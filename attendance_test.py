@@ -573,10 +573,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
-
-# Database setup to store device IDs (Create a new SQLite database or connect to an existing one)
+# Database setup to store device IDs
 def create_connection():
-    conn = sqlite3.connect("device_ids.db")  # Using SQLite file in app directory
+    conn = sqlite3.connect("device_ids.db")
     return conn
 
 def create_table():
@@ -584,64 +583,72 @@ def create_table():
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS device_ids (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                device_id TEXT,
+                device_id TEXT UNIQUE,
                 created_at DATETIME)''')
     conn.commit()
     conn.close()
 
-# Insert the device ID into the SQLite table
 def insert_device_id(device_id):
     conn = create_connection()
     c = conn.cursor()
-    c.execute("INSERT INTO device_ids (device_id, created_at) VALUES (?, ?)",
-              (device_id, datetime.now()))
-    conn.commit()
-    conn.close()
+    try:
+        c.execute("INSERT OR IGNORE INTO device_ids (device_id, created_at) VALUES (?, ?)",
+                  (device_id, datetime.now()))
+        conn.commit()
+    except Exception as e:
+        st.error(f"Database error: {e}")
+    finally:
+        conn.close()
 
-# Create the table if it doesn't exist
+# Initialize the database table
 create_table()
 
-# Inject JavaScript to set and read cookies
+# Inject JavaScript for cookie-based persistent ID
 st.markdown("""
     <script>
-      function getCookie(name) {
-          let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-          if (match) return match[2];
-      }
-      
-      function setCookie(name, value, days) {
-          let expires = "";
-          if (days) {
-              let date = new Date();
-              date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-              expires = "; expires=" + date.toUTCString();
-          }
-          document.cookie = name + "=" + (value || "") + expires + "; path=/";
-      }
+        function getCookie(name) {
+            let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            if (match) return match[2];
+        }
 
-      let deviceId = getCookie("device_id");
-      if (!deviceId) {
-          deviceId = crypto.randomUUID();  // Generate a unique ID
-          setCookie("device_id", deviceId, 365);  // Store for 1 year
-      }
-      // Pass the device ID to Streamlit via URL query parameters
-      const queryParams = new URLSearchParams(window.location.search);
-      queryParams.set("device_id", deviceId);
-      const newUrl = `${window.location.pathname}?${queryParams.toString()}`;
-      window.location.href = newUrl;
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                let date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
+        // Check for an existing device ID in cookies
+        let deviceId = getCookie("device_id");
+        if (!deviceId) {
+            // Generate a new UUID if not found
+            deviceId = crypto.randomUUID();
+            setCookie("device_id", deviceId, 365); // Store for 1 year
+        }
+
+        // Pass the device ID back to Streamlit using query parameters
+        const queryParams = new URLSearchParams(window.location.search);
+        queryParams.set("device_id", deviceId);
+        const newUrl = `${window.location.pathname}?${queryParams.toString()}`;
+        if (!window.location.search.includes("device_id")) {
+            window.location.href = newUrl;
+        }
     </script>
 """, unsafe_allow_html=True)
 
-# Retrieve the device ID from the query parameters using `st.query_params`
+# Fetch the device ID from query parameters
 device_id = st.query_params.get("device_id", ["unknown"])[0]
 
-# Display the device ID or an appropriate message
+# Display the device ID or an error message
 if device_id != "unknown":
-    # Save the device ID in the database
     insert_device_id(device_id)
     st.success(f"Your unique device ID is: {device_id}")
 else:
-    st.warning("Unable to fetch device ID. Please ensure JavaScript is enabled.")
+    st.error("Unable to fetch device ID. Please ensure JavaScript is enabled and reload the page.")
+    
 def get_precise_location(api_key=None):
     if api_key:
         # Google Maps Geocode API URL
