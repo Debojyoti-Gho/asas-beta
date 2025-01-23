@@ -953,7 +953,7 @@ elif menu == "Student Login":
                                 "Period 4": ("12:00", "12:50"),
                                 "Period 5": ("13:40", "14:30"),
                                 "Period 6": ("14:30", "15:20"),
-                                "Period 7": ("15:20", "16:10")
+                                "Period 7": ("15:20", "21:10")
                             }
 
                             # Function to get the current period based on time
