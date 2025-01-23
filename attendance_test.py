@@ -2074,35 +2074,104 @@ elif menu == "Admin Login":
             
         st.markdown("---")
         # Timetable Entry Form
+        DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+        PERIODS = ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5", "Period 6", "Period 7"]
+
+        def get_timetable(day):
+            cursor.execute("""
+                SELECT period, subject, teacher FROM timetable WHERE day = ? ORDER BY period
+            """, (day,))
+            return cursor.fetchall()
+
+        def add_timetable_entry(day, period, subject, teacher):
+            try:
+                cursor.execute("""
+                    SELECT * FROM timetable WHERE day = ? AND period = ?
+                """, (day, period))
+                existing_entry = cursor.fetchone()
+
+                if existing_entry:
+                    st.error(f"An entry already exists for {day} - {period}.") 
+                    return False
+
+                cursor.execute("""
+                    INSERT INTO timetable (day, period, subject, teacher) 
+                    VALUES (?, ?, ?, ?)
+                """, (day, period, subject, teacher))
+                conn.commit()
+                return True
+            except Exception as e:
+                st.error(f"Error adding entry: {e}") 
+                return False
+
+        def update_timetable_entry(day, period, subject, teacher):
+            try:
+                cursor.execute("""
+                    UPDATE timetable SET subject = ?, teacher = ? 
+                    WHERE day = ? AND period = ?
+                """, (subject, teacher, day, period))
+                conn.commit()
+                st.success(f"Timetable entry for {day} - {period} updated.")
+                return True
+            except Exception as e:
+                st.error(f"Error updating entry: {e}") 
+                return False
+
+        def delete_timetable_entry(day, period):
+            try:
+                cursor.execute("""
+                    DELETE FROM timetable WHERE day = ? AND period = ?
+                """, (day, period))
+                conn.commit()
+                st.success(f"Timetable entry for {day} - {period} deleted.")
+                return True
+            except Exception as e:
+                st.error(f"Error deleting entry: {e}") 
+                return False
+
         st.title("Timetable Management")
 
         with st.form("add_timetable"):
-            day = st.selectbox("Select Day", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
-            period = st.selectbox("Select Period", ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5", "Period 6", "Period 7"])
+            st.subheader("Add Timetable Entry")
+            day = st.selectbox("Select Day", DAYS_OF_WEEK)
+            period = st.selectbox("Select Period", PERIODS)
             subject = st.text_input("Subject Name")
             teacher = st.text_input("Teacher Name")
-            submit = st.form_submit_button("Add Entry")
+            submit_add = st.form_submit_button("Add Entry")
 
-            if submit:
-                if day and period and subject and teacher:
-                    cursor.execute("""
-                        INSERT INTO timetable (day, period, subject, teacher) 
-                        VALUES (?, ?, ?, ?)
-                    """, (day, period, subject, teacher))
-                    conn.commit()
-                    st.success(f"Timetable entry added: {day} - {period} - {subject} - {teacher}")
-                else:
-                    st.error("All fields are required!")
+            if submit_add:
+                if subject and teacher:
+                    if add_timetable_entry(day, period, subject, teacher):
+                        st.success(f"Timetable entry added: {day} - {period} - {subject} - {teacher}")
 
-        # View Timetable
+        with st.form("update_timetable"):
+            st.subheader("Update Timetable Entry")
+            day = st.selectbox("Select Day", DAYS_OF_WEEK)
+            period = st.selectbox("Select Period", PERIODS)
+            subject = st.text_input("Subject Name")
+            teacher = st.text_input("Teacher Name")
+            submit_update = st.form_submit_button("Update Entry")
+
+            if submit_update:
+                if subject and teacher:
+                    if update_timetable_entry(day, period, subject, teacher):
+                        st.success(f"Timetable entry updated: {day} - {period} - {subject} - {teacher}")
+
+        with st.form("delete_timetable"):
+            st.subheader("Delete Timetable Entry")
+            day = st.selectbox("Select Day", DAYS_OF_WEEK)
+            period = st.selectbox("Select Period", PERIODS)
+            submit_delete = st.form_submit_button("Delete Entry")
+
+            if submit_delete:
+                if st.button("Confirm Delete"): 
+                    if delete_timetable_entry(day, period):
+                        st.success(f"Timetable entry for {day} - {period} deleted.")
+
         st.header("View Timetable")
-        selected_day = st.selectbox("Select Day to View", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
+        selected_day = st.selectbox("Select Day to View", DAYS_OF_WEEK)
         if selected_day:
-            cursor.execute("""
-                SELECT period, subject, teacher FROM timetable WHERE day = ? ORDER BY period
-            """, (selected_day,))
-            timetable = cursor.fetchall()
-
+            timetable = get_timetable(selected_day) 
             if timetable:
                 st.table(timetable)
             else:
