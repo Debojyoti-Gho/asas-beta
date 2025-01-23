@@ -13,6 +13,8 @@ import numpy as np
 import time
 import logging
 import smtplib
+import random 
+import string 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
@@ -579,7 +581,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 # Function to fetch User-Agent and IP address
 def fetch_user_agent_and_ip():
     try:
-        # Fetch User-Agent via query parameters (or fallback to a default)
+        # Fetch User-Agent from Streamlit's query parameters (or fallback to default)
         user_agent = st.query_params.get("user_agent", ["unknown_agent"])[0]
 
         # Use external API to fetch public IP address
@@ -592,81 +594,40 @@ def fetch_user_agent_and_ip():
         st.error(f"Failed to fetch User-Agent or IP: {e}")
         return "unknown_agent", "unknown_ip"
 
-# JavaScript code to generate a unique ID using FingerprintJS
-def get_device_id_from_js():
-    js_code = """
-    <script src="https://cdn.jsdelivr.net/npm/fingerprintjs@3.3.0/dist/fingerprint.min.js"></script>
-    <script>
-        FingerprintJS.load().then(function(fingerprintJS) {
-            fingerprintJS.get().then(function(result) {
-                var device_id = result.visitorId;
-                
-                // Debugging log
-                console.log("Generated Device ID: ", device_id);
-                
-                // Store the generated device ID in localStorage
-                localStorage.setItem('device_id', device_id);
-                
-                // Send the device ID back to Streamlit via postMessage
-                window.parent.postMessage({func: 'set_device_id', device_id: device_id}, '*');
-            }).catch(function(error) {
-                // Debugging log for errors
-                console.error("Error generating device ID with FingerprintJS:", error);
-            });
-        }).catch(function(error) {
-            // Debugging log for errors
-            console.error("Error loading FingerprintJS:", error);
-        });
-    </script>
-    """
-    st.components.v1.html(js_code, height=0, width=0)
+# Generate a unique device ID based on User-Agent, IP, and a random value
+def generate_device_id(user_agent, ip_address):
+    try:
+        # Generate a random value to ensure uniqueness
+        random_value = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
 
-# Function to get the device ID stored in localStorage (via JavaScript)
-def get_device_id_from_local_storage():
-    device_id = None
-    js_code = """
-    <script>
-        // Retrieve device ID from localStorage
-        var device_id = localStorage.getItem('device_id');
-        // Debugging log
-        console.log("Fetched Device ID from localStorage: ", device_id);
-        // Send the device ID back to Streamlit via postMessage
-        window.parent.postMessage({func: 'set_device_id', device_id: device_id}, '*');
-    </script>
-    """
-    st.components.v1.html(js_code, height=0, width=0)
-    
-    return device_id
+        # Combine User-Agent, IP Address, and Random Value
+        unique_string = f"{user_agent}-{ip_address}-{random_value}"
+        
+        # Hash the unique string to generate a consistent device ID
+        device_id = hashlib.sha256(unique_string.encode()).hexdigest()
 
-# Handle the device ID from JavaScript callback
-def handle_device_id_from_js(message):
-    if 'device_id' in message:
-        st.session_state.device_id = message['device_id']
+        return device_id
+    except Exception as e:
+        st.error(f"Error generating device ID: {e}")
+        return None
 
-# Initialize session state for device ID
-if 'device_id' not in st.session_state:
-    st.session_state.device_id = None
-
-# Function to generate or fetch the device UUID
+# Function to get or generate the device ID
 def get_device_uuid():
     try:
         # Fetch User-Agent and IP Address
         user_agent, ip_address = fetch_user_agent_and_ip()
 
-        # Ensure the device ID is available
-        if st.session_state.device_id is None:
-            get_device_id_from_js()
+        # If the device ID is not already in session, generate it
+        if 'device_id' not in st.session_state:
+            device_id = generate_device_id(user_agent, ip_address)
+            if device_id:
+                st.session_state.device_id = device_id
+            else:
+                st.error("Could not generate a device ID.")
+                return None
 
-        if st.session_state.device_id is None:
-            # If device ID is still None, try retrieving it from localStorage
-            get_device_id_from_local_storage()
-
-        if st.session_state.device_id is not None:
-            st.success(f"Device ID generated successfully: {st.session_state.device_id}")
-            return st.session_state.device_id
-        else:
-            st.error("Could not fetch Device ID. Please refresh the page.")
-            return None
+        # Return the device ID from session state
+        return st.session_state.device_id
 
     except Exception as e:
         st.error(f"Error generating device ID: {e}")
@@ -675,9 +636,6 @@ def get_device_uuid():
 # Display the generated device UUID
 device_uuid = get_device_uuid()
 
-# Display the result
-if device_uuid:
-    st.write(f"Your device ID is: {device_uuid}")
 
 def get_precise_location(api_key=None):
     if api_key:
