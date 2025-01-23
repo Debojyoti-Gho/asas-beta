@@ -575,16 +575,26 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
+# Inject JavaScript to fetch User-Agent from the browser and add it to the query params
+st.markdown("""
+    <script>
+    const userAgent = window.navigator.userAgent;
+    const queryParams = new URLSearchParams(window.location.search);
+    queryParams.set("user_agent", userAgent);
+    window.history.replaceState({}, "", "?" + queryParams.toString());
+    </script>
+""", unsafe_allow_html=True)
+
 def fetch_user_agent_and_ip():
     """
     Automatically fetch User-Agent and IP from the client using an API and browser headers.
     Returns the values for easy access.
     """
     try:
-        # Fetch User-Agent directly from request headers
-        user_agent = st.request.headers.get('User-Agent', 'unknown_agent')
+        # Fetch User-Agent via query parameters
+        user_agent = st.experimental_get_query_params().get("user_agent", ["unknown_agent"])[0]
 
-        # Use external API to fetch IP
+        # Use external API to fetch IP address
         response = requests.get("https://api64.ipify.org?format=json")
         ip_address = response.json().get("ip", "unknown_ip")
 
@@ -593,7 +603,6 @@ def fetch_user_agent_and_ip():
     except Exception as e:
         st.error(f"Failed to fetch User-Agent or IP: {e}")
         return "unknown_agent", "unknown_ip"
-
 
 def get_device_uuid():
     """
@@ -631,7 +640,7 @@ def get_device_uuid():
     except Exception as e:
         st.error(f"Error generating device ID: {e}")
         return None
-
+        
 def get_precise_location(api_key=None):
     if api_key:
         # Google Maps Geocode API URL
