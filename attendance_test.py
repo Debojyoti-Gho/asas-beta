@@ -594,14 +594,15 @@ def fetch_user_agent_and_ip():
         st.error(f"Failed to fetch User-Agent or IP: {e}")
         return "unknown_agent", "unknown_ip"
 
-# Generate a unique device ID based on User-Agent, IP, and a random value
+# Generate a unique device ID based on User-Agent, IP, and a stronger random value
 def generate_device_id(user_agent, ip_address):
     try:
-        # Generate a random value to ensure uniqueness
+        # Generate a stronger random value by combining timestamp with randomness
         random_value = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-
-        # Combine User-Agent, IP Address, and Random Value
-        unique_string = f"{user_agent}-{ip_address}-{random_value}"
+        timestamp = str(int(time.time()))  # Add timestamp to make the ID unique across sessions
+        
+        # Combine User-Agent, IP Address, Random Value, and Timestamp
+        unique_string = f"{user_agent}-{ip_address}-{random_value}-{timestamp}"
         
         # Hash the unique string to generate a consistent device ID
         device_id = hashlib.sha256(unique_string.encode()).hexdigest()
@@ -638,7 +639,7 @@ device_uuid = get_device_uuid()
 
 # Display the result
 if device_uuid:
-    st.write(f"Your device ID is: {device_uuid}")
+    st.write(f"Your device ID is: {device_uuid}"))
 
 def get_precise_location(api_key=None):
     if api_key:
