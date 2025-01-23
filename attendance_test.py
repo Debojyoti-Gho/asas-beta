@@ -748,6 +748,7 @@ def get_current_period():
     }
 
     current_time = datetime.now().time()
+    st.info(f"The current time is: {current_time}")
 
     # Convert current_time to minutes for easier comparison
     current_minutes = current_time.hour * 60 + current_time.minute
