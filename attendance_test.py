@@ -578,23 +578,22 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 def fetch_user_agent_and_ip():
     """
     Automatically fetch User-Agent and IP from the client using an API and browser headers.
-    Stores these values in the session state for easy access.
+    Returns the values for easy access.
     """
-    if "user_agent" not in st.session_state or "ip_address" not in st.session_state:
-        try:
-            # Fetch User-Agent via headers
-            user_agent = st.session_state.get("user_agent", "unknown_agent")
-            
-            # Use external API to fetch IP
-            response = requests.get("https://api64.ipify.org?format=json")
-            ip_address = response.json().get("ip", "unknown_ip")
+    try:
+        # Fetch User-Agent directly from request headers
+        user_agent = st.request.headers.get('User-Agent', 'unknown_agent')
 
-            # Save to session state
-            st.session_state["user_agent"] = user_agent
-            st.session_state["ip_address"] = ip_address
+        # Use external API to fetch IP
+        response = requests.get("https://api64.ipify.org?format=json")
+        ip_address = response.json().get("ip", "unknown_ip")
 
-        except Exception as e:
-            st.error(f"Failed to fetch User-Agent or IP: {e}")
+        return user_agent, ip_address
+
+    except Exception as e:
+        st.error(f"Failed to fetch User-Agent or IP: {e}")
+        return "unknown_agent", "unknown_ip"
+
 
 def get_device_uuid():
     """
@@ -602,11 +601,8 @@ def get_device_uuid():
     Automatically detects User-Agent and IP for mobile/desktop devices.
     """
     try:
-        # Fetch User-Agent from session state
-        user_agent = st.session_state.get("user_agent", "unknown_agent")
-
-        # Fetch the client's public IP address
-        ip_address = st.session_state.get("ip_address", "unknown_ip")
+        # Fetch fresh User-Agent and IP
+        user_agent, ip_address = fetch_user_agent_and_ip()
 
         # Default values for device attributes
         device_brand, device_model, os_version = "Unknown", "Unknown Model", "Unknown OS"
