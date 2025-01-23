@@ -14,6 +14,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
+from streamlit_cookies_manager import EncryptedCookieManager
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False)
@@ -603,51 +604,30 @@ def insert_device_id(device_id):
 # Initialize the database table
 create_table()
 
-# Inject JavaScript for cookie-based persistent ID
-st.markdown("""
-    <script>
-        function getCookie(name) {
-            let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-            if (match) return match[2];
-        }
+# Initialize cookies manager
+cookies = EncryptedCookieManager(
+    prefix="my_app_",
+    password="your_secret_key"  # Use a secure password for encryption
+)
 
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                let date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
-            }
-            document.cookie = name + "=" + (value || "") + expires + "; path=/";
-        }
+# Ensure cookies are loaded
+if not cookies.ready():
+    st.stop()
 
-        // Check for an existing device ID in cookies
-        let deviceId = getCookie("device_id");
-        if (!deviceId) {
-            // Generate a new UUID if not found
-            deviceId = crypto.randomUUID();
-            setCookie("device_id", deviceId, 365); // Store for 1 year
-        }
+# Check for an existing device ID in cookies
+device_id = cookies.get("device_id")
 
-        // Pass the device ID back to Streamlit using query parameters
-        const queryParams = new URLSearchParams(window.location.search);
-        queryParams.set("device_id", deviceId);
-        const newUrl = `${window.location.pathname}?${queryParams.toString()}`;
-        if (!window.location.search.includes("device_id")) {
-            window.location.href = newUrl;
-        }
-    </script>
-""", unsafe_allow_html=True)
+if not device_id:
+    # Generate a new UUID if not found
+    device_id = str(uuid.uuid4())
+    cookies["device_id"] = device_id  # Save to cookies
+    cookies.save()  # Commit changes
 
-# Fetch the device ID from query parameters
-device_id = st.query_params.get("device_id", ["unknown"])[0]
+# Insert the device ID into the database
+insert_device_id(device_id)
 
-# Display the device ID or an error message
-if device_id != "unknown":
-    insert_device_id(device_id)
-    st.success(f"Your unique device ID is: {device_id}")
-else:
-    st.error("Unable to fetch device ID. Please ensure JavaScript is enabled and reload the page.")
+# Display the device ID
+st.success(f"Your unique device ID is: {device_id}")
     
 def get_precise_location(api_key=None):
     if api_key:
