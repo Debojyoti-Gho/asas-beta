@@ -579,65 +579,38 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #     return False
 
 
-def fetch_user_agent_and_ip():
-    """
-    Fetch the User-Agent and IP address of the client (browser) to generate unique device IDs.
-    """
-    try:
-        # Fetch the User-Agent string of the client
-        user_agent = st.experimental_get_query_params().get('user_agent', ['unknown'])[0]
+import streamlit as st
 
-        # Use external API to fetch public IP address
-        ip_response = requests.get("https://api64.ipify.org?format=json")
-        ip_address = ip_response.json().get("ip", "unknown_ip")
+# Inject JavaScript to handle device ID using FingerprintJS and store it in localStorage
+st.markdown("""
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs-pro@3.0.1/dist/fp.min.js"></script>
+    <script>
+      function getDeviceId() {
+        if (!localStorage.getItem('device_id')) {
+          FingerprintJS.load().then(function(fp) {
+            fp.get().then(function(result) {
+              const deviceId = result.visitorId;  // Unique ID generated
+              localStorage.setItem('device_id', deviceId);
+              // Redirect to include device ID in URL query parameter
+              window.location.href = "?device_id=" + deviceId;
+            });
+          });
+        } else {
+          const deviceId = localStorage.getItem('device_id');
+          window.location.href = "?device_id=" + deviceId;
+        }
+      }
+      
+      // Trigger the function on page load
+      getDeviceId();
+    </script>
+    """, unsafe_allow_html=True)
 
-        return user_agent, ip_address
-    except Exception as e:
-        st.error(f"Error fetching user agent or IP: {e}")
-        return "unknown_user_agent", "unknown_ip"
-
-def generate_device_id(user_agent, ip_address):
-    """
-    Generate a unique device ID based on User-Agent, IP address, and a random string.
-    """
-    try:
-        # Random string for uniqueness
-        random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-
-        # Combine the User-Agent, IP, and random string to form the unique string
-        unique_string = f"{user_agent}-{ip_address}-{random_string}"
-
-        # Hash this unique string to create the device ID
-        device_id = hashlib.sha256(unique_string.encode()).hexdigest()
-
-        return device_id
-    except Exception as e:
-        st.error(f"Error generating device ID: {e}")
-        return None
-
-def get_device_id():
-    """
-    Retrieve or generate a unique device ID for the client.
-    """
-    # If device ID already exists in session, use it
-    if "device_id" not in st.session_state:
-        user_agent, ip_address = fetch_user_agent_and_ip()
-        device_id = generate_device_id(user_agent, ip_address)
-        
-        if device_id:
-            st.session_state.device_id = device_id
-        else:
-            st.error("Failed to generate a device ID")
-            return None
-
-    return st.session_state.device_id
-
-# Fetch or generate the device ID
-device_id = get_device_id()
+# Retrieve the device ID from the query parameters
+device_id = st.experimental_get_query_params().get('device_id', ['unknown'])[0]
 
 # Display the device ID
-if device_id:
-    st.write(f"Your unique device ID is: {device_id}")
+st.write(f"Your unique device ID is: {device_id}")
 
 def get_precise_location(api_key=None):
     if api_key:
