@@ -873,7 +873,8 @@ elif menu == "Register":
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id))
                             conn.commit()
-                            st.success("Registration successful!")
+                            st.success("Registration successful! ")
+                            st.info("From now on this will be your registered device for future logins!") 
                             st.info("Please proceed to the Student Login page.")
 
 
@@ -1021,11 +1022,11 @@ elif menu == "Student Login":
                     else:
                         st.error("No Bluetooth devices found.")
                 else:
-                    st.error("You must be in Kolkata to login.")
+                    st.error("You must be in Institute of Engineering and Management to login.")
             else:
-                st.error("Device ID does not match.")
+                st.error("Device ID does not match.You can only login from your registered device.")
         else:
-            st.error("Invalid user ID or password.")
+            st.error("Invalid user ID or password.Please Try Again.")
 
     # Display student attendance search form
     if st.session_state.get('logged_in', False):
