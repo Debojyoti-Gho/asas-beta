@@ -854,7 +854,7 @@ elif menu == "Register":
             if st.form_submit_button("Register"):
 
                 # Fetch the device ID (UUID based)
-                device_id = get_device_id()
+                device_id = device_id()
 
                 if not device_id:
                     st.error("Could not fetch device ID, registration cannot proceed.")
@@ -884,7 +884,7 @@ elif menu == "Student Login":
     password = st.text_input("Password", type="password")
     
     # Fetch the device ID (IP address)
-    device_id = get_device_id() 
+    device_id = device_id() 
 
     if not device_id:
         st.error("Could not fetch device Id. Login cannot proceed.")
