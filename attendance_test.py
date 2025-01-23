@@ -955,15 +955,7 @@ elif menu == "Student Login":
                                 "Period 6": ("14:30", "15:20"),
                                 "Period 7": ("15:20", "21:10")
                             }
-
-                            # Function to get the current period based on time
-                            def get_current_period() -> Optional[str]:
-                                now = datetime.now().strftime("%H:%M")  # Current time in HH:MM format
-                                for period, (start, end) in PERIOD_TIMES.items():
-                                    if start <= now <= end:
-                                        return period
-                                return None
-
+                            
                             # Attendance Marking Logic
                             current_period = get_current_period()
 
