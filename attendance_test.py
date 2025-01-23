@@ -1,7 +1,7 @@
 import sqlite3
 import streamlit as st
 import datetime
-from datetime import date, datetime,timedelta
+from datetime import date, datetime,timedelta,timezone
 from io import BytesIO
 from fpdf import FPDF
 import matplotlib.pyplot as plt
@@ -734,9 +734,25 @@ def get_ble_signal_from_api():
 
 def get_current_period():
     """
-    Get the current active period based on the current time.
-    This function maps current time to the relevant period.
+    Get the current active period based on the current time, considering timezones.
+
+    This function maps current time to the relevant period, taking into account
+    the user's timezone (if available) or a specified default timezone.
     """
+
+    # Specify the desired timezone (e.g., IST for Indian Standard Time)
+    desired_timezone = timezone(timedelta(hours=5, minutes=30))  # Adjust as needed
+
+    # Try to get the user's timezone (optional)
+    # This might not be reliable in all cases
+    # user_timezone = st.session_state.get('user_timezone', desired_timezone)
+
+    current_time = datetime.now(desired_timezone).time()
+    st.info(f"The current time (in {desired_timezone}): {current_time}")
+
+    # Convert current_time to minutes for easier comparison
+    current_minutes = current_time.hour * 60 + current_time.minute
+
     period_times = {
         "Period 1": ("09:30", "10:20"),
         "Period 2": ("10:20", "11:10"),
@@ -744,14 +760,8 @@ def get_current_period():
         "Period 4": ("12:00", "12:50"),
         "Period 5": ("13:20", "14:30"),
         "Period 6": ("14:30", "15:20"),
-        "Period 7": ("15:20", "21:10")
+        "Period 7": ("15:20", "21:10")  # Update end time for Period 7 if needed
     }
-
-    current_time = datetime.now().time()
-    st.info(f"The current time is: {current_time}")
-
-    # Convert current_time to minutes for easier comparison
-    current_minutes = current_time.hour * 60 + current_time.minute
 
     for period, times in period_times.items():
         start_time = datetime.strptime(times[0], "%H:%M").time()
