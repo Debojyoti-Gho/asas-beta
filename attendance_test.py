@@ -639,7 +639,7 @@ device_uuid = get_device_uuid()
 
 # Display the result
 if device_uuid:
-    st.write(f"Your device ID is: {device_uuid}"))
+    st.write(f"Your device ID is: {device_uuid}")
 
 def get_precise_location(api_key=None):
     if api_key:
