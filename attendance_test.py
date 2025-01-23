@@ -576,22 +576,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #     return False
 
 
-# Utility function to generate or fetch the device ID from cookies
+# Utility function to generate or fetch the device ID from session state
 def get_or_create_device_id():
-    # Check if the device ID is already stored in the session (using cookies)
     if "device_id" not in st.session_state:
-        # Generate a new unique ID (UUID) for the first visit
-        device_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, platform.node()))
+        # Generate a new unique ID (UUID) using platform node (host name) for consistency
+        device_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, platform.node()))  
         st.session_state["device_id"] = device_id
     return st.session_state["device_id"]
 
-# Fetch User-Agent and IP address
+# Fetch User-Agent and IP address from external API
 def fetch_user_agent_and_ip():
     try:
-        # Fetch User-Agent via query parameters
+        # Fetch User-Agent via query parameters (or fallback to a default)
         user_agent = st.query_params.get("user_agent", ["unknown_agent"])[0]
 
-        # Use external API to fetch IP address
+        # Use external API to fetch public IP address
         response = requests.get("https://api64.ipify.org?format=json")
         ip_address = response.json().get("ip", "unknown_ip")
 
@@ -604,19 +603,19 @@ def fetch_user_agent_and_ip():
 def get_device_uuid():
     """
     Generate a unique identifier for the device accessing the Streamlit app.
-    Automatically detects User-Agent and IP for mobile/desktop devices.
+    This ensures uniqueness by combining device attributes like IP, MAC, etc.
     """
     try:
-        # Fetch fresh User-Agent and IP
+        # Fetch the User-Agent and IP address
         user_agent, ip_address = fetch_user_agent_and_ip()
 
-        # Get or create a persistent device ID using session state (which uses cookies)
+        # Get or create the persistent device ID stored in session state
         device_uuid = get_or_create_device_id()
 
         # Default values for device attributes
         device_brand, device_model, os_version = "Unknown", "Unknown Model", "Unknown OS"
 
-        # Parse User-Agent for mobile-specific information
+        # Parse User-Agent for mobile-specific information (e.g., iPhone, Android)
         if "iPhone" in user_agent or "iPad" in user_agent:
             device_brand = "Apple"
             device_model = user_agent.split('(')[-1].split(';')[0]
@@ -626,11 +625,11 @@ def get_device_uuid():
             device_model = user_agent.split('Build/')[0].split(' ')[-1]
             os_version = "Android " + user_agent.split('Android ')[-1].split(' ')[0]
 
-        # Additional attributes (e.g., hostname and MAC address)
-        node_name = platform.node()  # Hostname
-        mac_address = uuid.getnode()  # MAC address
+        # Additional attributes for further uniqueness
+        node_name = platform.node()  # Hostname of the machine (unique to each device)
+        mac_address = uuid.getnode()  # MAC address (unique to the device)
 
-        # Combine all details and hash them to create a unique identifier
+        # Combine all details into a string and hash it to generate a unique device ID
         unique_str = f"{device_brand}-{device_model}-{os_version}-{node_name}-{mac_address}-{ip_address}-{device_uuid}"
         device_uuid = hashlib.sha256(unique_str.encode()).hexdigest()
 
@@ -640,6 +639,7 @@ def get_device_uuid():
     except Exception as e:
         st.error(f"Error generating device ID: {e}")
         return None
+
 
 def get_precise_location(api_key=None):
     if api_key:
