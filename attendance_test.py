@@ -624,26 +624,24 @@ st.markdown("""
           deviceId = crypto.randomUUID();  // Generate a unique ID
           setCookie("device_id", deviceId, 365);  // Store for 1 year
       }
-      // Pass the device ID to Streamlit
-      window.parent.postMessage(deviceId, "*");
+      // Pass the device ID to Streamlit via URL query parameters
+      const queryParams = new URLSearchParams(window.location.search);
+      queryParams.set("device_id", deviceId);
+      const newUrl = `${window.location.pathname}?${queryParams.toString()}`;
+      window.location.href = newUrl;
     </script>
 """, unsafe_allow_html=True)
 
-# Placeholder for device ID
-device_id_placeholder = st.empty()
+# Retrieve the device ID from the query parameters using `st.query_params`
+device_id = st.query_params.get("device_id", ["unknown"])[0]
 
-# JavaScript-to-Python communication via Streamlit components
-device_id = st.experimental_get_query_params().get("device_id", ["unknown"])[0]
-
-# If a device ID is found, store and display it
+# Display the device ID or an appropriate message
 if device_id != "unknown":
     # Save the device ID in the database
     insert_device_id(device_id)
-    device_id_placeholder.write(f"Your unique device ID is: {device_id}")
+    st.success(f"Your unique device ID is: {device_id}")
 else:
     st.warning("Unable to fetch device ID. Please ensure JavaScript is enabled.")
-
-
 def get_precise_location(api_key=None):
     if api_key:
         # Google Maps Geocode API URL
