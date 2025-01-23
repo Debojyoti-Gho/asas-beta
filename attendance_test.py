@@ -578,9 +578,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
-
-import streamlit as st
-
 # Inject JavaScript to handle device ID using FingerprintJS and store it in localStorage
 st.markdown("""
     <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs-pro@3.0.1/dist/fp.min.js"></script>
@@ -606,12 +603,11 @@ st.markdown("""
     </script>
     """, unsafe_allow_html=True)
 
-# Retrieve the device ID from the query parameters
-device_id = st.experimental_get_query_params().get('device_id', ['unknown'])[0]
+# Retrieve the device ID from the query parameters using the new method
+device_id = st.query_params.get('device_id', ['unknown'])[0]
 
 # Display the device ID
 st.write(f"Your unique device ID is: {device_id}")
-
 def get_precise_location(api_key=None):
     if api_key:
         # Google Maps Geocode API URL
