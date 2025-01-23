@@ -575,10 +575,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
-# Utility function to generate a persistent device ID using cookies
+
+# Utility function to generate or fetch the device ID from cookies
 def get_or_create_device_id():
+    # Check if the device ID is already stored in the session (using cookies)
     if "device_id" not in st.session_state:
-        # Generate a new device ID if it doesn't exist
+        # Generate a new unique ID (UUID) for the first visit
         device_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, platform.node()))
         st.session_state["device_id"] = device_id
     return st.session_state["device_id"]
@@ -608,7 +610,7 @@ def get_device_uuid():
         # Fetch fresh User-Agent and IP
         user_agent, ip_address = fetch_user_agent_and_ip()
 
-        # Get or create a persistent device ID using cookies/session state
+        # Get or create a persistent device ID using session state (which uses cookies)
         device_uuid = get_or_create_device_id()
 
         # Default values for device attributes
