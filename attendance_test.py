@@ -576,8 +576,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
-
-
 # Function to fetch User-Agent and IP address
 def fetch_user_agent_and_ip():
     try:
@@ -602,11 +600,22 @@ def get_device_id_from_js():
         FingerprintJS.load().then(function(fingerprintJS) {
             fingerprintJS.get().then(function(result) {
                 var device_id = result.visitorId;
+                
+                // Debugging log
+                console.log("Generated Device ID: ", device_id);
+                
                 // Store the generated device ID in localStorage
                 localStorage.setItem('device_id', device_id);
-                // Notify Streamlit when the ID is ready
+                
+                // Send the device ID back to Streamlit via postMessage
                 window.parent.postMessage({func: 'set_device_id', device_id: device_id}, '*');
+            }).catch(function(error) {
+                // Debugging log for errors
+                console.error("Error generating device ID with FingerprintJS:", error);
             });
+        }).catch(function(error) {
+            // Debugging log for errors
+            console.error("Error loading FingerprintJS:", error);
         });
     </script>
     """
@@ -619,6 +628,8 @@ def get_device_id_from_local_storage():
     <script>
         // Retrieve device ID from localStorage
         var device_id = localStorage.getItem('device_id');
+        // Debugging log
+        console.log("Fetched Device ID from localStorage: ", device_id);
         // Send the device ID back to Streamlit via postMessage
         window.parent.postMessage({func: 'set_device_id', device_id: device_id}, '*');
     </script>
