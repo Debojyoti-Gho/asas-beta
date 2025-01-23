@@ -16,6 +16,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
+import json 
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False)
@@ -576,32 +577,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #     return False
 
 
-# Utility function to generate or fetch the device ID from session state (using JavaScript)
-def get_device_id_from_js():
-    device_id = None
-    # JavaScript code to generate or retrieve a unique device ID
-    js_code = """
-    <script>
-        // Function to generate or retrieve a unique device ID from localStorage
-        if (!localStorage.getItem('device_id')) {
-            // If no device_id in localStorage, generate a new one using UUID
-            var device_id = 'device_' + crypto.randomUUID();
-            localStorage.setItem('device_id', device_id);
-        } else {
-            // Otherwise, retrieve the existing device_id from localStorage
-            var device_id = localStorage.getItem('device_id');
-        }
-        // Send the device_id to Streamlit via a custom callback
-        window.parent.postMessage({func: 'set_device_id', device_id: device_id}, '*');
-    </script>
-    """
-    # Use Streamlit's HTML component to inject the JavaScript into the page
-    st.components.v1.html(js_code, height=0, width=0)
-
-    # Return the device ID from the custom JavaScript function
-    return device_id
-
-# Fetch User-Agent and IP address
+# Function to fetch User-Agent and IP address
 def fetch_user_agent_and_ip():
     try:
         # Fetch User-Agent via query parameters (or fallback to a default)
@@ -617,6 +593,32 @@ def fetch_user_agent_and_ip():
         st.error(f"Failed to fetch User-Agent or IP: {e}")
         return "unknown_agent", "unknown_ip"
 
+# JavaScript code to generate a unique ID using FingerprintJS
+def get_device_id_from_js():
+    device_id = None
+    js_code = """
+    <script src="https://cdn.jsdelivr.net/npm/fingerprintjs@3.3.0/dist/fingerprint.min.js"></script>
+    <script>
+        // Wait for the FingerprintJS library to load
+        FingerprintJS.load().then(fingerprintJS => {
+            // Get the unique fingerprint
+            fingerprintJS.get().then(result => {
+                var device_id = result.visitorId;
+                
+                // Store the generated device ID in localStorage
+                localStorage.setItem('device_id', device_id);
+                
+                // Send the device ID back to Streamlit via postMessage
+                window.parent.postMessage({func: 'set_device_id', device_id: device_id}, '*');
+            });
+        });
+    </script>
+    """
+    # Inject the JavaScript into the page
+    st.components.v1.html(js_code, height=0, width=0)
+
+    return device_id
+
 # Get or create device UUID
 def get_device_uuid():
     """
@@ -627,12 +629,8 @@ def get_device_uuid():
         # Fetch the User-Agent and IP address
         user_agent, ip_address = fetch_user_agent_and_ip()
 
-        # Get the device ID generated or retrieved from JavaScript/localStorage
+        # Get the device ID generated or retrieved from JavaScript (FingerprintJS)
         device_uuid = get_device_id_from_js()
-
-        # Combine all details into a string and hash it to generate a unique device ID
-        unique_str = f"{user_agent}-{ip_address}-{device_uuid}"
-        device_uuid = hashlib.sha256(unique_str.encode()).hexdigest()
 
         st.success(f"Device ID generated successfully: {device_uuid}")
         return device_uuid
@@ -640,7 +638,6 @@ def get_device_uuid():
     except Exception as e:
         st.error(f"Error generating device ID: {e}")
         return None
-
 
 def get_precise_location(api_key=None):
     if api_key:
