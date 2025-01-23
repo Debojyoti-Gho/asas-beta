@@ -17,7 +17,7 @@ from typing import Optional
 from streamlit_cookies_manager import EncryptedCookieManager
 
 # Database setup
-conn = sqlite3.connect("asasspecial.db", check_same_thread=False)
+conn = sqlite3.connect("/Users/debojyotighosh/Desktop/asasspecial.db", check_same_thread=False)
 cursor = conn.cursor()
 
 # Create tables
@@ -574,10 +574,11 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
+
 # Database setup to store device IDs
 def create_connection():
     conn = sqlite3.connect("device_ids.db")
-    return conn 
+    return conn
 
 def create_table():
     conn = create_connection()
@@ -607,7 +608,7 @@ create_table()
 # Initialize cookies manager
 cookies = EncryptedCookieManager(
     prefix="my_app_",
-    password="debo@6290"  # Use a secure password for encryption
+    password="your_secret_key"  # Use a secure password for encryption
 )
 
 # Ensure cookies are loaded
@@ -615,20 +616,20 @@ if not cookies.ready():
     st.stop()
 
 # Check for an existing device ID in cookies
-device_id = cookies.get("device_id")
+device_id_from_cookies = cookies.get("device_id")  # Use a different name to avoid conflicts
 
-if not device_id:
+if not device_id_from_cookies:
     # Generate a new UUID if not found
-    device_id = str(uuid.uuid4())
-    cookies["device_id"] = device_id  # Save to cookies
+    device_id_from_cookies = str(uuid.uuid4())
+    cookies["device_id"] = device_id_from_cookies  # Save to cookies
     cookies.save()  # Commit changes
 
 # Insert the device ID into the database
-insert_device_id(device_id)
+insert_device_id(device_id_from_cookies)
 
 # Display the device ID
-st.success(f"Your unique device ID is: {device_id}")
-    
+st.success(f"Your unique device ID is: {device_id_from_cookies}")
+
 def get_precise_location(api_key=None):
     if api_key:
         # Google Maps Geocode API URL
@@ -854,7 +855,7 @@ elif menu == "Register":
             if st.form_submit_button("Register"):
 
                 # Fetch the device ID (UUID based)
-                device_id = device_id()
+                device_id = device_id_from_cookies
 
                 if not device_id:
                     st.error("Could not fetch device ID, registration cannot proceed.")
@@ -884,7 +885,7 @@ elif menu == "Student Login":
     password = st.text_input("Password", type="password")
     
     # Fetch the device ID (IP address)
-    device_id = device_id() 
+    device_id = device_id_from_cookies
 
     if not device_id:
         st.error("Could not fetch device Id. Login cannot proceed.")
