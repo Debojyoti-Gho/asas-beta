@@ -627,9 +627,6 @@ if not device_id_from_cookies:
 # Insert the device ID into the database
 insert_device_id(device_id_from_cookies)
 
-# Display the device ID
-st.success(f"Your unique device ID is: {device_id_from_cookies}")
-
 def get_precise_location(api_key=None):
     if api_key:
         # Google Maps Geocode API URL
@@ -856,6 +853,7 @@ elif menu == "Register":
 
                 # Fetch the device ID (UUID based)
                 device_id = device_id_from_cookies
+                st.success(f"Your unique device ID is: {device_id_from_cookies}")
 
                 if not device_id:
                     st.error("Could not fetch device ID, registration cannot proceed.")
@@ -886,6 +884,7 @@ elif menu == "Student Login":
     
     # Fetch the device ID (IP address)
     device_id = device_id_from_cookies
+    st.success(f"Your unique device ID is: {device_id_from_cookies}")
 
     if not device_id:
         st.error("Could not fetch device Id. Login cannot proceed.")
