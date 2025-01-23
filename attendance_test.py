@@ -573,6 +573,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
+
 # Database setup to store device IDs (Create a new SQLite database or connect to an existing one)
 def create_connection():
     conn = sqlite3.connect("device_ids.db")  # Using SQLite file in app directory
@@ -597,28 +598,51 @@ def insert_device_id(device_id):
     conn.commit()
     conn.close()
 
-# Retrieve the device ID from the database based on some criteria
-def get_device_id():
-    conn = create_connection()
-    c = conn.cursor()
-    c.execute("SELECT device_id FROM device_ids ORDER BY created_at DESC LIMIT 1")
-    result = c.fetchone()
-    conn.close()
-    return result[0] if result else None
-
 # Create the table if it doesn't exist
 create_table()
 
-# Generate device ID if not present
-device_id = get_device_id()
+# Inject JavaScript to set and read cookies
+st.markdown("""
+    <script>
+      function getCookie(name) {
+          let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+          if (match) return match[2];
+      }
+      
+      function setCookie(name, value, days) {
+          let expires = "";
+          if (days) {
+              let date = new Date();
+              date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+              expires = "; expires=" + date.toUTCString();
+          }
+          document.cookie = name + "=" + (value || "") + expires + "; path=/";
+      }
 
-if device_id is None:
-    # Generate a new device ID if it doesn't exist
-    device_id = str(uuid.uuid4())  # Or use FingerprintJS to generate a unique ID
+      let deviceId = getCookie("device_id");
+      if (!deviceId) {
+          deviceId = crypto.randomUUID();  // Generate a unique ID
+          setCookie("device_id", deviceId, 365);  // Store for 1 year
+      }
+      // Pass the device ID to Streamlit
+      window.parent.postMessage(deviceId, "*");
+    </script>
+""", unsafe_allow_html=True)
+
+# Placeholder for device ID
+device_id_placeholder = st.empty()
+
+# JavaScript-to-Python communication via Streamlit components
+device_id = st.experimental_get_query_params().get("device_id", ["unknown"])[0]
+
+# If a device ID is found, store and display it
+if device_id != "unknown":
+    # Save the device ID in the database
     insert_device_id(device_id)
+    device_id_placeholder.write(f"Your unique device ID is: {device_id}")
+else:
+    st.warning("Unable to fetch device ID. Please ensure JavaScript is enabled.")
 
-# Show the device ID
-st.write(f"Your unique device ID is: {device_id}")
 
 def get_precise_location(api_key=None):
     if api_key:
