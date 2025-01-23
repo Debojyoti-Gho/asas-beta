@@ -578,33 +578,36 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
-# Function to fetch User-Agent and IP address
+
 def fetch_user_agent_and_ip():
+    """
+    Fetch the User-Agent and IP address of the client (browser) to generate unique device IDs.
+    """
     try:
-        # Fetch User-Agent from Streamlit's query parameters (or fallback to default)
-        user_agent = st.query_params.get("user_agent", ["unknown_agent"])[0]
+        # Fetch the User-Agent string of the client
+        user_agent = st.experimental_get_query_params().get('user_agent', ['unknown'])[0]
 
         # Use external API to fetch public IP address
-        response = requests.get("https://api64.ipify.org?format=json")
-        ip_address = response.json().get("ip", "unknown_ip")
+        ip_response = requests.get("https://api64.ipify.org?format=json")
+        ip_address = ip_response.json().get("ip", "unknown_ip")
 
         return user_agent, ip_address
-
     except Exception as e:
-        st.error(f"Failed to fetch User-Agent or IP: {e}")
-        return "unknown_agent", "unknown_ip"
+        st.error(f"Error fetching user agent or IP: {e}")
+        return "unknown_user_agent", "unknown_ip"
 
-# Generate a unique device ID based on User-Agent, IP, and a stronger random value
 def generate_device_id(user_agent, ip_address):
+    """
+    Generate a unique device ID based on User-Agent, IP address, and a random string.
+    """
     try:
-        # Generate a stronger random value by combining timestamp with randomness
-        random_value = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-        timestamp = str(int(time.time()))  # Add timestamp to make the ID unique across sessions
-        
-        # Combine User-Agent, IP Address, Random Value, and Timestamp
-        unique_string = f"{user_agent}-{ip_address}-{random_value}-{timestamp}"
-        
-        # Hash the unique string to generate a consistent device ID
+        # Random string for uniqueness
+        random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+
+        # Combine the User-Agent, IP, and random string to form the unique string
+        unique_string = f"{user_agent}-{ip_address}-{random_string}"
+
+        # Hash this unique string to create the device ID
         device_id = hashlib.sha256(unique_string.encode()).hexdigest()
 
         return device_id
@@ -612,34 +615,29 @@ def generate_device_id(user_agent, ip_address):
         st.error(f"Error generating device ID: {e}")
         return None
 
-# Function to get or generate the device ID
-def get_device_uuid():
-    try:
-        # Fetch User-Agent and IP Address
+def get_device_id():
+    """
+    Retrieve or generate a unique device ID for the client.
+    """
+    # If device ID already exists in session, use it
+    if "device_id" not in st.session_state:
         user_agent, ip_address = fetch_user_agent_and_ip()
+        device_id = generate_device_id(user_agent, ip_address)
+        
+        if device_id:
+            st.session_state.device_id = device_id
+        else:
+            st.error("Failed to generate a device ID")
+            return None
 
-        # If the device ID is not already in session, generate it
-        if 'device_id' not in st.session_state:
-            device_id = generate_device_id(user_agent, ip_address)
-            if device_id:
-                st.session_state.device_id = device_id
-            else:
-                st.error("Could not generate a device ID.")
-                return None
+    return st.session_state.device_id
 
-        # Return the device ID from session state
-        return st.session_state.device_id
+# Fetch or generate the device ID
+device_id = get_device_id()
 
-    except Exception as e:
-        st.error(f"Error generating device ID: {e}")
-        return None
-
-# Display the generated device UUID
-device_uuid = get_device_uuid()
-
-# Display the result
-if device_uuid:
-    st.write(f"Your device ID is: {device_uuid}")
+# Display the device ID
+if device_id:
+    st.write(f"Your unique device ID is: {device_id}")
 
 def get_precise_location(api_key=None):
     if api_key:
