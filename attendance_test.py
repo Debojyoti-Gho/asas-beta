@@ -577,7 +577,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 # Database setup to store device IDs
 def create_connection():
     conn = sqlite3.connect("device_ids.db")
-    return conn
+    return conn 
 
 def create_table():
     conn = create_connection()
