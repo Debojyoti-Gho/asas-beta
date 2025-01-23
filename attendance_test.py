@@ -744,7 +744,7 @@ def get_current_period():
         "Period 4": ("12:00", "12:50"),
         "Period 5": ("13:20", "14:30"),
         "Period 6": ("14:30", "15:20"),
-        "Period 7": ("15:20", "16:10")
+        "Period 7": ("15:20", "21:10")
     }
 
     current_time = datetime.now().time()
