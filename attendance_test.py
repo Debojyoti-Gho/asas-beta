@@ -607,7 +607,7 @@ create_table()
 # Initialize cookies manager
 cookies = EncryptedCookieManager(
     prefix="my_app_",
-    password="your_secret_key"  # Use a secure password for encryption
+    password="debo@6290"  # Use a secure password for encryption
 )
 
 # Ensure cookies are loaded
