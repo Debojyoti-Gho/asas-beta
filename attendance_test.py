@@ -575,11 +575,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
+# Utility function to generate a persistent device ID using cookies
+def get_or_create_device_id():
+    if "device_id" not in st.session_state:
+        # Generate a new device ID if it doesn't exist
+        device_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, platform.node()))
+        st.session_state["device_id"] = device_id
+    return st.session_state["device_id"]
+
+# Fetch User-Agent and IP address
 def fetch_user_agent_and_ip():
-    """
-    Automatically fetch User-Agent and IP from the client using an API and browser headers.
-    Returns the values for easy access.
-    """
     try:
         # Fetch User-Agent via query parameters
         user_agent = st.query_params.get("user_agent", ["unknown_agent"])[0]
@@ -603,6 +608,9 @@ def get_device_uuid():
         # Fetch fresh User-Agent and IP
         user_agent, ip_address = fetch_user_agent_and_ip()
 
+        # Get or create a persistent device ID using cookies/session state
+        device_uuid = get_or_create_device_id()
+
         # Default values for device attributes
         device_brand, device_model, os_version = "Unknown", "Unknown Model", "Unknown OS"
 
@@ -616,12 +624,12 @@ def get_device_uuid():
             device_model = user_agent.split('Build/')[0].split(' ')[-1]
             os_version = "Android " + user_agent.split('Android ')[-1].split(' ')[0]
 
-        # Additional attributes
+        # Additional attributes (e.g., hostname and MAC address)
         node_name = platform.node()  # Hostname
         mac_address = uuid.getnode()  # MAC address
 
-        # Generate a unique identifier by hashing key attributes
-        unique_str = f"{device_brand}-{device_model}-{os_version}-{node_name}-{mac_address}-{ip_address}"
+        # Combine all details and hash them to create a unique identifier
+        unique_str = f"{device_brand}-{device_model}-{os_version}-{node_name}-{mac_address}-{ip_address}-{device_uuid}"
         device_uuid = hashlib.sha256(unique_str.encode()).hexdigest()
 
         st.success(f"Device ID generated successfully: {device_uuid}")
