@@ -13,8 +13,6 @@ import numpy as np
 import time
 import logging
 import smtplib
-import random
-import string
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
@@ -577,16 +575,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
-# Inject JavaScript to fetch User-Agent from the browser and add it to the query params
-st.markdown("""
-    <script>
-    const userAgent = window.navigator.userAgent;
-    const queryParams = new URLSearchParams(window.location.search);
-    queryParams.set("user_agent", userAgent);
-    window.history.replaceState({}, "", "?" + queryParams.toString());
-    </script>
-""", unsafe_allow_html=True)
-
 def fetch_user_agent_and_ip():
     """
     Automatically fetch User-Agent and IP from the client using an API and browser headers.
@@ -606,13 +594,6 @@ def fetch_user_agent_and_ip():
         st.error(f"Failed to fetch User-Agent or IP: {e}")
         return "unknown_agent", "unknown_ip"
 
-def generate_session_id():
-    """
-    Generate a random unique session identifier for each session.
-    This helps to make device IDs unique even if they share the same IP address.
-    """
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-
 def get_device_uuid():
     """
     Generate a unique identifier for the device accessing the Streamlit app.
@@ -621,9 +602,6 @@ def get_device_uuid():
     try:
         # Fetch fresh User-Agent and IP
         user_agent, ip_address = fetch_user_agent_and_ip()
-
-        # Add a session ID for further uniqueness
-        session_id = generate_session_id()
 
         # Default values for device attributes
         device_brand, device_model, os_version = "Unknown", "Unknown Model", "Unknown OS"
@@ -642,8 +620,8 @@ def get_device_uuid():
         node_name = platform.node()  # Hostname
         mac_address = uuid.getnode()  # MAC address
 
-        # Generate a unique identifier by hashing key attributes + session ID
-        unique_str = f"{device_brand}-{device_model}-{os_version}-{node_name}-{mac_address}-{ip_address}-{session_id}"
+        # Generate a unique identifier by hashing key attributes
+        unique_str = f"{device_brand}-{device_model}-{os_version}-{node_name}-{mac_address}-{ip_address}"
         device_uuid = hashlib.sha256(unique_str.encode()).hexdigest()
 
         st.success(f"Device ID generated successfully: {device_uuid}")
