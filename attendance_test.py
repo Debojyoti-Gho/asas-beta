@@ -594,7 +594,6 @@ def create_table():
                 device_id TEXT UNIQUE,
                 created_at DATETIME)''')
     conn.commit()
-    conn.close()
 
 def insert_device_id(device_id):
     conn = create_connection()  # This will reuse the cached connection
@@ -605,8 +604,6 @@ def insert_device_id(device_id):
         conn.commit()
     except Exception as e:
         st.error(f"Database error: {e}")
-    finally:
-        conn.close()
 
 # Initialize the database table
 create_table()
@@ -614,7 +611,7 @@ create_table()
 # Initialize cookies manager
 cookies = EncryptedCookieManager(
     prefix="my_app_",
-    password="your_secret_key"  # Use a secure password for encryption
+    password="Debo@2005"  # Use a secure password for encryption
 )
 
 # Ensure cookies are loaded
