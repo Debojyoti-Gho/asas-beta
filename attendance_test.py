@@ -890,31 +890,37 @@ elif menu == "Register":
                     if not device_id:
                         st.error("Could not fetch device ID, registration cannot proceed.")
                     else:
-                        # Check for duplicate entries in the database
-                        cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
+                        # Check if the device ID is already registered
+                        cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
                         if cursor.fetchone():
-                            st.error("This email is already registered.")
+                            st.error("This device has already been used for registration. Only one registration is allowed per device.")
                         else:
-                            cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
+                            # Check for duplicate entries in the database for email, roll, user ID, and enrollment number
+                            cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
                             if cursor.fetchone():
-                                st.error("This roll number is already registered.")
+                                st.error("This email is already registered.")
                             else:
-                                cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
+                                cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
                                 if cursor.fetchone():
-                                    st.error("This user ID is already registered.")
+                                    st.error("This roll number is already registered.")
                                 else:
-                                    cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (enrollment_no,))
+                                    cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
                                     if cursor.fetchone():
-                                        st.error("This enrollment number is already registered.")
+                                        st.error("This user ID is already registered.")
                                     else:
-                                        # Insert into database
-                                        cursor.execute("""
-                                        INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
-                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                        """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
-                                        conn.commit()
-                                        st.success("Registration successful!")
-                                        st.info("Please proceed to the Student Login page.")
+                                        cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (enrollment_no,))
+                                        if cursor.fetchone():
+                                            st.error("This enrollment number is already registered.")
+                                        else:
+                                            # Insert into database
+                                            cursor.execute("""
+                                            INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
+                                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                            """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
+                                            conn.commit()
+                                            st.success("Registration successful!")
+                                            st.info("Please proceed to the Student Login page.")
+
 
 elif menu == "Student Login":
     st.header("Student Login")
