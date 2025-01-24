@@ -1437,9 +1437,22 @@ elif menu == "Admin Login":
                     st.write(f"Year: {student[7]}")
                     st.write(f"Semester: {student[8]}")
 
-                    # Fetch the student's face encoding from the database
-                    face_encoding_blob = student[10]  # Assuming 'student_face' is at index 10
-
+                    # Fetch the student's face image from the database (stored as a BLOB in student[10])
+                    face_blob = student[10]  # Assuming 'student_face' is at index 10
+                    
+                    # Display the face image if available
+                    if face_blob:
+                        face_image = Image.open(io.BytesIO(face_blob))
+                        
+                        # Resize image to passport size (e.g., 200x200 pixels)
+                        face_image = face_image.resize((200, 200))
+                        st.image(face_image, caption="Current Face Image", use_container_width=True)
+                    else:
+                        st.write("No face image available for this student.")
+                    
+                    # If you still want to show the face encoding or other data:
+                    face_encoding_blob = student[11]  # If you need to fetch face encoding from another field
+                    
                     if face_encoding_blob:
                         # Show a message indicating that face data is available
                         st.write("Face data is available for this student.")
@@ -1448,6 +1461,7 @@ elif menu == "Admin Login":
                         st.write(f"Raw Face Encoding (first 10 values): {list(face_encoding_blob[:10])}")
                     else:
                         st.write("No face data available for this student.")
+
                         
                     # Attendance Analysis for the student
                     st.subheader(f"Attendance Analysis for {student_name}")
@@ -1554,7 +1568,10 @@ elif menu == "Admin Login":
                         if result and result[0]:  # Check if a face image is present
                             face_blob = result[0]
                             face_image = Image.open(io.BytesIO(face_blob))
-                            st.image(face_image, caption="Current Face Image", use_column_width=True)
+                            # Resize image to passport size (e.g., 200x200 pixels)
+                            face_image = face_image.resize((200, 200))
+                            st.image(face_image, caption="Current Face Image", use_container_width=True)
+                
                         else:
                             st.warning("No face image found for this student.")
                     except Exception as e:
