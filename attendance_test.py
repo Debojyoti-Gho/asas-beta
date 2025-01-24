@@ -817,6 +817,29 @@ elif menu == "Register":
         user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
 
+        # Check if the email, roll number, or user ID already exists
+        if email and roll and user_id:
+            cursor.execute("SELECT * FROM students WHERE email = ? OR roll = ? OR user_id = ?", (email, roll, user_id))
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                st.error("This email, roll number, or user ID is already registered. Please use different details.")
+                st.stop()  # Stop further processing if duplicate is found
+
+        # Check if the device ID has already been used for registration
+        if email and roll and user_id:
+            device_id = device_id_from_cookies  # Fetch the device ID (UUID based)
+            if not device_id:
+                st.error("Could not fetch device ID, registration cannot proceed.")
+                st.stop()  # Stop further processing if device ID cannot be fetched
+
+            cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
+            existing_device = cursor.fetchone()
+
+            if existing_device:
+                st.error("This device has already been used to register an account. Only one registration per device is allowed.")
+                st.stop()  # Stop further processing if device ID is already used
+
         st.subheader("Email Verification")
         if not st.session_state.email_verified:
             # Send OTP Button
@@ -878,48 +901,27 @@ elif menu == "Register":
             face_blob = img_bytes.getvalue()  # Convert to binary data
 
             st.success("Face captured successfully!")
-            
 
         # Registration Button
         if st.session_state.email_verified:
             st.subheader("Complete Registration")
             if st.form_submit_button("Register"):
-                # Fetch the device ID (UUID based)
-                device_id = device_id_from_cookies
-                st.success(f"Your unique device ID is: {device_id_from_cookies}")
+                if face_image:
+                    try:
+                        # Insert the student data into the database
+                        cursor.execute("""
+                            INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
+                        conn.commit()
 
-                if not device_id:
-                    st.error("Could not fetch device ID, registration cannot proceed.")
+                        st.success("Registration successful!")
+                        st.info("You can now proceed to login.")
+                        st.warning("From now on, this will be your verified device for future logins.")
+                    except Exception as e:
+                        st.error(f"Failed to register: {e}")
                 else:
-                    # Check if the email, roll number, or user ID already exists
-                    cursor.execute("SELECT * FROM students WHERE email = ? OR roll = ? OR user_id = ?", (email, roll, user_id))
-                    existing_user = cursor.fetchone()
-                    
-                    if existing_user:
-                        st.error("This email, roll number, or user ID is already registered. Please use different details.")
-                    # Check if the device ID has already been used for registration
-                    cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
-                    existing_device = cursor.fetchone()
-                    
-                    if existing_device:
-                        st.error("This device has already been used to register an account. Only one registration per device is allowed.")
-
-                    if face_image:
-                        try:
-                            # Insert the student data into the database
-                            cursor.execute("""
-                                INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
-                            conn.commit()
-
-                            st.success("Registration successful!")
-                            st.info("You can now proceed to login.")
-                            st.warning("from now on this will be your verified device for future logins")
-                        except Exception as e:
-                            st.error(f"Failed to register: {e}")
-                    else:
-                        st.error("No face image captured. Please try again.")
+                    st.error("No face image captured. Please try again.")
 
 elif menu == "Student Login":
     st.header("Student Login")
