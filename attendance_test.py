@@ -715,8 +715,8 @@ def get_precise_location(api_key=None):
 
 def get_ble_devices():
     """
-    Automatically scans for BLE devices using the Web Bluetooth API
-    and returns the list of available devices.
+    Automatically scan for BLE devices using the Web Bluetooth API and return
+    the list of available devices to the Streamlit app.
     """
     html_code = """
     <div>
@@ -1037,7 +1037,7 @@ elif menu == "Student Login":
                                 st.session_state.bluetooth_selected = True  # Mark Bluetooth as selected
                             else:
                                 st.error("Required Bluetooth device not found. Login failed.")
-
+                                
                             # Define constant for period times
                             PERIOD_TIMES = {
                                 "Period 1": ("09:30", "10:20"),
