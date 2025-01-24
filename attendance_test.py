@@ -783,6 +783,7 @@ def get_current_period():
     return None
 
 # Streamlit UI
+st.image('Screenshot_2025-01-24_at_5.38.14_PM-removebg-preview.png', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
 
@@ -813,7 +814,7 @@ if menu == "Home":
          "answer": "Yes, the 'Lab Examination System' section allows students to view and track their exam schedule."},
         
         {"question": "How can I contact support?", 
-         "answer": "If you need help, you can contact us through the 'Contact' section or send an email to support@asas.com."}
+         "answer": "If you need help, you can contact us by sending an email to support@asas.com."}
     ]
     
     # Display the FAQs
