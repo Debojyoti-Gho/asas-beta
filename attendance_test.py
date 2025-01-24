@@ -873,7 +873,7 @@ elif menu == "Register":
                     except Exception as e:
                         st.error(f"Failed to send OTP: {e}")
                 else:
-                    st.error("Please enter a valid email address.")
+                    st.error("your registered email address will be used for future communications.")
 
         # OTP Verification
         if st.session_state.email_otp and not st.session_state.email_verified:
@@ -891,7 +891,7 @@ elif menu == "Register":
 
         if face_image:
             # Image is captured successfully, display it
-            st.image(face_image, caption="Captured Face", use_column_width=True)
+            st.image(face_image, caption="Captured Face", use_container_width=True)
 
             # Convert the image to binary for database storage
             img = Image.open(face_image)
