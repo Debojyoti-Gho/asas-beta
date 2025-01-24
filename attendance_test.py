@@ -878,13 +878,15 @@ elif menu == "Register":
             face_blob = img_bytes.getvalue()  # Convert to binary data
 
             st.success("Face captured successfully!")
+            
 
         # Registration Button
         if st.session_state.email_verified:
             st.subheader("Complete Registration")
             if st.form_submit_button("Register"):
                 # Fetch the device ID (UUID based)
-                device_id = str(uuid.uuid4())
+                device_id = device_id_from_cookies
+                st.success(f"Your unique device ID is: {device_id_from_cookies}")
 
                 if not device_id:
                     st.error("Could not fetch device ID, registration cannot proceed.")
@@ -899,7 +901,8 @@ elif menu == "Register":
                             conn.commit()
 
                             st.success("Registration successful!")
-                            st.write("You can now proceed to login.")
+                            st.info("You can now proceed to login.")
+                            st.warning("from now on this will be your verified device for future logins")
                         except Exception as e:
                             st.error(f"Failed to register: {e}")
                     else:
