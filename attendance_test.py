@@ -1044,74 +1044,72 @@ elif menu == "Student Login":
                     else:
                         st.error("Failed to scan for Bluetooth devices.")
                         
-                            # Define constant for period times
-                            PERIOD_TIMES = {
-                                "Period 1": ("09:30", "10:20"),
-                                "Period 2": ("10:20", "11:10"),
-                                "Period 3": ("11:10", "12:00"),
-                                "Period 4": ("12:00", "12:50"),
-                                "Period 5": ("13:40", "14:30"),
-                                "Period 6": ("14:30", "15:20"),
-                                "Period 7": ("15:20", "21:10")
-                            }
-                            
-                            # Attendance Marking Logic
-                            current_period = get_current_period()
+                    # Define constant for period times
+                    PERIOD_TIMES = {
+                        "Period 1": ("09:30", "10:20"),
+                        "Period 2": ("10:20", "11:10"),
+                        "Period 3": ("11:10", "12:00"),
+                        "Period 4": ("12:00", "12:50"),
+                        "Period 5": ("13:40", "14:30"),
+                        "Period 6": ("14:30", "15:20"),
+                        "Period 7": ("15:20", "21:10")
+                    }
+                    
+                    # Attendance Marking Logic
+                    current_period = get_current_period()
 
-                            if current_period:
-                                st.success(f"Attendance for {current_period} is being marked automatically. Waiting for confirmation from the server!")
+                    if current_period:
+                        st.success(f"Attendance for {current_period} is being marked automatically. Waiting for confirmation from the server!")
 
-                                current_day = datetime.now().strftime("%A")  # Get current weekday name
+                        current_day = datetime.now().strftime("%A")  # Get current weekday name
 
-                                try:
-                                    # Fetch timetable details
+                        try:
+                            # Fetch timetable details
+                            cursor.execute("""
+                                SELECT subject, teacher FROM timetable 
+                                WHERE day = ? AND period = ?
+                            """, (current_day, current_period))
+                            period_details = cursor.fetchone()
+
+                            if period_details:
+                                subject, teacher = period_details
+                                st.info(f"Subject: {subject} | Teacher: {teacher}")
+
+                                # Check for existing attendance record
+                                cursor.execute("""
+                                    SELECT * FROM attendance WHERE student_id = ? AND date = ? AND day = ?
+                                """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
+                                existing_record = cursor.fetchone()
+
+                                period_column = f"period_{list(PERIOD_TIMES.keys()).index(current_period) + 1}"
+
+                                if existing_record:
+                                    # Update attendance
+                                    cursor.execute(f"""
+                                        UPDATE attendance 
+                                        SET {period_column} = 1, subject = ?, teacher = ?
+                                        WHERE student_id = ? AND date = ? AND day = ?
+                                    """, (subject, teacher, user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
+                                    conn.commit()
+                                    st.success(f"Attendance updated for {current_period} ({subject}) by {teacher} on {current_day}!")
+                                else:
+                                    # Prepare attendance data
+                                    attendance_data = {period: 0 for period in PERIOD_TIMES.keys()}
+                                    attendance_data[current_period] = 1
+
+                                    # Insert new attendance record
                                     cursor.execute("""
-                                        SELECT subject, teacher FROM timetable 
-                                        WHERE day = ? AND period = ?
-                                    """, (current_day, current_period))
-                                    period_details = cursor.fetchone()
-
-                                    if period_details:
-                                        subject, teacher = period_details
-                                        st.info(f"Subject: {subject} | Teacher: {teacher}")
-
-                                        # Check for existing attendance record
-                                        cursor.execute("""
-                                            SELECT * FROM attendance WHERE student_id = ? AND date = ? AND day = ?
-                                        """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
-                                        existing_record = cursor.fetchone()
-
-                                        period_column = f"period_{list(PERIOD_TIMES.keys()).index(current_period) + 1}"
-
-                                        if existing_record:
-                                            # Update attendance
-                                            cursor.execute(f"""
-                                                UPDATE attendance 
-                                                SET {period_column} = 1, subject = ?, teacher = ?
-                                                WHERE student_id = ? AND date = ? AND day = ?
-                                            """, (subject, teacher, user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
-                                            conn.commit()
-                                            st.success(f"Attendance updated for {current_period} ({subject}) by {teacher} on {current_day}!")
-                                        else:
-                                            # Prepare attendance data
-                                            attendance_data = {period: 0 for period in PERIOD_TIMES.keys()}
-                                            attendance_data[current_period] = 1
-
-                                            # Insert new attendance record
-                                            cursor.execute("""
-                                                INSERT INTO attendance (student_id, date, day, period_1, period_2, period_3, period_4, period_5, period_6, period_7, subject, teacher)
-                                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                            """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day, *attendance_data.values(), subject, teacher))
-                                            conn.commit()
-                                            st.success(f"Attendance for {current_period} ({subject}) by {teacher} marked successfully for {current_day}!")
-                                    else:
-                                        st.error(f"No timetable entry found for {current_period} on {current_day}.")
-                                except Exception as e:
-                                    st.error(f"An error occurred: {e}")
+                                        INSERT INTO attendance (student_id, date, day, period_1, period_2, period_3, period_4, period_5, period_6, period_7, subject, teacher)
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day, *attendance_data.values(), subject, teacher))
+                                    conn.commit()
+                                    st.success(f"Attendance for {current_period} ({subject}) by {teacher} marked successfully for {current_day}!")
                             else:
-                                st.warning("No active class period at the moment.")
+                                st.error(f"No timetable entry found for {current_period} on {current_day}.")
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
                     else:
-                        st.error("No Bluetooth devices found.")
+                        st.warning("No active class period at the moment.")
                 else:
                     st.error("You must be in Institute of Engineering and Management to login.")
             else:
