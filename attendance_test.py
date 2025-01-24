@@ -1445,24 +1445,11 @@ elif menu == "Admin Login":
                         face_image = Image.open(io.BytesIO(face_blob))
                         
                         # Resize image to passport size (e.g., 200x200 pixels)
-                        face_image = face_image.resize((200, 200))
+                        face_image = face_image.resize((100, 100))
                         st.image(face_image, caption="Current Face Image", use_container_width=True)
                     else:
                         st.write("No face image available for this student.")
-                    
-                    # If you still want to show the face encoding or other data:
-                    face_encoding_blob = student[11]  # If you need to fetch face encoding from another field
-                    
-                    if face_encoding_blob:
-                        # Show a message indicating that face data is available
-                        st.write("Face data is available for this student.")
-                        
-                        # Optional: Display the raw face encoding as text (for debugging purposes)
-                        st.write(f"Raw Face Encoding (first 10 values): {list(face_encoding_blob[:10])}")
-                    else:
-                        st.write("No face data available for this student.")
-
-                        
+                                    
                     # Attendance Analysis for the student
                     st.subheader(f"Attendance Analysis for {student_name}")
 
@@ -1569,7 +1556,7 @@ elif menu == "Admin Login":
                             face_blob = result[0]
                             face_image = Image.open(io.BytesIO(face_blob))
                             # Resize image to passport size (e.g., 200x200 pixels)
-                            face_image = face_image.resize((200, 200))
+                            face_image = face_image.resize((100, 100))
                             st.image(face_image, caption="Current Face Image", use_container_width=True)
                 
                         else:
