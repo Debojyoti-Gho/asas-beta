@@ -9,3 +9,4 @@ streamlit-cookies-manager
 reportlab==4.2.5
 Pillow
 opencv-python
+face_recognition
