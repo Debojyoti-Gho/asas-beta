@@ -1008,42 +1008,42 @@ elif menu == "Student Login":
                     
                     st.info("Just a step away from your dashboard!! Scanning for Bluetooth devices...")
 
-                            # Get the Bluetooth devices from the Web Bluetooth API
-                            ble_signal = get_ble_devices()
-                        
-                            if ble_signal:
-                                # Check that ble_signal is a dictionary or in a format that supports .items()
-                                if isinstance(ble_signal, dict):
-                                    st.info("Bluetooth devices found. Listing all available devices...")
-                                    
-                                    # Display all available Bluetooth devices
-                                    st.write("Available Bluetooth devices:")
-                                    for device_name, mac_address in ble_signal.items():
-                                        st.write(f"Device Name: {device_name}, MAC Address: {mac_address}")
-                        
-                                    # Automatically check if the required Bluetooth device is in the list
-                                    required_device_name = "76:6B:E1:0F:92:09"
-                                    required_mac_id = "INSTITUTE BLE VERIFY SIGNA"  # Replace with the actual MAC address if known
-                        
-                                    found_device = False
-                                    for device_name, mac_address in ble_signal.items():
-                                        if required_device_name in device_name or mac_address == required_mac_id:
-                                            st.success(f"Required Bluetooth device found! Device Name: {device_name}, MAC Address: {mac_address}")
-                                            found_device = True
-                                            break
-                        
-                                    if found_device:
-                                        # Save user login to session state
-                                        st.session_state.logged_in = True
-                                        st.session_state.user_id = user_id  # Replace with actual user ID if available
-                                        st.session_state.bluetooth_selected = True  # Mark Bluetooth as selected
-                                    else:
-                                        st.error("Required Bluetooth device not found. Login failed.")
-                                else:
-                                    st.warning("No Bluetooth devices found or received invalid data.")
+                    # Get the Bluetooth devices from the Web Bluetooth API
+                    ble_signal = get_ble_devices()
+                
+                    if ble_signal:
+                        # Check that ble_signal is a dictionary or in a format that supports .items()
+                        if isinstance(ble_signal, dict):
+                            st.info("Bluetooth devices found. Listing all available devices...")
+                            
+                            # Display all available Bluetooth devices
+                            st.write("Available Bluetooth devices:")
+                            for device_name, mac_address in ble_signal.items():
+                                st.write(f"Device Name: {device_name}, MAC Address: {mac_address}")
+                
+                            # Automatically check if the required Bluetooth device is in the list
+                            required_device_name = "76:6B:E1:0F:92:09"
+                            required_mac_id = "INSTITUTE BLE VERIFY SIGNA"  # Replace with the actual MAC address if known
+                
+                            found_device = False
+                            for device_name, mac_address in ble_signal.items():
+                                if required_device_name in device_name or mac_address == required_mac_id:
+                                    st.success(f"Required Bluetooth device found! Device Name: {device_name}, MAC Address: {mac_address}")
+                                    found_device = True
+                                    break
+                
+                            if found_device:
+                                # Save user login to session state
+                                st.session_state.logged_in = True
+                                st.session_state.user_id = user_id  # Replace with actual user ID if available
+                                st.session_state.bluetooth_selected = True  # Mark Bluetooth as selected
                             else:
-                                st.error("Failed to scan for Bluetooth devices.")
-                                
+                                st.error("Required Bluetooth device not found. Login failed.")
+                        else:
+                            st.warning("No Bluetooth devices found or received invalid data.")
+                    else:
+                        st.error("Failed to scan for Bluetooth devices.")
+                        
                             # Define constant for period times
                             PERIOD_TIMES = {
                                 "Period 1": ("09:30", "10:20"),
