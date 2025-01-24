@@ -20,6 +20,7 @@ from email.mime.multipart import MIMEMultipart
 from typing import Optional
 from streamlit_cookies_manager import EncryptedCookieManager
 from PIL import Image
+import io
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
