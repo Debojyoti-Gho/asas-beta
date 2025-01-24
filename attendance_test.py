@@ -790,6 +790,36 @@ menu = st.sidebar.selectbox("Menu", ["Home", "Register", "Student Login", "Admin
 
 if menu == "Home":
     st.write("Welcome to the Student Management System!")
+    st.subheader("Frequently Asked Questions (FAQs)")
+
+# FAQ Section
+faq = [
+    {"question": "How do I register as a student?", 
+     "answer": "To register as a student, go to the 'Register' section and fill in your details. You will need to provide basic information like name, roll number, and email."},
+    
+    {"question": "How do I log in as a student?", 
+     "answer": "To log in as a student, go to the 'Student Login' section and enter your registered email and password."},
+    
+    {"question": "How do I mark attendance?", 
+     "answer": "Once logged in, you can access the attendance page where your attendance is automatically marked based on your participation."},
+    
+    {"question": "What do I do if I forget my password?", 
+     "answer": "If you've forgotten your password, go to the 'Forgot Password' section on the login page and follow the instructions to reset it."},
+    
+    {"question": "How can an admin manage students?", 
+     "answer": "Admins can manage students' records by logging into the 'Admin Login' section. Admins have the ability to view, update, and delete student information."},
+    
+    {"question": "Can I track my exam schedule?", 
+     "answer": "Yes, the 'Lab Examination System' section allows students to view and track their exam schedule."},
+    
+    {"question": "How can I contact support?", 
+     "answer": "If you need help, you can contact us through the 'Contact' section or send an email to support@asas.com."}
+]
+
+# Display the FAQs
+for item in faq:
+    st.subheader(item["question"])
+    st.write(item["answer"])
 
 # Assume get_device_ip() and get_device_uuid() are defined elsewhere in your code.
 # Main registration logic
