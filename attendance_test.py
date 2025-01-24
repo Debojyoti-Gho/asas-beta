@@ -744,7 +744,7 @@ def get_ble_signal_from_api():
     st.write(f"Network latency: {latency:.2f} ms")
     
     # If latency is above the threshold (50 ms), assume the devices are too far
-    latency_threshold_ms = 50  # Adjust this as needed (for example, 50 ms threshold for 10 meters)
+    latency_threshold_ms = 10000  # Adjust this as needed (for example, 50 ms threshold for 10 meters)
     if latency > latency_threshold_ms:
         st.error("Devices are too far (latency exceeds threshold).")
         return None
