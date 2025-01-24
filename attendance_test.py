@@ -583,9 +583,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 # Database setup to store device IDs
 @st.cache_resource  # Cache the database connection to reuse it across sessions
 def create_connection():
-    # Add check_same_thread=False to allow SQLite to be used across threads
-    conn = sqlite3.connect("device_ids.db", check_same_thread=False)
+    conn = sqlite3.connect("device_ids.db")
     return conn
+
 
 def create_table():
     conn = create_connection()  # This will now reuse the cached connection
