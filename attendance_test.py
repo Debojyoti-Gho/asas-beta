@@ -891,6 +891,19 @@ elif menu == "Register":
                 if not device_id:
                     st.error("Could not fetch device ID, registration cannot proceed.")
                 else:
+                    # Check if the email, roll number, or user ID already exists
+                    cursor.execute("SELECT * FROM students WHERE email = ? OR roll = ? OR user_id = ?", (email, roll, user_id))
+                    existing_user = cursor.fetchone()
+                    
+                    if existing_user:
+                        st.error("This email, roll number, or user ID is already registered. Please use different details.")
+                    # Check if the device ID has already been used for registration
+                    cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
+                    existing_device = cursor.fetchone()
+                    
+                    if existing_device:
+                        st.error("This device has already been used to register an account. Only one registration per device is allowed.")
+
                     if face_image:
                         try:
                             # Insert the student data into the database
