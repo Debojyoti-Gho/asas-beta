@@ -893,24 +893,24 @@ elif menu == "Register":
                         # Check if the device ID is already registered
                         cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
                         if cursor.fetchone():
-                            st.error("This device has already been used for registration. Only one registration is allowed per device.")
+                            st.error("This device has already been used for registration. Only one registration is allowed per device.Please refresh and start again!")
                         else:
                             # Check for duplicate entries in the database for email, roll, user ID, and enrollment number
                             cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
                             if cursor.fetchone():
-                                st.error("This email is already registered.")
+                                st.error("This email is already registered.Please refresh and start again!")
                             else:
                                 cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
                                 if cursor.fetchone():
-                                    st.error("This roll number is already registered.")
+                                    st.error("This roll number is already registered.Please refresh and start again!")
                                 else:
                                     cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
                                     if cursor.fetchone():
-                                        st.error("This user ID is already registered.")
+                                        st.error("This user ID is already registered.Please refresh and start again!")
                                     else:
                                         cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (enrollment_no,))
                                         if cursor.fetchone():
-                                            st.error("This enrollment number is already registered.")
+                                            st.error("This enrollment number is already registered.Please refresh and start again!")
                                         else:
                                             # Insert into database
                                             cursor.execute("""
@@ -919,6 +919,7 @@ elif menu == "Register":
                                             """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
                                             conn.commit()
                                             st.success("Registration successful!")
+                                            st.warning("From now on this device will be considered the only registered and verified device for future logins")
                                             st.info("Please proceed to the Student Login page.")
 
 
