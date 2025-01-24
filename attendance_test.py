@@ -1124,7 +1124,7 @@ elif menu == "Student Login":
                 else:
                     st.error("You must be in Kolkata to login.")
             else:
-                st.error("Device ID does not match.")
+                st.error("Device ID does not match.Please login from your registered device.")
         else:
             st.error("Invalid user ID or password.")
 
