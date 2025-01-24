@@ -6,9 +6,4 @@ requests==2.32.3
 uuid==1.30
 streamlit-cookies-manager
 reportlab==4.2.5
-Pillow
-opencv-python
-face_recognition
-torch
-torchvision
-face_recognition
+
