@@ -783,7 +783,7 @@ def get_current_period():
     return None
 
 # Streamlit UI
-st.image('Screenshot_2025-01-24_at_5.38.14_PM-removebg-preview.png', width=200)
+st.image('Screenshot 2025-01-24 at 5.54.54 PM.png', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
 
