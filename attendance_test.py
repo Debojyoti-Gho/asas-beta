@@ -1534,36 +1534,6 @@ elif menu == "Admin Login":
                         st.write("No year or semester information found for this student.")
 
 
-                # Fetch the current date
-                current_date = date.today()
-                
-                # Fetch the year and semester details from the `semester_dates` table
-                cursor.execute("""
-                    SELECT year, semester, start_date, end_date
-                    FROM semester_dates
-                    WHERE start_date <= ? AND end_date >= ?
-                    ORDER BY year, semester
-                """, (current_date, current_date))
-                
-                # Check if the current date matches a semester in the database
-                semester_info = cursor.fetchone()
-                
-                if semester_info:
-                    # Calculate next year and semester for the student
-                    current_year = semester_info[0]
-                    current_semester = semester_info[1]
-                
-                    # Assuming semesters alternate every 6 months, and the academic year starts in the first semester
-                    if current_semester == 1:
-                        next_year = current_year
-                        next_semester = 2
-                    else:
-                        next_year = current_year + 1
-                        next_semester = 1  # Next year will start with semester 1
-                else:
-                    next_year = None
-                    next_semester = None
-                
                 # Initialize session state for form visibility
                 if f"form_shown_{student_id}" not in st.session_state:
                     st.session_state[f"form_shown_{student_id}"] = False
@@ -1601,13 +1571,37 @@ elif menu == "Admin Login":
                     new_email = st.text_input("Email", value=student[5], key=f"email_{student_id}")
                     new_enrollment_no = st.text_input("Enrollment Number", value=student[6], key=f"enrollment_{student_id}")
                     
-                    # Use the auto-calculated next year and semester if available
+                    # Fetch the current date to determine the student's current semester
+                    current_date = date.today()
+                    cursor.execute("""
+                        SELECT year, semester
+                        FROM semester_dates
+                        WHERE start_date <= ? AND end_date >= ?
+                        ORDER BY year, semester
+                        LIMIT 1
+                    """, (current_date, current_date))
+                
+                    semester_info = cursor.fetchone()
+                
+                    if semester_info:
+                        # Fetch the current year and semester
+                        current_year = semester_info[0]
+                        current_semester = semester_info[1]
+                    else:
+                        current_year = None
+                        current_semester = None
+                
+                    # Use the fetched semester data to set year and semester dropdown
                     new_year = st.selectbox(
                         "Year", ["1", "2", "3", "4"],
-                        index=["1", "2", "3", "4"].index(str(next_year)) if next_year else 0,
+                        index=["1", "2", "3", "4"].index(str(current_year)) if current_year else 0,
                         key=f"year_{student_id}"
                     )
-                    new_semester = st.text_input("Semester", value=str(next_semester) if next_semester else student[8], key=f"semester_{student_id}")
+                    new_semester = st.selectbox(
+                        "Semester", ["1", "2"],
+                        index=[0, 1].index(current_semester - 1) if current_semester else 0,
+                        key=f"semester_{student_id}"
+                    )
                     
                     new_user_id = st.text_input("User ID", value=student[0], key=f"user_id_{student_id}")
                     new_password = st.text_input("Password", type="password", value=student[1], key=f"password_{student_id}")
@@ -1619,7 +1613,6 @@ elif menu == "Admin Login":
                             # Validate required fields
                             if not new_user_id or not new_password or not new_device_ip:
                                 st.error("User ID, Password, and Device IP are required fields.")
-                            
                 
                             # Process the new face image if provided
                             if new_face_image:
@@ -1665,6 +1658,7 @@ elif menu == "Admin Login":
                     # Cancel button to hide the form
                     if st.button("Cancel", key=f"cancel_edit_{student_id}"):
                         st.session_state[f"form_shown_{student_id}"] = False
+
         
 
                 # Button to deregister a student
