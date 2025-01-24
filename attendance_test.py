@@ -713,52 +713,30 @@ def get_precise_location(api_key=None):
             st.error(f"ipinfo.io request failed: {str(e)}")
             return "Error with ipinfo.io request."
 
-def get_ble_devices():
+def get_ble_signal_from_api():
     """
-    Automatically scan for BLE devices using the Web Bluetooth API and return
-    the list of available devices to the Streamlit app.
+    Fetch BLE signals by making a GET request to the Flask BLE API server.
+    Replace the URL with your Flask server's actual endpoint.
     """
-    html_code = """
-    <div>
-        <p id="status">Scanning for BLE devices...</p>
-        <div id="deviceList"></div>
-    </div>
-    <script>
-        async function scanForDevices() {
-            try {
-                // Request nearby BLE devices
-                const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: ['battery_service']
-                });
+    try:
+        url = "https://fresh-adjusted-spider.ngrok-free.app/scan_ble"  # Your Flask API URL
+        response = requests.get(url)
 
-                // Display the device name and ID
-                const deviceInfo = `Device Name: ${device.name || 'Unknown'}, ID: ${device.id}`;
-                document.getElementById("deviceList").innerText = deviceInfo;
+        # Log the raw response for debugging
+        st.write("Raw response:", response.text)
 
-                // Pass the device info back to Streamlit
-                const streamlitReturn = { name: device.name || 'Unknown', id: device.id };
-                Streamlit.setComponentValue(streamlitReturn);
-            } catch (error) {
-                // Handle errors and display the message
-                console.error('Error scanning for devices:', error);
-                document.getElementById("status").innerText = 'Error: ' + error.message;
-                Streamlit.setComponentValue(null);
-            }
-        }
-
-        // Automatically call the scan function when the page loads
-        scanForDevices();
-    </script>
-    """
-
-    # Embed the HTML and JavaScript in the Streamlit app and get the result
-    result = components.html(html_code, height=300)
-    
-    # Ensure the result is not None and in a valid format (e.g., dictionary)
-    if result is None:
+        if response.status_code == 200:
+            try:
+                return response.json()  # Parse and return the JSON response from the Flask server
+            except ValueError:
+                st.error("Error: Received an invalid JSON response from the server.")
+                return None
+        else:
+            st.error(f"Failed to fetch BLE devices. Status Code: {response.status_code}")
+            return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error connecting to the BLE API: {e}")
         return None
-    return result
     
 def get_current_period():
     """
@@ -1006,116 +984,120 @@ elif menu == "Student Login":
                     time.sleep(2)
                     st.success(f"Login successful! Welcome, {user[2]}")
                     
-                    st.info("Just a step away from your dashboard!! Scanning for Bluetooth devices...")
+                    # Check for Bluetooth signal during login session
+                    st.info("just a step away from your dashboard !! Scanning for Bluetooth devices...")
 
-                    # Get the Bluetooth devices from the Web Bluetooth API
-                    ble_signal = get_ble_devices()
-                
+                    # Replace the original BLE signal detection logic
+                    ble_signal = get_ble_signal_from_api()
+                    
                     if ble_signal:
-                        # Check that ble_signal is a dictionary or in a format that supports .items()
-                        if isinstance(ble_signal, dict):
+                        if isinstance(ble_signal, dict) and "status" in ble_signal:
+                            # Handle API status response (e.g., Bluetooth is off)
+                            st.warning(ble_signal["status"])
+                        else:
                             st.info("Bluetooth devices found. Listing all available devices...")
                             
                             # Display all available Bluetooth devices
                             st.write("Available Bluetooth devices:")
                             for device_name, mac_address in ble_signal.items():
-                                st.write(f"Device Name: {device_name}, MAC Address: {mac_address}")
-                
+                                st.write(f"Device Name: {mac_address}, MAC Address: {device_name}")
+                    
                             # Automatically check if the required Bluetooth device is in the list
                             required_device_name = "76:6B:E1:0F:92:09"
                             required_mac_id = "INSTITUTE BLE VERIFY SIGNA"  # Replace with the actual MAC address if known
-                
+                    
                             found_device = False
                             for device_name, mac_address in ble_signal.items():
                                 if required_device_name in device_name or mac_address == required_mac_id:
                                     st.success(f"Required Bluetooth device found! Device Name: {device_name}, MAC Address: {mac_address}")
                                     found_device = True
                                     break
-                
+                    
                             if found_device:
                                 # Save user login to session state
                                 st.session_state.logged_in = True
                                 st.session_state.user_id = user_id  # Replace with actual user ID if available
                                 st.session_state.bluetooth_selected = True  # Mark Bluetooth as selected
+
                             else:
                                 st.error("Required Bluetooth device not found. Login failed.")
-                        else:
-                            st.warning("No Bluetooth devices found or received invalid data.")
-                    else:
-                        st.error("Failed to scan for Bluetooth devices.")
-                        
-                    # Define constant for period times
-                    PERIOD_TIMES = {
-                        "Period 1": ("09:30", "10:20"),
-                        "Period 2": ("10:20", "11:10"),
-                        "Period 3": ("11:10", "12:00"),
-                        "Period 4": ("12:00", "12:50"),
-                        "Period 5": ("13:40", "14:30"),
-                        "Period 6": ("14:30", "15:20"),
-                        "Period 7": ("15:20", "21:10")
-                    }
+
+                            # Define constant for period times
+                            PERIOD_TIMES = {
+                                "Period 1": ("09:30", "10:20"),
+                                "Period 2": ("10:20", "11:10"),
+                                "Period 3": ("11:10", "12:00"),
+                                "Period 4": ("12:00", "12:50"),
+                                "Period 5": ("13:40", "14:30"),
+                                "Period 6": ("14:30", "15:20"),
+                                "Period 7": ("15:20", "16:10")
+                            }
+
                     
-                    # Attendance Marking Logic
-                    current_period = get_current_period()
 
-                    if current_period:
-                        st.success(f"Attendance for {current_period} is being marked automatically. Waiting for confirmation from the server!")
+                            # Attendance Marking Logic
+                            current_period = get_current_period()
 
-                        current_day = datetime.now().strftime("%A")  # Get current weekday name
+                            if current_period:
+                                st.success(f"Attendance for {current_period} is being marked automatically. Waiting for confirmation from the server!")
 
-                        try:
-                            # Fetch timetable details
-                            cursor.execute("""
-                                SELECT subject, teacher FROM timetable 
-                                WHERE day = ? AND period = ?
-                            """, (current_day, current_period))
-                            period_details = cursor.fetchone()
+                                current_day = datetime.now().strftime("%A")  # Get current weekday name
 
-                            if period_details:
-                                subject, teacher = period_details
-                                st.info(f"Subject: {subject} | Teacher: {teacher}")
-
-                                # Check for existing attendance record
-                                cursor.execute("""
-                                    SELECT * FROM attendance WHERE student_id = ? AND date = ? AND day = ?
-                                """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
-                                existing_record = cursor.fetchone()
-
-                                period_column = f"period_{list(PERIOD_TIMES.keys()).index(current_period) + 1}"
-
-                                if existing_record:
-                                    # Update attendance
-                                    cursor.execute(f"""
-                                        UPDATE attendance 
-                                        SET {period_column} = 1, subject = ?, teacher = ?
-                                        WHERE student_id = ? AND date = ? AND day = ?
-                                    """, (subject, teacher, user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
-                                    conn.commit()
-                                    st.success(f"Attendance updated for {current_period} ({subject}) by {teacher} on {current_day}!")
-                                else:
-                                    # Prepare attendance data
-                                    attendance_data = {period: 0 for period in PERIOD_TIMES.keys()}
-                                    attendance_data[current_period] = 1
-
-                                    # Insert new attendance record
+                                try:
+                                    # Fetch timetable details
                                     cursor.execute("""
-                                        INSERT INTO attendance (student_id, date, day, period_1, period_2, period_3, period_4, period_5, period_6, period_7, subject, teacher)
-                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                    """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day, *attendance_data.values(), subject, teacher))
-                                    conn.commit()
-                                    st.success(f"Attendance for {current_period} ({subject}) by {teacher} marked successfully for {current_day}!")
+                                        SELECT subject, teacher FROM timetable 
+                                        WHERE day = ? AND period = ?
+                                    """, (current_day, current_period))
+                                    period_details = cursor.fetchone()
+
+                                    if period_details:
+                                        subject, teacher = period_details
+                                        st.info(f"Subject: {subject} | Teacher: {teacher}")
+
+                                        # Check for existing attendance record
+                                        cursor.execute("""
+                                            SELECT * FROM attendance WHERE student_id = ? AND date = ? AND day = ?
+                                        """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
+                                        existing_record = cursor.fetchone()
+
+                                        period_column = f"period_{list(PERIOD_TIMES.keys()).index(current_period) + 1}"
+
+                                        if existing_record:
+                                            # Update attendance
+                                            cursor.execute(f"""
+                                                UPDATE attendance 
+                                                SET {period_column} = 1, subject = ?, teacher = ?
+                                                WHERE student_id = ? AND date = ? AND day = ?
+                                            """, (subject, teacher, user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
+                                            conn.commit()
+                                            st.success(f"Attendance updated for {current_period} ({subject}) by {teacher} on {current_day}!")
+                                        else:
+                                            # Prepare attendance data
+                                            attendance_data = {period: 0 for period in PERIOD_TIMES.keys()}
+                                            attendance_data[current_period] = 1
+
+                                            # Insert new attendance record
+                                            cursor.execute("""
+                                                INSERT INTO attendance (student_id, date, day, period_1, period_2, period_3, period_4, period_5, period_6, period_7, subject, teacher)
+                                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                            """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day, *attendance_data.values(), subject, teacher))
+                                            conn.commit()
+                                            st.success(f"Attendance for {current_period} ({subject}) by {teacher} marked successfully for {current_day}!")
+                                    else:
+                                        st.error(f"No timetable entry found for {current_period} on {current_day}.")
+                                except Exception as e:
+                                    st.error(f"An error occurred: {e}")
                             else:
-                                st.error(f"No timetable entry found for {current_period} on {current_day}.")
-                        except Exception as e:
-                            st.error(f"An error occurred: {e}")
+                                st.warning("No active class period at the moment.")
                     else:
-                        st.warning("No active class period at the moment.")
+                        st.error("No Bluetooth devices found.")
                 else:
-                    st.error("You must be in Institute of Engineering and Management to login.")
+                    st.error("You must be in Kolkata to login.")
             else:
-                st.error("Device ID does not match.You can only login from your registered device.")
+                st.error("Device ID does not match.")
         else:
-            st.error("Invalid user ID or password.Please Try Again.")
+            st.error("Invalid user ID or password.")
 
     # Display student attendance search form
     if st.session_state.get('logged_in', False):
