@@ -581,14 +581,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #     return False
 
 # Database setup to store device IDs
-@st.cache_resource  # Cache the database connection to reuse it across sessions
 def create_connection():
     conn = sqlite3.connect("device_ids.db")
     return conn
 
-
 def create_table():
-    conn = create_connection()  # This will now reuse the cached connection
+    conn = create_connection()
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS device_ids (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -598,7 +596,7 @@ def create_table():
     conn.close()
 
 def insert_device_id(device_id):
-    conn = create_connection()  # This will reuse the cached connection
+    conn = create_connection()
     c = conn.cursor()
     try:
         c.execute("INSERT OR IGNORE INTO device_ids (device_id, created_at) VALUES (?, ?)",
