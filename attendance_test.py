@@ -1586,7 +1586,7 @@ elif menu == "Admin Login":
                             # Validate required fields
                             if not new_user_id or not new_password or not new_device_ip:
                                 st.error("User ID, Password, and Device IP are required fields.")
-                                return
+                            
                 
                             # Process the new face image if provided
                             if new_face_image:
