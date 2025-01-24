@@ -744,7 +744,7 @@ def get_ble_signal_from_api():
     st.write(f"Network latency: {latency:.2f} ms")
     
     # If latency is above the threshold (50 ms), assume the devices are too far
-    latency_threshold_ms = 10000  # Adjust this as needed (for example, 50 ms threshold for 10 meters)
+    latency_threshold_ms = 5800  # Adjust this as needed (for example, 50 ms threshold for 10 meters)
     if latency > latency_threshold_ms:
         st.error("Devices are too far from your classroom of your institution.")
         return None
@@ -756,7 +756,6 @@ def get_ble_signal_from_api():
         if response.status_code == 200:
             try:
                 return response.json()  # Parse and return the JSON response from the Flask server
-                st.success("you are in your classroom, have a nice study time!")
             except ValueError:
                 st.error("Error: Received an invalid JSON response from the server.")
                 return None
@@ -1018,7 +1017,8 @@ elif menu == "Student Login":
 
                     # Replace the original BLE signal detection logic
                     ble_signal = get_ble_signal_from_api()
-                    
+                    time.sleep(3)
+                    st.success("you are in your classroom, have a nice study time! We will mark your attendance shortly!")
                     if ble_signal:
                         if isinstance(ble_signal, dict) and "status" in ble_signal:
                             # Handle API status response (e.g., Bluetooth is off)
