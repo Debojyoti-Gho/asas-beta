@@ -7,7 +7,7 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Image, Paragraph
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-from io import BytesIO
+from io import BytesIO 
 import matplotlib.pyplot as plt
 import uuid
 import requests
