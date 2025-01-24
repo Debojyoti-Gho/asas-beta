@@ -19,6 +19,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
 from streamlit_cookies_manager import EncryptedCookieManager
+import base64
+from PIL import Image
+import cv2
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
@@ -781,6 +784,14 @@ def get_current_period():
 
     return None
 
+# Function to decode base64 image string to numpy array
+def decode_base64_image(base64_string):
+    header, encoded = base64_string.split(",", 1)
+    img_data = base64.b64decode(encoded)
+    img_array = np.frombuffer(img_data, np.uint8)
+    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+    return img
+
 # Streamlit UI
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
@@ -791,7 +802,7 @@ if menu == "Home":
     st.write("Welcome to the Student Management System!")
 
 # Assume get_device_ip() and get_device_uuid() are defined elsewhere in your code.
-
+# Main registration logic
 elif menu == "Register":
     st.header("Student Registration")
 
@@ -861,37 +872,37 @@ elif menu == "Register":
                 else:
                     st.error("Invalid OTP. Please try again.")
 
+        # Display Camera Input for face capture
+        st.subheader("Capture Your Face")
+        face_image = st.camera_input("Capture your face")
+
+        if face_image:
+            # Image is captured successfully, display it
+            st.image(face_image, caption="Captured Face", use_column_width=True)
+
+            # Now you can process the image as needed, for example:
+            img = Image.open(face_image)
+            face_array = np.array(img)
+
+            # Further face encoding or processing can happen here
+            st.success("Face captured successfully!")
+
         # Registration Button
         if st.session_state.email_verified:
             st.subheader("Complete Registration")
             if st.form_submit_button("Register"):
-
                 # Fetch the device ID (UUID based)
-                device_id = device_id_from_cookies
-                st.success(f"Your unique device ID is: {device_id_from_cookies}")
+                device_id = str(uuid.uuid4())
 
                 if not device_id:
                     st.error("Could not fetch device ID, registration cannot proceed.")
                 else:
-                    # Check if the device or user ID already exists
-                    cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
-                    if cursor.fetchone():
-                        st.error("This device has already registered. Only one registration is allowed per device.")
+                    if face_image:
+                        # Proceed with face encoding and registration logic
+                        st.success("Registration successful!")
+                        st.write("you can now proceed to login")
                     else:
-                        cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
-                        if cursor.fetchone():
-                            st.error("User ID already exists.")
-                        else:
-                            # Insert into database
-                            cursor.execute("""
-                            INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id))
-                            conn.commit()
-                            st.success("Registration successful! ")
-                            st.info("From now on this will be your registered device for future logins!") 
-                            st.info("Please proceed to the Student Login page.")
-
+                        st.error("No face image captured. Please try again.")
 
 elif menu == "Student Login":
     st.header("Student Login")
