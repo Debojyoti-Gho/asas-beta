@@ -766,11 +766,6 @@ def get_ble_signal_from_api():
         st.error(f"Error connecting to the BLE API: {e}")
         return None
 
-# Example call to get BLE signal
-ble_signal = get_ble_signal_from_api()
-if ble_signal:
-    st.write("BLE devices found:", ble_signal)
-    
 def get_current_period():
     """
     Get the current active period based on the current time, considering timezones.
