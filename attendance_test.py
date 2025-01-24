@@ -746,7 +746,7 @@ def get_ble_signal_from_api():
     # If latency is above the threshold (50 ms), assume the devices are too far
     latency_threshold_ms = 10000  # Adjust this as needed (for example, 50 ms threshold for 10 meters)
     if latency > latency_threshold_ms:
-        st.error("Devices are too far (latency exceeds threshold).")
+        st.error("Devices are too far from your classroom of your institution.")
         return None
     
     # Proceed to fetch BLE signals if latency is within range
@@ -756,6 +756,7 @@ def get_ble_signal_from_api():
         if response.status_code == 200:
             try:
                 return response.json()  # Parse and return the JSON response from the Flask server
+                st.success("you are in your classroom, have a nice study time!")
             except ValueError:
                 st.error("Error: Received an invalid JSON response from the server.")
                 return None
