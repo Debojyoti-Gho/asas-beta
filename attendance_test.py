@@ -22,6 +22,10 @@ from streamlit_cookies_manager import EncryptedCookieManager
 import base64
 from PIL import Image
 import cv2
+from scipy.spatial.distance import euclidean
+import torch
+from torchvision import transforms
+import face_recognition
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
@@ -449,137 +453,137 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #     return matched_students
 
 
-# # Load the pre-trained MiDaS model for depth estimation on appropriate device
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# model = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
-# model.eval().to(device)
-# def capture_face():
-#     st.write("Automatically turnig on your camera to capture the face.")
-#     cap = cv2.VideoCapture(0)  # Open the camera
+# Load the pre-trained MiDaS model for depth estimation on appropriate device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
+model.eval().to(device)
+def capture_face():
+    st.write("Automatically turnig on your camera to capture the face.")
+    cap = cv2.VideoCapture(0)  # Open the camera
     
-#     # Check if the camera is successfully opened
-#     if not cap.isOpened():
-#         st.error("Could not open camera.")
-#         return None
+    # Check if the camera is successfully opened
+    if not cap.isOpened():
+        st.error("Could not open camera.")
+        return None
 
-#     st_frame = st.image([])
+    st_frame = st.image([])
 
-#     captured_face = None  # Variable to store the captured face
+    captured_face = None  # Variable to store the captured face
 
-#     while True:
-#         ret, frame = cap.read()
+    while True:
+        ret, frame = cap.read()
         
-#         # Check if frame was successfully captured
-#         if not ret or frame is None or frame.size == 0:
-#             st.error("Failed to capture frame from the camera.")
-#             break
+        # Check if frame was successfully captured
+        if not ret or frame is None or frame.size == 0:
+            st.error("Failed to capture frame from the camera.")
+            break
         
-#         st_frame.image(frame, channels="BGR")
+        st_frame.image(frame, channels="BGR")
 
-#         # Convert to RGB for face recognition
-#         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#         face_locations = face_recognition.face_locations(rgb_image)
+        # Convert to RGB for face recognition
+        rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        face_locations = face_recognition.face_locations(rgb_image)
         
-#         # If at least one face is detected, capture the first one
-#         if len(face_locations) > 0:
-#             captured_face = frame
-#             st.write("Face captured successfully!")
-#             break  # Exit the loop once a face is captured
+        # If at least one face is detected, capture the first one
+        if len(face_locations) > 0:
+            captured_face = frame
+            st.write("Face captured successfully!")
+            break  # Exit the loop once a face is captured
 
-#     cap.release()  # Release the camera
+    cap.release()  # Release the camera
 
-#     if captured_face is None:
-#         st.error("No valid face detected. Try again.")
-#         return None
+    if captured_face is None:
+        st.error("No valid face detected. Try again.")
+        return None
 
-#     # Check if captured face is valid before proceeding with depth estimation
-#     if captured_face is None or captured_face.size == 0:
-#         st.error("Captured face is empty or invalid.")
-#         return None
+    # Check if captured face is valid before proceeding with depth estimation
+    if captured_face is None or captured_face.size == 0:
+        st.error("Captured face is empty or invalid.")
+        return None
 
-#     # Depth estimation: Convert the captured frame to RGB for MiDaS model
-#     rgb_frame = cv2.cvtColor(captured_face, cv2.COLOR_BGR2RGB)
+    # Depth estimation: Convert the captured frame to RGB for MiDaS model
+    rgb_frame = cv2.cvtColor(captured_face, cv2.COLOR_BGR2RGB)
 
-#     # Define the transformation (resize and normalization)
-#     transform = transforms.Compose([
-#     transforms.ToPILImage(),
-#     transforms.Resize(384),  # Ensure it resizes to 384x384
-#     transforms.CenterCrop(384),  # Ensure the size matches the expected dimensions
-#     transforms.ToTensor(),
-#     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-# ])
+    # Define the transformation (resize and normalization)
+    transform = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.Resize(384),  # Ensure it resizes to 384x384
+    transforms.CenterCrop(384),  # Ensure the size matches the expected dimensions
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
 
-#     # Apply the transformations
-#     input_tensor = transform(rgb_frame).unsqueeze(0)
+    # Apply the transformations
+    input_tensor = transform(rgb_frame).unsqueeze(0)
 
-#     # Predict the depth
-#     with torch.no_grad():
-#         depth_map = model(input_tensor)
+    # Predict the depth
+    with torch.no_grad():
+        depth_map = model(input_tensor)
 
-#     # Normalize the depth map for display
-#     depth_map = depth_map.squeeze().cpu().numpy()
-#     depth_map = cv2.normalize(depth_map, None, 0, 255, cv2.NORM_MINMAX)
-#     depth_map = np.uint8(depth_map)
+    # Normalize the depth map for display
+    depth_map = depth_map.squeeze().cpu().numpy()
+    depth_map = cv2.normalize(depth_map, None, 0, 255, cv2.NORM_MINMAX)
+    depth_map = np.uint8(depth_map)
 
-#     # Show depth map for debugging (optional)
-#     st.image(depth_map, channels="GRAY", caption="Depth Map")
+    # Show depth map for debugging (optional)
+    st.image(depth_map, channels="GRAY", caption="Depth Map")
 
-#     # Check if the depth map has sufficient variation (meaningful 3D object)
-#     depth_variation = np.std(depth_map)
+    # Check if the depth map has sufficient variation (meaningful 3D object)
+    depth_variation = np.std(depth_map)
 
-#     # Enhance the check to account for larger regions
-#     mean_depth = np.mean(depth_map)
-#     depth_threshold = 80  # Adjust threshold for a more reliable check
+    # Enhance the check to account for larger regions
+    mean_depth = np.mean(depth_map)
+    depth_threshold = 80  # Adjust threshold for a more reliable check
 
-#     # Check if depth variation and mean depth are consistent with 3D face
-#     if depth_variation < depth_threshold or mean_depth < 20:
-#         st.error("Depth variation too low or invalid depth detected! This might be a 2D image.")
-#         captured_face = None
-#         return None
+    # Check if depth variation and mean depth are consistent with 3D face
+    if depth_variation < depth_threshold or mean_depth < 20:
+        st.error("Depth variation too low or invalid depth detected! This might be a 2D image.")
+        captured_face = None
+        return None
 
-#     return captured_face  # Return the captured frame if everything is valid
+    return captured_face  # Return the captured frame if everything is valid
 
-# # Preprocess face image to get encoding
-# def get_face_encoding(image):
-#     # Check if the image is None or empty
-#     if image is None or image.size == 0:
-#         st.error("Failed to capture face image. The image is empty.")
-#         return None
+# Preprocess face image to get encoding
+def get_face_encoding(image):
+    # Check if the image is None or empty
+    if image is None or image.size == 0:
+        st.error("Failed to capture face image. The image is empty.")
+        return None
     
-#     # Convert the image to RGB (required by face_recognition)
-#     try:
-#         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-#     except cv2.error as e:
-#         st.error(f"OpenCV error during color conversion: {e}")
-#         return None
+    # Convert the image to RGB (required by face_recognition)
+    try:
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    except cv2.error as e:
+        st.error(f"OpenCV error during color conversion: {e}")
+        return None
     
-#     # Detect face locations
-#     face_locations = face_recognition.face_locations(rgb_image)
+    # Detect face locations
+    face_locations = face_recognition.face_locations(rgb_image)
     
-#     if len(face_locations) == 0:
-#         st.error("No face detected. Try again!")
-#         return None
+    if len(face_locations) == 0:
+        st.error("No face detected. Try again!")
+        return None
     
-#     # Get face encodings for the detected faces
-#     face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
+    # Get face encodings for the detected faces
+    face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
     
-#     if len(face_encodings) > 0:
-#         return face_encodings[0]  # Return the encoding of the first detected face
-#     else:
-#         st.error("No face encoding found.")
-#         return None
+    if len(face_encodings) > 0:
+        return face_encodings[0]  # Return the encoding of the first detected face
+    else:
+        st.error("No face encoding found.")
+        return None
     
-# def authenticate_with_face(captured_encoding, stored_encoding, threshold=0.6):
-#     # Calculate the Euclidean distance between the two encodings
-#     distance = euclidean(captured_encoding, stored_encoding)
+def authenticate_with_face(captured_encoding, stored_encoding, threshold=0.6):
+    # Calculate the Euclidean distance between the two encodings
+    distance = euclidean(captured_encoding, stored_encoding)
 
-#     # Log the distance for debugging purposes
-#     st.write(f"Distance between captured and stored encoding: {distance}")
+    # Log the distance for debugging purposes
+    st.write(f"Distance between captured and stored encoding: {distance}")
 
-#     # Compare the distance with a threshold
-#     if distance < threshold:
-#         return True
-#     return False
+    # Compare the distance with a threshold
+    if distance < threshold:
+        return True
+    return False
 
 
 # Database setup to store device IDs
