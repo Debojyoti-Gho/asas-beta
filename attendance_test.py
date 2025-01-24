@@ -19,13 +19,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
 from streamlit_cookies_manager import EncryptedCookieManager
-import base64
 from PIL import Image
-import cv2
-from scipy.spatial.distance import euclidean
-import torch
-from torchvision import transforms
-import face_recognition
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
@@ -453,137 +447,137 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #     return matched_students
 
 
-# Load the pre-trained MiDaS model for depth estimation on appropriate device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
-model.eval().to(device)
-def capture_face():
-    st.write("Automatically turnig on your camera to capture the face.")
-    cap = cv2.VideoCapture(0)  # Open the camera
+# # Load the pre-trained MiDaS model for depth estimation on appropriate device
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# model = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
+# model.eval().to(device)
+# def capture_face():
+#     st.write("Automatically turnig on your camera to capture the face.")
+#     cap = cv2.VideoCapture(0)  # Open the camera
     
-    # Check if the camera is successfully opened
-    if not cap.isOpened():
-        st.error("Could not open camera.")
-        return None
+#     # Check if the camera is successfully opened
+#     if not cap.isOpened():
+#         st.error("Could not open camera.")
+#         return None
 
-    st_frame = st.image([])
+#     st_frame = st.image([])
 
-    captured_face = None  # Variable to store the captured face
+#     captured_face = None  # Variable to store the captured face
 
-    while True:
-        ret, frame = cap.read()
+#     while True:
+#         ret, frame = cap.read()
         
-        # Check if frame was successfully captured
-        if not ret or frame is None or frame.size == 0:
-            st.error("Failed to capture frame from the camera.")
-            break
+#         # Check if frame was successfully captured
+#         if not ret or frame is None or frame.size == 0:
+#             st.error("Failed to capture frame from the camera.")
+#             break
         
-        st_frame.image(frame, channels="BGR")
+#         st_frame.image(frame, channels="BGR")
 
-        # Convert to RGB for face recognition
-        rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        face_locations = face_recognition.face_locations(rgb_image)
+#         # Convert to RGB for face recognition
+#         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#         face_locations = face_recognition.face_locations(rgb_image)
         
-        # If at least one face is detected, capture the first one
-        if len(face_locations) > 0:
-            captured_face = frame
-            st.write("Face captured successfully!")
-            break  # Exit the loop once a face is captured
+#         # If at least one face is detected, capture the first one
+#         if len(face_locations) > 0:
+#             captured_face = frame
+#             st.write("Face captured successfully!")
+#             break  # Exit the loop once a face is captured
 
-    cap.release()  # Release the camera
+#     cap.release()  # Release the camera
 
-    if captured_face is None:
-        st.error("No valid face detected. Try again.")
-        return None
+#     if captured_face is None:
+#         st.error("No valid face detected. Try again.")
+#         return None
 
-    # Check if captured face is valid before proceeding with depth estimation
-    if captured_face is None or captured_face.size == 0:
-        st.error("Captured face is empty or invalid.")
-        return None
+#     # Check if captured face is valid before proceeding with depth estimation
+#     if captured_face is None or captured_face.size == 0:
+#         st.error("Captured face is empty or invalid.")
+#         return None
 
-    # Depth estimation: Convert the captured frame to RGB for MiDaS model
-    rgb_frame = cv2.cvtColor(captured_face, cv2.COLOR_BGR2RGB)
+#     # Depth estimation: Convert the captured frame to RGB for MiDaS model
+#     rgb_frame = cv2.cvtColor(captured_face, cv2.COLOR_BGR2RGB)
 
-    # Define the transformation (resize and normalization)
-    transform = transforms.Compose([
-    transforms.ToPILImage(),
-    transforms.Resize(384),  # Ensure it resizes to 384x384
-    transforms.CenterCrop(384),  # Ensure the size matches the expected dimensions
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
+#     # Define the transformation (resize and normalization)
+#     transform = transforms.Compose([
+#     transforms.ToPILImage(),
+#     transforms.Resize(384),  # Ensure it resizes to 384x384
+#     transforms.CenterCrop(384),  # Ensure the size matches the expected dimensions
+#     transforms.ToTensor(),
+#     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+# ])
 
-    # Apply the transformations
-    input_tensor = transform(rgb_frame).unsqueeze(0)
+#     # Apply the transformations
+#     input_tensor = transform(rgb_frame).unsqueeze(0)
 
-    # Predict the depth
-    with torch.no_grad():
-        depth_map = model(input_tensor)
+#     # Predict the depth
+#     with torch.no_grad():
+#         depth_map = model(input_tensor)
 
-    # Normalize the depth map for display
-    depth_map = depth_map.squeeze().cpu().numpy()
-    depth_map = cv2.normalize(depth_map, None, 0, 255, cv2.NORM_MINMAX)
-    depth_map = np.uint8(depth_map)
+#     # Normalize the depth map for display
+#     depth_map = depth_map.squeeze().cpu().numpy()
+#     depth_map = cv2.normalize(depth_map, None, 0, 255, cv2.NORM_MINMAX)
+#     depth_map = np.uint8(depth_map)
 
-    # Show depth map for debugging (optional)
-    st.image(depth_map, channels="GRAY", caption="Depth Map")
+#     # Show depth map for debugging (optional)
+#     st.image(depth_map, channels="GRAY", caption="Depth Map")
 
-    # Check if the depth map has sufficient variation (meaningful 3D object)
-    depth_variation = np.std(depth_map)
+#     # Check if the depth map has sufficient variation (meaningful 3D object)
+#     depth_variation = np.std(depth_map)
 
-    # Enhance the check to account for larger regions
-    mean_depth = np.mean(depth_map)
-    depth_threshold = 80  # Adjust threshold for a more reliable check
+#     # Enhance the check to account for larger regions
+#     mean_depth = np.mean(depth_map)
+#     depth_threshold = 80  # Adjust threshold for a more reliable check
 
-    # Check if depth variation and mean depth are consistent with 3D face
-    if depth_variation < depth_threshold or mean_depth < 20:
-        st.error("Depth variation too low or invalid depth detected! This might be a 2D image.")
-        captured_face = None
-        return None
+#     # Check if depth variation and mean depth are consistent with 3D face
+#     if depth_variation < depth_threshold or mean_depth < 20:
+#         st.error("Depth variation too low or invalid depth detected! This might be a 2D image.")
+#         captured_face = None
+#         return None
 
-    return captured_face  # Return the captured frame if everything is valid
+#     return captured_face  # Return the captured frame if everything is valid
 
-# Preprocess face image to get encoding
-def get_face_encoding(image):
-    # Check if the image is None or empty
-    if image is None or image.size == 0:
-        st.error("Failed to capture face image. The image is empty.")
-        return None
+# # Preprocess face image to get encoding
+# def get_face_encoding(image):
+#     # Check if the image is None or empty
+#     if image is None or image.size == 0:
+#         st.error("Failed to capture face image. The image is empty.")
+#         return None
     
-    # Convert the image to RGB (required by face_recognition)
-    try:
-        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    except cv2.error as e:
-        st.error(f"OpenCV error during color conversion: {e}")
-        return None
+#     # Convert the image to RGB (required by face_recognition)
+#     try:
+#         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#     except cv2.error as e:
+#         st.error(f"OpenCV error during color conversion: {e}")
+#         return None
     
-    # Detect face locations
-    face_locations = face_recognition.face_locations(rgb_image)
+#     # Detect face locations
+#     face_locations = face_recognition.face_locations(rgb_image)
     
-    if len(face_locations) == 0:
-        st.error("No face detected. Try again!")
-        return None
+#     if len(face_locations) == 0:
+#         st.error("No face detected. Try again!")
+#         return None
     
-    # Get face encodings for the detected faces
-    face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
+#     # Get face encodings for the detected faces
+#     face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
     
-    if len(face_encodings) > 0:
-        return face_encodings[0]  # Return the encoding of the first detected face
-    else:
-        st.error("No face encoding found.")
-        return None
+#     if len(face_encodings) > 0:
+#         return face_encodings[0]  # Return the encoding of the first detected face
+#     else:
+#         st.error("No face encoding found.")
+#         return None
     
-def authenticate_with_face(captured_encoding, stored_encoding, threshold=0.6):
-    # Calculate the Euclidean distance between the two encodings
-    distance = euclidean(captured_encoding, stored_encoding)
+# def authenticate_with_face(captured_encoding, stored_encoding, threshold=0.6):
+#     # Calculate the Euclidean distance between the two encodings
+#     distance = euclidean(captured_encoding, stored_encoding)
 
-    # Log the distance for debugging purposes
-    st.write(f"Distance between captured and stored encoding: {distance}")
+#     # Log the distance for debugging purposes
+#     st.write(f"Distance between captured and stored encoding: {distance}")
 
-    # Compare the distance with a threshold
-    if distance < threshold:
-        return True
-    return False
+#     # Compare the distance with a threshold
+#     if distance < threshold:
+#         return True
+#     return False
 
 
 # Database setup to store device IDs
@@ -788,14 +782,6 @@ def get_current_period():
 
     return None
 
-# Function to decode base64 image string to numpy array
-def decode_base64_image(base64_string):
-    header, encoded = base64_string.split(",", 1)
-    img_data = base64.b64decode(encoded)
-    img_array = np.frombuffer(img_data, np.uint8)
-    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-    return img
-
 # Streamlit UI
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
@@ -884,11 +870,12 @@ elif menu == "Register":
             # Image is captured successfully, display it
             st.image(face_image, caption="Captured Face", use_column_width=True)
 
-            # Now you can process the image as needed, for example:
+            # Convert the image to binary for database storage
             img = Image.open(face_image)
-            face_array = np.array(img)
+            img_bytes = io.BytesIO()
+            img.save(img_bytes, format="JPEG")
+            face_blob = img_bytes.getvalue()  # Convert to binary data
 
-            # Further face encoding or processing can happen here
             st.success("Face captured successfully!")
 
         # Registration Button
@@ -902,9 +889,18 @@ elif menu == "Register":
                     st.error("Could not fetch device ID, registration cannot proceed.")
                 else:
                     if face_image:
-                        # Proceed with face encoding and registration logic
-                        st.success("Registration successful!")
-                        st.write("you can now proceed to login")
+                        try:
+                            # Insert the student data into the database
+                            cursor.execute("""
+                                INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
+                            conn.commit()
+
+                            st.success("Registration successful!")
+                            st.write("You can now proceed to login.")
+                        except Exception as e:
+                            st.error(f"Failed to register: {e}")
                     else:
                         st.error("No face image captured. Please try again.")
 
@@ -1537,70 +1533,138 @@ elif menu == "Admin Login":
                         st.write("No year or semester information found for this student.")
 
 
+                # Fetch the current date
+                current_date = datetime.date.today()
+                
+                # Fetch the year and semester details from the `semester_dates` table
+                cursor.execute("""
+                    SELECT year, semester, start_date, end_date
+                    FROM semester_dates
+                    WHERE start_date <= ? AND end_date >= ?
+                    ORDER BY year, semester
+                """, (current_date, current_date))
+                
+                # Check if the current date matches a semester in the database
+                semester_info = cursor.fetchone()
+                
+                if semester_info:
+                    # Calculate next year and semester for the student
+                    current_year = semester_info[0]
+                    current_semester = semester_info[1]
+                
+                    # Assuming semesters alternate every 6 months, and the academic year starts in the first semester
+                    if current_semester == 1:
+                        next_year = current_year
+                        next_semester = 2
+                    else:
+                        next_year = current_year + 1
+                        next_semester = 1  # Next year will start with semester 1
+                else:
+                    next_year = None
+                    next_semester = None
+                
                 # Initialize session state for form visibility
                 if f"form_shown_{student_id}" not in st.session_state:
                     st.session_state[f"form_shown_{student_id}"] = False
-
+                
                 # Button to toggle form visibility
                 if st.button(f"View/Edit Details for {student_name}", key=f"edit_{student_id}"):
                     st.session_state[f"form_shown_{student_id}"] = not st.session_state[f"form_shown_{student_id}"]
-
+                
                 # Display the form if it's active
                 if st.session_state[f"form_shown_{student_id}"]:
                     st.header(f"Edit Details for {student_name}")
-
+                
+                    # Retrieve and display the student's face image from the database
+                    try:
+                        cursor.execute("SELECT student_face FROM students WHERE user_id = ?", (student_id,))
+                        result = cursor.fetchone()
+                
+                        if result and result[0]:  # Check if a face image is present
+                            face_blob = result[0]
+                            face_image = Image.open(io.BytesIO(face_blob))
+                            st.image(face_image, caption="Current Face Image", use_column_width=True)
+                        else:
+                            st.warning("No face image found for this student.")
+                    except Exception as e:
+                        st.error(f"Error retrieving face image: {e}")
+                
+                    # Add option to upload or capture a new face image
+                    st.subheader("Update Face Image")
+                    new_face_image = st.camera_input("Capture a new face image") or st.file_uploader("Upload a new face image", type=["png", "jpg", "jpeg"])
+                
                     # Pre-fill existing student data into form fields
                     new_name = st.text_input("Name", value=student[2], key=f"name_{student_id}")
                     new_roll = st.text_input("Roll Number", value=student[3], key=f"roll_{student_id}")
                     new_section = st.text_input("Section", value=student[4], key=f"section_{student_id}")
                     new_email = st.text_input("Email", value=student[5], key=f"email_{student_id}")
                     new_enrollment_no = st.text_input("Enrollment Number", value=student[6], key=f"enrollment_{student_id}")
+                    
+                    # Use the auto-calculated next year and semester if available
                     new_year = st.selectbox(
                         "Year", ["1", "2", "3", "4"],
-                        index=["1", "2", "3", "4"].index(student[7]),
+                        index=["1", "2", "3", "4"].index(str(next_year)) if next_year else 0,
                         key=f"year_{student_id}"
                     )
-                    new_semester = st.text_input("Semester", value=student[8], key=f"semester_{student_id}")
+                    new_semester = st.text_input("Semester", value=str(next_semester) if next_semester else student[8], key=f"semester_{student_id}")
+                    
                     new_user_id = st.text_input("User ID", value=student[0], key=f"user_id_{student_id}")
                     new_password = st.text_input("Password", type="password", value=student[1], key=f"password_{student_id}")
                     new_device_ip = st.text_input("Device IP", value=student[9], key=f"device_ip_{student_id}")
-
+                
                     # Save changes button
                     if st.button("Save Changes", key=f"save_changes_{student_id}"):
                         try:
                             # Validate required fields
                             if not new_user_id or not new_password or not new_device_ip:
                                 st.error("User ID, Password, and Device IP are required fields.")
-
-                            # Update student details in the database
-                            st.write("Updating student details...")
-                            cursor.execute("""
-                                UPDATE students
-                                SET user_id = ?, password = ?, device_id = ?, name = ?, roll = ?, section = ?, email = ?, enrollment_no = ?, year = ?, semester = ?
-                                WHERE user_id = ?
-                            """, (
-                                new_user_id, new_password, new_device_ip, new_name, new_roll, new_section,
-                                new_email, new_enrollment_no, new_year, new_semester, student_id
-                            ))
+                                return
+                
+                            # Process the new face image if provided
+                            if new_face_image:
+                                img = Image.open(new_face_image)
+                                img_bytes = io.BytesIO()
+                                img.save(img_bytes, format="JPEG")  # Save the image as bytes
+                                face_blob = img_bytes.getvalue()  # Convert to BLOB
+                
+                                # Update the database with the new face image and details
+                                cursor.execute("""
+                                    UPDATE students
+                                    SET user_id = ?, password = ?, device_id = ?, name = ?, roll = ?, section = ?, email = ?, enrollment_no = ?, year = ?, semester = ?, student_face = ?
+                                    WHERE user_id = ?
+                                """, (
+                                    new_user_id, new_password, new_device_ip, new_name, new_roll, new_section,
+                                    new_email, new_enrollment_no, new_year, new_semester, face_blob, student_id
+                                ))
+                            else:
+                                # Update details without changing the face image
+                                cursor.execute("""
+                                    UPDATE students
+                                    SET user_id = ?, password = ?, device_id = ?, name = ?, roll = ?, section = ?, email = ?, enrollment_no = ?, year = ?, semester = ?
+                                    WHERE user_id = ?
+                                """, (
+                                    new_user_id, new_password, new_device_ip, new_name, new_roll, new_section,
+                                    new_email, new_enrollment_no, new_year, new_semester, student_id
+                                ))
+                
                             conn.commit()
-
+                
                             # Confirm success
                             if cursor.rowcount > 0:
                                 st.success(f"Details for {student_name} have been successfully updated!")
                             else:
                                 st.error("No changes were made. Please verify the details.")
-
+                
                             # Close the form after successful update
                             st.session_state[f"form_shown_{student_id}"] = False
-
+                
                         except Exception as e:
                             st.error(f"An error occurred while updating the details: {str(e)}")
-
+                
                     # Cancel button to hide the form
                     if st.button("Cancel", key=f"cancel_edit_{student_id}"):
                         st.session_state[f"form_shown_{student_id}"] = False
-
-
+        
 
                 # Button to deregister a student
                 if st.button(f"Deregister {student_name}", key=f"deregister_{student_id}"):
