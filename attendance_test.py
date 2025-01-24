@@ -816,28 +816,21 @@ elif menu == "Register":
         user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
 
-        # Check if the email, roll number, or user ID already exists
-        if email and roll and user_id:
-            cursor.execute("SELECT * FROM students WHERE email = ? OR roll = ? OR user_id = ?", (email, roll, user_id))
-            existing_user = cursor.fetchone()
+        # Capture face photo
+        st.subheader("Capture Your Face")
+        face_image = st.camera_input("Capture your face")
 
-            if existing_user:
-                st.error("This email, roll number, or user ID is already registered. Please use different details.")
-                st.stop()  # Stop further processing if duplicate is found
+        if face_image:
+            # Display the captured face image
+            st.image(face_image, caption="Captured Face", use_container_width=True)
 
-        # Check if the device ID has already been used for registration
-        if email and roll and user_id:
-            device_id = device_id_from_cookies  # Fetch the device ID (UUID based)
-            if not device_id:
-                st.error("Could not fetch device ID, registration cannot proceed.")
-                st.stop()  # Stop further processing if device ID cannot be fetched
+            # Convert the image to binary for database storage
+            img = Image.open(face_image)
+            img_bytes = io.BytesIO()
+            img.save(img_bytes, format="JPEG")
+            face_blob = img_bytes.getvalue()  # Convert to binary data
 
-            cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
-            existing_device = cursor.fetchone()
-
-            if existing_device:
-                st.error("This device has already been used to register an account. Only one registration per device is allowed.")
-                st.stop()  # Stop further processing if device ID is already used
+            st.success("Face captured successfully!")
 
         st.subheader("Email Verification")
         if not st.session_state.email_verified:
@@ -873,7 +866,7 @@ elif menu == "Register":
                     except Exception as e:
                         st.error(f"Failed to send OTP: {e}")
                 else:
-                    st.error("your registered email address will be used for future communications.")
+                    st.error("Please enter a valid email address.")
 
         # OTP Verification
         if st.session_state.email_otp and not st.session_state.email_verified:
@@ -885,42 +878,36 @@ elif menu == "Register":
                 else:
                     st.error("Invalid OTP. Please try again.")
 
-        # Display Camera Input for face capture
-        st.subheader("Capture Your Face")
-        face_image = st.camera_input("Capture your face")
-
-        if face_image:
-            # Image is captured successfully, display it
-            st.image(face_image, caption="Captured Face", use_container_width=True)
-
-            # Convert the image to binary for database storage
-            img = Image.open(face_image)
-            img_bytes = io.BytesIO()
-            img.save(img_bytes, format="JPEG")
-            face_blob = img_bytes.getvalue()  # Convert to binary data
-
-            st.success("Face captured successfully!")
-
         # Registration Button
         if st.session_state.email_verified:
             st.subheader("Complete Registration")
             if st.form_submit_button("Register"):
-                if face_image:
-                    try:
-                        # Insert the student data into the database
-                        cursor.execute("""
-                            INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
-                        conn.commit()
+                if face_image:  # Ensure face image is captured
+                    # Fetch the device ID (UUID based)
+                    device_id = device_id_from_cookies
+                    st.success(f"Your unique device ID is: {device_id_from_cookies}")
 
-                        st.success("Registration successful!")
-                        st.info("You can now proceed to login.")
-                        st.warning("From now on, this will be your verified device for future logins.")
-                    except Exception as e:
-                        st.error(f"Failed to register: {e}")
-                else:
-                    st.error("No face image captured. Please try again.")
+                    if not device_id:
+                        st.error("Could not fetch device ID, registration cannot proceed.")
+                    else:
+                        # Check if the device or user ID already exists
+                        cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
+                        if cursor.fetchone():
+                            st.error("This device has already registered. Only one registration is allowed per device.")
+                        else:
+                            cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
+                            if cursor.fetchone():
+                                st.error("User ID already exists.")
+                            else:
+                                # Insert into database
+                                cursor.execute("""
+                                INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
+                                conn.commit()
+                                st.success("Registration successful!")
+                                st.info("Please proceed to the Student Login page.")
+
 
 elif menu == "Student Login":
     st.header("Student Login")
