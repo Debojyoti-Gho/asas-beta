@@ -783,6 +783,7 @@ def get_current_period():
     return None
 
 # Streamlit UI
+st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
 
