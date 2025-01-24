@@ -1534,7 +1534,7 @@ elif menu == "Admin Login":
 
 
                 # Fetch the current date
-                current_date = datetime.date.today()
+                current_date = date.today()
                 
                 # Fetch the year and semester details from the `semester_dates` table
                 cursor.execute("""
