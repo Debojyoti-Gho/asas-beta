@@ -4,7 +4,7 @@ import datetime
 from datetime import date, datetime,timedelta,timezone
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet 
 from reportlab.platypus import Image, Paragraph
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from io import BytesIO 
