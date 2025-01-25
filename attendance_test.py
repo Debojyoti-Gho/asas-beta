@@ -896,8 +896,9 @@ def generate_challenge():
     return base64.urlsafe_b64encode(challenge).decode('utf-8')  # Base64 encoding for URL compatibility
 
 def webauthn_script(challenge):
-    script = """
+    script = f"""
     <script>
+        // Declare the authenticate function in the global scope
         async function authenticate() {{
             const publicKey = {{
                 challenge: Uint8Array.from("{challenge}", c => c.charCodeAt(0)),  // Dynamic server-generated challenge
@@ -941,7 +942,6 @@ def webauthn_script(challenge):
     <p id="webauthn-result"></p>
     """
     return script
-
 
 def handle_webauthn_response():
     # Check if 'auth_status' is available in query parameters
