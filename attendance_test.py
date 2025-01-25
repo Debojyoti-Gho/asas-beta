@@ -1116,6 +1116,7 @@ elif menu == "Student Login":
         st.error("Fingerprint authentication failed. Please try again.")
         st.stop()  # Stop execution until authentication is successful 
     st.success("fingerprint accepted.waiting for server confirmation!!")
+    st.info("fingerprint passkey authentication is still under development so can be bypassed sometimes.However later on this will be mandatory!! ")
     
     user_id = st.text_input("User ID")
     password = st.text_input("Password", type="password")
