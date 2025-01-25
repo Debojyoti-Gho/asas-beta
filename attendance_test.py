@@ -1097,18 +1097,6 @@ elif menu == "Register":
 
 elif menu == "Student Login":
     st.header("Student Login")
-    # WebAuthn Integration
-    st.subheader("Fingerprint Authentication")
-    st.warning("please procced with the fingerprint authentication first to continue with login !") 
-    
-    # Integrate fingerprint authentication script
-    auth_successful = st.components.v1.html(webauthn_script())  # Replace with actual WebAuthn logic
-
-    if not auth_successful:
-        st.error("Fingerprint authentication failed. Please try again.")
-        st.stop()  # Stop execution until authentication is successful 
-    st.success("fingerprint accepted.waiting for server confirmation!!")
-    
     user_id = st.text_input("User ID")
     password = st.text_input("Password", type="password")
     
@@ -1123,6 +1111,17 @@ elif menu == "Student Login":
         cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
         user = cursor.fetchone()
         if user:
+            # WebAuthn Integration
+            st.subheader("Fingerprint Authentication")
+            st.warning("please procced with the fingerprint authentication first to continue with login !") 
+            
+            # Integrate fingerprint authentication script
+            auth_successful = st.components.v1.html(webauthn_script())  # Replace with actual WebAuthn logic
+        
+            if not auth_successful:
+                st.error("Fingerprint authentication failed. Please try again.")
+                st.stop()  # Stop execution until authentication is successful 
+            st.success("fingerprint accepted.waiting for server confirmation!!")
             if user[9] == device_id:  # Match device_id from IP address
                 location = get_precise_location()
                 st.write(f"Your current location is: {location}")
