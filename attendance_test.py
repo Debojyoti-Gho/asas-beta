@@ -1021,6 +1021,10 @@ elif menu == "Student Login":
 
     if not device_id:
         st.error("Could not fetch device Id. Login cannot proceed.")
+        
+    # WebAuthn Integration
+    st.subheader("Fingerprint Authentication")
+    st.components.v1.html(webauthn_script(), height=200)
     
     if st.button("Login") and not st.session_state.get('bluetooth_selected', False):
         cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
