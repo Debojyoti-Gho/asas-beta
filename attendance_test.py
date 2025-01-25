@@ -1146,7 +1146,7 @@ elif menu == "Student Login":
     handle_webauthn_response()
     
     # Listen for the message from WebAuthn script
-    auth_params = st.query_params()
+    auth_params = st.query_params.get()
     st.write(f"All query parameters: {auth_params}")  # Debugging line
     
     auth_response = auth_params.get("auth_status", [None])[0]
