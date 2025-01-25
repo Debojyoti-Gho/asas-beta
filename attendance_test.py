@@ -1031,25 +1031,22 @@ elif menu == "Student Login":
     webauthn_status = st.text_input("WebAuthn Status", value="pending", type="hidden")
     
     if st.button("Login") and not st.session_state.get('bluetooth_selected', False):
-        if webauthn_status != "success":
-            st.error("Fingerprint authentication is required to proceed.")
-        else:
-            cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
-            user = cursor.fetchone()
-            if user:
-                if user[9] == device_id:  # Match device_id from IP address
-                    location = get_precise_location()
-                    st.write(f"Your current location is: {location}")
-                    if location and "The Dalles" in location:
-                        time.sleep(2)
-                        st.success("user ID and password verification succesfull!")
-                        time.sleep(2)
-                        st.success("you have passed the location check and your location has been verified")
-                        time.sleep(2)
-                        st.success(f"your registered device has been verified successfully")
-                        time.sleep(2)
-                        st.success(f"Login successful! Welcome, {user[2]}")
-                    
+        cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
+        user = cursor.fetchone()
+        if user:
+            if user[9] == device_id:  # Match device_id from IP address
+                location = get_precise_location()
+                st.write(f"Your current location is: {location}")
+                if location and "The Dalles" in location:
+                    time.sleep(2)
+                    st.success("user ID and password verification succesfull!")
+                    time.sleep(2)
+                    st.success("you have passed the location check and your location has been verified")
+                    time.sleep(2)
+                    st.success(f"your registered device has been verified successfully")
+                    time.sleep(2)
+                    st.success(f"Login successful! Welcome, {user[2]}")
+                
                     # Check for Bluetooth signal during login session
                     st.info("just a step away from your dashboard !! Scanning for Bluetooth devices...")
 
