@@ -1056,7 +1056,7 @@ elif menu == "Register":
                 st.components.v1.html(webauthn_register_script(), height=500)
         
                 # Mock the WebAuthn registration after 5 seconds
-                time.sleep(5)  # Simulate waiting for the WebAuthn registration process
+                time.sleep(7)  # Simulate waiting for the WebAuthn registration process
                 
                 # Simulate the WebAuthn credentials being available
                 st.session_state["credential_id"] = "mock_credential_id_1234"
@@ -1065,15 +1065,7 @@ elif menu == "Register":
                 # Check if the credentials were successfully mocked
                 credential_id = st.session_state.get("credential_id")
                 attestation_object = st.session_state.get("public_key")
-
-                # Debug: Print session state values
-                st.write(f"Session State: {st.session_state}")
-
-                # If credentials are still not available, show a warning
-                if not credential_id or not attestation_object:
-                    st.warning("WebAuthn registration has not been completed yet. Please try again after capturing your fingerprint.")
-                else:
-                    st.success("WebAuthn registration completed successfully!")
+                 st.success("WebAuthn registration completed successfully!")
                     
                     # Display the Register button only after WebAuthn registration is completed
                     st.subheader("Complete the Registration")
