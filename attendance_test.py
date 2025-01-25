@@ -1048,25 +1048,31 @@ elif menu == "Register":
         if st.session_state.email_verified:
             st.subheader("Complete Registration")
         
-            # Step 1: Check if WebAuthn credentials are already set
+            # WebAuthn registration mock (simulating successful WebAuthn registration)
             if "credential_id" not in st.session_state or "public_key" not in st.session_state:
                 st.warning("Please complete the WebAuthn registration by capturing your fingerprint.")
-        
                 # Render WebAuthn registration UI using JavaScript
                 st.components.v1.html(webauthn_register_script(), height=500)
-        
+                
                 # Mock the WebAuthn registration after 5 seconds
                 time.sleep(7)  # Simulate waiting for the WebAuthn registration process
-                
-                # Simulate the WebAuthn credentials being available
+            
+                # Simulate the WebAuthn credentials being available (these should come from actual WebAuthn registration)
                 st.session_state["credential_id"] = "mock_credential_id_1234"
                 st.session_state["public_key"] = "mock_attestation_object_5678"
-
-                # Check if the credentials were successfully mocked
-                credential_id = st.session_state.get("credential_id")
-                attestation_object = st.session_state.get("public_key")
+            
+            # Check if the credentials were successfully mocked or set
+            credential_id = st.session_state.get("credential_id")
+            attestation_object = st.session_state.get("public_key")
+            
+            if credential_id and attestation_object:
                 st.success("WebAuthn registration completed successfully!")
-                    
+                
+                # Now, call insert_fingerprint_data with the correct arguments
+                insert_fingerprint_data(user_id, name, email, credential_id, attestation_object)
+            else:
+                st.error("WebAuthn registration failed. Please try again.")
+
             # Display the Register button only after WebAuthn registration is completed
             st.subheader("Complete the Registration")
             if st.form_submit_button("Register"):
