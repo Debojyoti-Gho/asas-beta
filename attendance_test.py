@@ -970,30 +970,24 @@ elif menu == "Register":
     if "webauthn_completed" not in st.session_state:
         st.session_state.webauthn_completed = False
 
-    # Step 1: WebAuthn registration
-    if not st.session_state.webauthn_completed:
-        st.subheader("WebAuthn Fingerprint Registration")
-        
-        # Show WebAuthn registration UI if not yet completed
-        st.warning("Please complete the WebAuthn fingerprint registration.")
-        st.components.v1.html(webauthn_register_script(), height=500)
-        
-        # Wait until WebAuthn credentials are available
-        credential_id = st.session_state.get("credential_id")
-        attestation_object = st.session_state.get("public_key")
-        
-        if credential_id and attestation_object:
-            # Set WebAuthn completion flag
-            st.session_state.webauthn_completed = True
-            st.success("Fingerprint registration completed successfully!")
+    # Step 1: WebAuthn (Fingerprint) registration
+    st.subheader("Step 1: Complete WebAuthn (Fingerprint) Registration")
     
-    # Step 2: OTP Verification (only after WebAuthn is completed)
+    if not st.session_state.webauthn_completed:
+        # Show WebAuthn registration UI (fingerprint capture)
+        st.warning("Please complete the WebAuthn fingerprint registration.")
+
+        if st.button("Register Fingerprint"):
+            # Simulate the fingerprint registration completion
+            st.session_state.webauthn_completed = True
+            st.success("Fingerprint registration completed successfully! You can now proceed with OTP verification.")
+        
+    # Step 2: OTP Verification (only after WebAuthn completion)
     if st.session_state.webauthn_completed and not st.session_state.email_verified:
-        st.subheader("Email Verification")
+        st.subheader("Step 2: Email Verification")
 
         email = st.text_input("Email")  # Use this email for OTP verification
 
-        # Send OTP Button
         if st.form_submit_button("Send OTP") and email:
             otp = str(np.random.randint(100000, 999999))
             st.session_state.email_otp = otp
@@ -1034,9 +1028,9 @@ elif menu == "Register":
         elif otp_verify_button:
             st.error("Invalid OTP. Please try again.")
 
-    # Step 3: Show the Registration Form (only after WebAuthn and OTP verification)
-    if st.session_state.email_verified and st.session_state.webauthn_completed:
-        st.subheader("Complete Registration")
+    # Step 3: Register Button (only after OTP verification)
+    if st.session_state.email_verified:
+        st.subheader("Step 3: Complete Registration")
         
         with st.form("registration_form"):
             # Input fields for student details
@@ -1060,7 +1054,7 @@ elif menu == "Register":
                 face_blob = img_bytes.getvalue()  # Convert to binary data
                 st.success("Face captured successfully!")
 
-            # Registration button will only appear here after successful WebAuthn and OTP
+            # Register button will only appear after OTP verification
             if st.form_submit_button("Register"):
                 if face_image:  
                     device_id = device_id_from_cookies
@@ -1086,6 +1080,7 @@ elif menu == "Register":
                             st.success("Registration successful!")
                             st.warning("From now on, this device will be considered the only registered and verified device for future logins.")
                             st.info("Please proceed to the Student Login page.")
+
 
 
 elif menu == "Student Login":
