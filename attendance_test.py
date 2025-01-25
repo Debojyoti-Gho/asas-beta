@@ -1074,7 +1074,7 @@ elif menu == "Register":
                     st.warning("WebAuthn registration has not been completed yet. Please try again after capturing your fingerprint.")
                 else:
                     st.success("WebAuthn registration completed successfully!")
-            else:
+                    
                 # If WebAuthn credentials are available, show the registration form with the "Register" button
                 with st.form("registration_form"):
                     # Display the Register button only after WebAuthn registration is completed
