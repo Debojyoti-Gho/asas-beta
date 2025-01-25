@@ -935,9 +935,9 @@ def webauthn_script():
     """
     return script
 
-# In Streamlit, add this to handle the postMessage response
+# In Streamlit, modify to use st.query_params instead of st.experimental_get_query_params
 def handle_webauthn_response():
-    auth_response = st.experimental_get_query_params().get("auth_status", [None])[0]
+    auth_response = st.query_params.get("auth_status", [None])[0]
     if auth_response:
         auth_response = json.loads(auth_response)
         if auth_response["status"] == "success":
@@ -1138,14 +1138,15 @@ elif menu == "Student Login":
     
     # Integrate fingerprint authentication script
     auth_successful = False  # Default to False until authentication succeeds
+    # Integrate fingerprint authentication script
     auth_script = webauthn_script()  # Fetch the script
-
-    # Display the WebAuthn script
     st.components.v1.html(auth_script, height=600)
-     # Listen for the response from WebAuthn and update accordingly
+
+    # Listen for the response from WebAuthn and update accordingly
     handle_webauthn_response()
+    
     # Listen for the message from WebAuthn script
-    auth_params = st.experimental_get_query_params()
+    auth_params = st.query_params()
     st.write(f"All query parameters: {auth_params}")  # Debugging line
     
     auth_response = auth_params.get("auth_status", [None])[0]
