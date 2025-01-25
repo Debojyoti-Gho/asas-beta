@@ -1047,7 +1047,7 @@ elif menu == "Register":
         # Registration logic
         if st.session_state.email_verified:
             st.subheader("Complete Registration")
-        
+
             # WebAuthn registration mock (simulating successful WebAuthn registration)
             if "credential_id" not in st.session_state or "public_key" not in st.session_state:
                 st.warning("Please complete the WebAuthn registration by capturing your fingerprint.")
@@ -1074,7 +1074,6 @@ elif menu == "Register":
                 st.error("WebAuthn registration failed. Please try again.")
 
             # Display the Register button only after WebAuthn registration is completed
-            st.subheader("Complete the Registration")
             if st.form_submit_button("Register"):
                 # Ensure the face image is captured
                 if face_image:  
