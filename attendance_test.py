@@ -1105,52 +1105,45 @@ elif menu == "Student Login":
     st.header("Student Login")
     user_id = st.text_input("User ID")
     password = st.text_input("Password", type="password")
-    
+
     # Fetch the device ID (IP address)
     device_id = device_id_from_cookies
     st.success(f"Your unique device ID is: {device_id_from_cookies}")
 
     if not device_id:
-        st.error("Could not fetch device Id. Login cannot proceed.")
+        st.error("Could not fetch device ID. Login cannot proceed.")
     
     if st.button("Login") and not st.session_state.get('bluetooth_selected', False):
+        # Verify user ID and password
         cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
         user = cursor.fetchone()
         if user:
-            # Step 1: Fingerprint Authentication
-            st.subheader("Fingerprint Authentication")
-            st.warning("Please proceed with fingerprint authentication to continue.")
-            # Display the WebAuthn script in Streamlit
-            auth_result = st.components.v1.html(webauthn_script(), height=300)
-            
-            # Add a hidden element to check if the authentication was successful
-            status = st.session_state.get("webauthn_status", "pending")
-            
-            if st.button("Check Authentication"):
-                # Simulate fetching the status from the WebAuthn script
-                if "success" in status:
-                    st.success("Fingerprint authentication successful!")
-                elif "failed" in status:
-                    st.error("Fingerprint authentication failed.")
-                else:
-                    st.warning("Authentication is still pending.")
-            st.success("fingerprint accepted.waiting for server confirmation!!")
-            
+            # Check if device ID matches
             if user[9] == device_id:  # Match device_id from IP address
                 location = get_precise_location()
                 st.write(f"Your current location is: {location}")
                 if location and "The Dalles" in location:
-                    time.sleep(2)
-                    st.success("user ID and password verification succesfull!")
-                    time.sleep(2)
-                    st.success("you have passed the location check and your location has been verified")
-                    time.sleep(2)
-                    st.success(f"your registered device has been verified successfully")
-                    time.sleep(2)
-                    st.success("fingerprint authentication successfull")
-                    time.sleep(2)
-                    st.success(f"Login successful! Welcome, {user[2]}")
-                
+                    st.success("User ID and password verification successful!")
+                    st.success("You have passed the location check and your location has been verified.")
+                    st.success("Your registered device has been verified successfully.")
+
+                    # WebAuthn integration
+                    st.subheader("Fingerprint Authentication")
+                    st.warning("Please proceed with fingerprint authentication to continue!")
+
+                    # Inject WebAuthn script
+                    webauthn_result = st.components.v1.html(webauthn_script(), height=300)
+
+                    # Fetch authentication result
+                    auth_status = st.session_state.get("webauthn_status", "pending")
+                    if auth_status == "pending":
+                        st.warning("Waiting for fingerprint authentication...")
+                        st.stop()
+                    elif auth_status == "failed":
+                        st.error("Fingerprint authentication failed. Login aborted.")
+                        st.stop()
+                    elif auth_status == "success":
+                        st.success("Fingerprint authentication successful. Proceeding with login...")
                     # Check for Bluetooth signal during login session
                     st.info("just a step away from your dashboard !! Scanning for physical verification devices...")
 
