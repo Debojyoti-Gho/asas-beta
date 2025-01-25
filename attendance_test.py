@@ -1150,8 +1150,13 @@ elif menu == "Student Login":
     
     # Integrate fingerprint authentication script
     auth_successful = False  # Default to False until authentication succeeds
-    # Integrate fingerprint authentication script
-    auth_script = webauthn_script()  # Fetch the script
+
+    # Generate the challenge on the server side
+    challenge = generate_challenge()
+    
+    # Fetch the WebAuthn script with the generated challenge
+    auth_script = webauthn_script(challenge)
+    
     st.components.v1.html(auth_script, height=600)
 
     # Listen for the response from WebAuthn and update accordingly
