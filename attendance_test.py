@@ -22,6 +22,7 @@ from streamlit_cookies_manager import EncryptedCookieManager
 from PIL import Image
 import io
 import streamlit.components.v1 as components
+import json
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
@@ -886,67 +887,78 @@ def webauthn_register_script():
     """
     return script
 
+import os
+import base64
 
-# Placeholder for WebAuthn integration script
-def webauthn_script():
+def generate_challenge():
+    # Generate a random challenge (32 bytes for security)
+    challenge = os.urandom(32)
+    return base64.urlsafe_b64encode(challenge).decode('utf-8')  # Base64 encoding for URL compatibility
+
+def webauthn_script(challenge):
     script = """
     <script>
-        async function authenticate() {
-            const publicKey = {
-                challenge: Uint8Array.from("YourServerChallenge", c => c.charCodeAt(0)), // Replace with a secure challenge
+        async function authenticate() {{
+            const publicKey = {{
+                challenge: Uint8Array.from("{challenge}", c => c.charCodeAt(0)),  // Dynamic server-generated challenge
                 timeout: 60000,
                 userVerification: "required"
-            };
+            }};
 
-            try {
-                const credential = await navigator.credentials.get({ publicKey });
+            try {{
+                const credential = await navigator.credentials.get({{ publicKey }});
 
                 // Serialize the credential object (extract only the necessary fields)
-                const credentialData = {
+                const credentialData = {{
                     id: credential.id,
                     rawId: Array.from(new Uint8Array(credential.rawId)),
-                    response: {
+                    response: {{
                         clientDataJSON: Array.from(new Uint8Array(credential.response.clientDataJSON)),
                         authenticatorData: Array.from(new Uint8Array(credential.response.authenticatorData)),
                         signature: Array.from(new Uint8Array(credential.response.signature)),
                         userHandle: credential.response.userHandle ? Array.from(new Uint8Array(credential.response.userHandle)) : null
-                    }
-                };
+                    }}
+                }};
 
                 // Send the serialized data to Streamlit via postMessage
-                window.parent.postMessage({ status: "success", data: credentialData }, "*");
+                window.parent.postMessage({{ status: "success", data: credentialData }}, "*");
                 document.getElementById("webauthn-result").innerHTML = 'Authentication successful! Please wait for the next steps!';
-            } catch (error) {
+            }} catch (error) {{
                 // Send failure status to Streamlit
-                window.parent.postMessage({ status: "failed", error: error.message }, "*");
+                window.parent.postMessage({{ status: "failed", error: error.message }}, "*");
                 document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error.message;
-            }
-        }
+            }}
+        }}
 
         // Listen for messages from Streamlit
-        window.addEventListener("message", (event) => {
-            if (event.data === "authenticate") {
+        window.addEventListener("message", (event) => {{
+            if (event.data === "authenticate") {{
                 authenticate();
-            }
-        });
+            }}
+        }});
     </script>
     <button onclick="authenticate()">Authenticate with Fingerprint</button>
     <p id="webauthn-result"></p>
     """
     return script
 
-# In Streamlit, modify to use st.query_params instead of st.experimental_get_query_params
+
 def handle_webauthn_response():
+    # Check if 'auth_status' is available in query parameters
     auth_response = st.query_params.get("auth_status", [None])[0]
     if auth_response:
-        auth_response = json.loads(auth_response)
-        if auth_response["status"] == "success":
-            st.success("Fingerprint authentication successful!")
-            # You can handle further steps here based on the response
-        elif auth_response["status"] == "failed":
-            st.error(f"Fingerprint authentication failed. Error: {auth_response.get('error', 'Unknown error')}")
-        else:
-            st.warning("Unknown response from authentication.")
+        # Try to load the response as JSON
+        try:
+            auth_response = json.loads(auth_response)
+            if auth_response.get("status") == "success":
+                st.success("Fingerprint authentication successful!")
+                # You can handle further steps here based on the response
+            elif auth_response.get("status") == "failed":
+                st.error(f"Fingerprint authentication failed. Error: {auth_response.get('error', 'Unknown error')}")
+            else:
+                st.warning("Unknown response from authentication.")
+        except Exception as e:
+            st.error(f"Error parsing authentication response: {str(e)}")
     else:
         st.error("No authentication response received.")
         
