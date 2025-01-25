@@ -853,38 +853,42 @@ def insert_fingerprint_data(user_id, name, email, credential_id, attestation_obj
 def webauthn_register_script():
     script = """
         <script>
-        async function registerFingerprint() {
-            try {
-                // Generate WebAuthn registration options
-                const publicKey = {
-                    challenge: Uint8Array.from('someRandomChallenge123', c => c.charCodeAt(0)),
-                    rp: { name: 'WebAuthn Example' },
-                    user: {
-                        id: Uint8Array.from(window.userId, c => c.charCodeAt(0)),
-                        name: window.userEmail,
-                        displayName: window.userName
-                    },
-                    pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-                    authenticatorAttachment: 'platform',
-                    timeout: 60000,
-                    userVerification: 'required'
-                };
+            async function registerFingerprint() {
+        try {
+            const publicKey = {
+                challenge: Uint8Array.from('someRandomChallenge123', c => c.charCodeAt(0)),
+                rp: { name: 'WebAuthn Example' },
+                user: {
+                    id: Uint8Array.from(window.userId, c => c.charCodeAt(0)),
+                    name: window.userEmail,
+                    displayName: window.userName
+                },
+                pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+                authenticatorAttachment: 'platform',
+                timeout: 60000,
+                userVerification: 'required'
+            };
     
-                // Call WebAuthn API to register the credential
-                const credential = await navigator.credentials.create({ publicKey });
+            const credential = await navigator.credentials.create({ publicKey });
     
-                // Prepare the data to send to Python
-                const credentialId = credential.id;
-                const attestationObject = btoa(String.fromCharCode(...new Uint8Array(credential.response.attestationObject)));
-    
-                // Send WebAuthn data to Streamlit
-                window.parent.postMessage({ credentialId, attestationObject }, "*");
-    
-                document.getElementById('registration-result').innerHTML = 'Registration successful!';
-            } catch (error) {
-                document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error.message;
+            if (!credential || !credential.response || !credential.response.attestationObject) {
+                throw new Error("Invalid WebAuthn credential response.");
             }
+    
+            const credentialId = credential.id;
+            const attestationObject = btoa(String.fromCharCode(...new Uint8Array(credential.response.attestationObject)));
+    
+            // Update the URL with WebAuthn data
+            const params = new URLSearchParams(window.location.search);
+            params.set('credentialId', credentialId);
+            params.set('attestationObject', attestationObject);
+            window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+    
+            document.getElementById('registration-result').innerHTML = 'Registration successful!';
+        } catch (error) {
+            document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error.message;
         }
+    }
     </script>
     <button onclick="registerFingerprint()">Register Fingerprint</button>
     <p id="registration-result"></p>
@@ -1014,22 +1018,20 @@ elif menu == "Register":
             # Streamlit component to render WebAuthn registration UI
             st.components.v1.html(webauthn_register_script())
             
-            # Capture WebAuthn data (from JavaScript)
-            web_authn_data = st.experimental_get_query_params().get("webAuthnData", None)
+            # Capture WebAuthn data from the URL query params
+            web_authn_data = st.experimental_get_query_params()
             
-            # Process WebAuthn data if available
-            if web_authn_data:
-                try:
-                    # Decode the WebAuthn data
-                    data = json.loads(web_authn_data[0])
-                    credential_id = data.get("credentialId")
-                    attestation_object = data.get("attestationObject")
+            # Extract the WebAuthn data
+            credential_id = web_authn_data.get("credentialId", [None])[0]
+            attestation_object = web_authn_data.get("attestationObject", [None])[0]
             
-                    # Insert into database
-                    insert_fingerprint_data(user_id, name, email, credential_id, attestation_object)
-            
-                except Exception as e:
-                    st.error(f"Error processing WebAuthn data: {e}")
+            if credential_id and attestation_object:
+                # Insert into database
+                insert_fingerprint_data(user_id, name, email, credential_id, attestation_object)
+                st.success("Fingerprint data saved successfully!")
+            else:
+                st.error("WebAuthn data is missing or invalid.")
+
             
             # Mock the WebAuthn registration after 30 seconds
             time.sleep(30)  # Simulate waiting for the WebAuthn registration process
