@@ -824,14 +824,17 @@ def webauthn_script():
 
             try {
                 const credential = await navigator.credentials.get({ publicKey });
-                document.getElementById("webauthn-result").innerHTML = "Authentication successful: " + JSON.stringify(credential);
+                document.getElementById("webauthn-result").innerHTML = JSON.stringify(credential);
+                document.getElementById("webauthn-status").value = "success";
             } catch (error) {
                 document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error;
+                document.getElementById("webauthn-status").value = "failed";
             }
         }
     </script>
     <button onclick="authenticate()">Authenticate with Fingerprint</button>
     <p id="webauthn-result"></p>
+    <input type="hidden" id="webauthn-status" name="webauthn-status" value="pending">
     """
     return script
 
@@ -1022,9 +1025,15 @@ elif menu == "Student Login":
         
      # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
-    st.components.v1.html(webauthn_script(), height=200)
+    webauthn_html = st.components.v1.html(webauthn_script(), height=300)
+
+    # Placeholder for authentication status
+    webauthn_status = st.text_input("WebAuthn Status", value="pending", type="hidden")
     
     if st.button("Login") and not st.session_state.get('bluetooth_selected', False):
+        if webauthn_status != "success":
+            st.error("Fingerprint authentication is required to proceed.")
+        else:
         cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
         user = cursor.fetchone()
         if user:
