@@ -1136,8 +1136,8 @@ elif menu == "Student Login":
                     # Inject WebAuthn script
                     webauthn_script_html = webauthn_script()
                     auth_container = st.empty()
-                    auth_container.components.v1.html(webauthn_script_html, height=300)
-
+                    auth_container.html(webauthn_script_html)
+                    
                     # Fetch WebAuthn status from session state
                     if "webauthn_status" not in st.session_state:
                         st.session_state.webauthn_status = "pending"
