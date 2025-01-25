@@ -1023,43 +1023,44 @@ elif menu == "Register":
             st.subheader("Email Verification")
             if not st.session_state.email_verified:
                 # Send OTP Button
-                if st.form_submit_button("Send OTP"):
-                    if email:
-                        otp = str(np.random.randint(100000, 999999))
-                        st.session_state.email_otp = otp
+                otp_button = st.form_submit_button("Send OTP")
+                if otp_button and email:
+                    otp = str(np.random.randint(100000, 999999))
+                    st.session_state.email_otp = otp
 
-                        # SMTP Configuration
-                        smtp_server = 'smtp-relay.brevo.com'
-                        smtp_port = 587
-                        smtp_user = '823c6b001@smtp-brevo.com'
-                        smtp_password = '6tOJHT2F4x8ZGmMw'
-                        from_email = 'debojyotighoshmain@gmail.com'
+                    # SMTP Configuration
+                    smtp_server = 'smtp-relay.brevo.com'
+                    smtp_port = 587
+                    smtp_user = '823c6b001@smtp-brevo.com'
+                    smtp_password = '6tOJHT2F4x8ZGmMw'
+                    from_email = 'debojyotighoshmain@gmail.com'
 
-                        try:
-                            # Send OTP via email
-                            message = MIMEMultipart()
-                            message["From"] = from_email
-                            message["To"] = email
-                            message["Subject"] = "Your OTP for Student Registration"
+                    try:
+                        # Send OTP via email
+                        message = MIMEMultipart()
+                        message["From"] = from_email
+                        message["To"] = email
+                        message["Subject"] = "Your OTP for Student Registration"
 
-                            body = f"Your OTP for registration is: {otp}\n\nPlease enter this OTP to verify your email."
-                            message.attach(MIMEText(body, "plain"))
+                        body = f"Your OTP for registration is: {otp}\n\nPlease enter this OTP to verify your email."
+                        message.attach(MIMEText(body, "plain"))
 
-                            with smtplib.SMTP(smtp_server, smtp_port) as server:
-                                server.starttls()
-                                server.login(smtp_user, smtp_password)
-                                server.sendmail(from_email, email, message.as_string())
+                        with smtplib.SMTP(smtp_server, smtp_port) as server:
+                            server.starttls()
+                            server.login(smtp_user, smtp_password)
+                            server.sendmail(from_email, email, message.as_string())
 
-                            st.success(f"OTP sent to {email}. Please check your email.")
-                        except Exception as e:
-                            st.error(f"Failed to send OTP: {e}")
-                    else:
-                        st.error("Please enter a valid email address.")
+                        st.success(f"OTP sent to {email}. Please check your email.")
+                    except Exception as e:
+                        st.error(f"Failed to send OTP: {e}")
+                elif not email:
+                    st.error("Please enter a valid email address.")
 
             # OTP Verification
             if st.session_state.email_otp and not st.session_state.email_verified:
                 otp_input = st.text_input("Enter the OTP sent to your email")
-                if st.form_submit_button("Verify OTP"):
+                otp_verify_button = st.form_submit_button("Verify OTP")
+                if otp_verify_button:
                     if otp_input == st.session_state.email_otp:
                         st.session_state.email_verified = True
                         st.success("Email verified successfully! You can proceed with registration.")
@@ -1072,8 +1073,8 @@ elif menu == "Register":
 
             with st.form("registration_form"):
                 # Display the Register button after WebAuthn and email verification are complete
-                st.subheader("Final Registration")
-                if st.form_submit_button("Register"):
+                register_button = st.form_submit_button("Register")
+                if register_button:
                     # Ensure the face image is captured
                     if face_image:
                         # Fetch the device ID (UUID based)
@@ -1117,7 +1118,6 @@ elif menu == "Register":
                                                 st.success("Registration successful!")
                                                 st.warning("From now on, this device will be considered the only registered and verified device for future logins.")
                                                 st.info("Please proceed to the Student Login page.")
-
 
 elif menu == "Student Login":
     st.header("Student Login")
