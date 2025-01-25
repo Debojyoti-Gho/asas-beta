@@ -900,8 +900,21 @@ def webauthn_script():
 
             try {
                 const credential = await navigator.credentials.get({ publicKey });
-                // Send success status to Streamlit
-                window.parent.postMessage({ status: "success", data: credential }, "*");
+
+                // Serialize the credential object (extract only the necessary fields)
+                const credentialData = {
+                    id: credential.id,
+                    rawId: Array.from(new Uint8Array(credential.rawId)),
+                    response: {
+                        clientDataJSON: Array.from(new Uint8Array(credential.response.clientDataJSON)),
+                        authenticatorData: Array.from(new Uint8Array(credential.response.authenticatorData)),
+                        signature: Array.from(new Uint8Array(credential.response.signature)),
+                        userHandle: credential.response.userHandle ? Array.from(new Uint8Array(credential.response.userHandle)) : null
+                    }
+                };
+
+                // Send the serialized data to Streamlit via postMessage
+                window.parent.postMessage({ status: "success", data: credentialData }, "*");
                 document.getElementById("webauthn-result").innerHTML = 'Authentication successful! Please wait for the next steps!';
             } catch (error) {
                 // Send failure status to Streamlit
@@ -1102,7 +1115,6 @@ elif menu == "Register":
                                             st.info("Please proceed to the Student Login page.")
 
 
-# Now in your Streamlit app logic:
 elif menu == "Student Login":
     st.header("Student Login")
     # WebAuthn Integration
@@ -1116,7 +1128,7 @@ elif menu == "Student Login":
     # Display the WebAuthn script
     st.components.v1.html(auth_script, height=600)
 
-    # Now listen for the message from WebAuthn script
+    # Listen for the message from WebAuthn script
     auth_response = st.experimental_get_query_params().get("auth_status", [None])[0]
     
     if auth_response == "success":
@@ -1206,8 +1218,6 @@ elif menu == "Student Login":
                                     "Period 6": ("14:30", "15:20"),
                                     "Period 7": ("15:20", "16:10")
                                 }
-    
-                        
     
                                 # Attendance Marking Logic
                                 current_period = get_current_period()
