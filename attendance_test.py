@@ -1044,24 +1044,24 @@ elif menu == "Register":
                 else:
                     st.error("Invalid OTP. Please try again.")
 
-        # Registration logic
+        # WebAuthn Registration Step
         if st.session_state.email_verified:
             st.subheader("Complete Registration")
-        
+
             # Step 1: Check if WebAuthn credentials are already set
             if "credential_id" not in st.session_state or "public_key" not in st.session_state:
                 st.warning("Please complete the WebAuthn registration by capturing your fingerprint.")
-        
+
                 # Render WebAuthn registration UI using JavaScript
                 st.components.v1.html(webauthn_register_script(), height=500)
-        
+
                 # Wait until the WebAuthn credentials are available
                 credential_id = st.session_state.get("credential_id")
                 attestation_object = st.session_state.get("public_key")
-        
+
                 # Debug: Print session state values
                 st.write(f"Session State: {st.session_state}")
-        
+
                 # If credentials are still not available, show a warning
                 if not credential_id or not attestation_object:
                     st.warning("WebAuthn registration has not been completed yet. Please try again after capturing your fingerprint.")
@@ -1074,17 +1074,17 @@ elif menu == "Register":
                     st.subheader("Complete the Registration")
                     if st.form_submit_button("Register"):
                         # Ensure the face image is captured
-                        if face_image:  
+                        if face_image:
                             # Fetch the device ID (UUID based)
                             device_id = device_id_from_cookies
                             st.success(f"Your unique device ID is: {device_id_from_cookies}")
-        
+
                             if not device_id:
                                 st.error("Could not fetch device ID, registration cannot proceed.")
                             else:
                                 # Save WebAuthn credentials in the database
                                 insert_fingerprint_data(user_id, name, email, credential_id, attestation_object)
-        
+
                                 # Check if the device ID is already registered
                                 cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
                                 if cursor.fetchone():
@@ -1118,9 +1118,6 @@ elif menu == "Register":
                                                     st.info("Please proceed to the Student Login page.")
 
 
-
-
-    
 
 elif menu == "Student Login":
     st.header("Student Login")
