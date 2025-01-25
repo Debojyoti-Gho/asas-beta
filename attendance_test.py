@@ -895,26 +895,27 @@ def generate_challenge():
     challenge = os.urandom(32)
     return base64.urlsafe_b64encode(challenge).decode('utf-8')  # Base64 encoding for URL compatibility
 
-def webauthn_script(challenge):
+# Placeholder for WebAuthn integration script
+def webauthn_script():
     script = """
     <script>
-        async function authenticate() {{
-            const publicKey = {{
-                challenge: Uint8Array.from(atob("{challenge}"), c => c.charCodeAt(0)), // Secure challenge
+        async function authenticate() {
+            const publicKey = {
+                challenge: Uint8Array.from("YourServerChallenge", c => c.charCodeAt(0)), // Replace with a secure challenge
                 timeout: 60000,
                 userVerification: "required"
-            }};
+            };
 
-            try {{
-                const credential = await navigator.credentials.get({{ publicKey }});
+            try {
+                const credential = await navigator.credentials.get({ publicKey });
                 document.getElementById("webauthn-result").innerHTML = JSON.stringify(credential);
-                document.getElementById("webauthn-result").innerHTML += '<br>Registration successful! Please wait for the next steps!';
+                document.getElementById("webauthn-result").innerHTML = 'Registration successful! please wait for the next steps!';
                 document.getElementById("webauthn-status").value = "success";
-            }} catch (error) {{
+            } catch (error) {
                 document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error;
                 document.getElementById("webauthn-status").value = "failed";
-            }}
-        }}
+            }
+        }
     </script>
     <button onclick="authenticate()">Authenticate with Fingerprint</button>
     <p id="webauthn-result"></p>
@@ -1104,25 +1105,17 @@ elif menu == "Register":
 
 elif menu == "Student Login":
     st.header("Student Login")
-    # WebAuthn Integration in Streamlit
+    # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
-    st.warning("Please proceed with fingerprint authentication first to continue with login!")
+    st.warning("please procced with the fingerprint authentication first to continue with login !") 
     
-    # Generate a challenge
-    challenge = generate_challenge()
-    
-    # Integrate fingerprint authentication script with the generated challenge
-    auth_script = webauthn_script(challenge)
-    
-    # Embed the WebAuthn script into the Streamlit app
-    auth_successful = st.components.v1.html(auth_script)  # This will render the authentication UI
-    time.sleep(10)
-    # Add flow control based on authentication success
+    # Integrate fingerprint authentication script
+    auth_successful = st.components.v1.html(webauthn_script())  # Replace with actual WebAuthn logic
+    time.sleep(20)
     if not auth_successful:
         st.error("Fingerprint authentication failed. Please try again.")
-        st.stop()  # Stop execution until authentication is successful
-    else:
-        st.success("Fingerprint accepted. Waiting for server confirmation!")
+        st.stop()  # Stop execution until authentication is successful 
+    st.success("fingerprint accepted.waiting for server confirmation!!")
     
     user_id = st.text_input("User ID")
     password = st.text_input("Password", type="password")
