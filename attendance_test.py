@@ -1146,7 +1146,7 @@ elif menu == "Student Login":
             if user[9] == device_id:  # Match device_id from IP address
                 location = get_precise_location()
                 st.write(f"Your current location is: {location}")
-                if location and "Kolkata" in location:
+                if location and "The Dalles" in location:
                     time.sleep(2)
                     st.success("user ID and password verification succesfull!")
                     time.sleep(2)
