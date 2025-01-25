@@ -900,23 +900,25 @@ def webauthn_script():
 
             try {
                 const credential = await navigator.credentials.get({ publicKey });
-                document.getElementById("webauthn-result").innerHTML = 'Authentication successful! Please wait for the next steps.';
-                document.getElementById("webauthn-status").value = "success";
-
-                // Notify Streamlit about success
-                window.parent.postMessage({ status: "success" }, "*");
+                // Send success status to Streamlit
+                window.parent.postMessage({ status: "success", data: credential }, "*");
+                document.getElementById("webauthn-result").innerHTML = 'Registration successful! Please wait for the next steps!';
             } catch (error) {
-                document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error;
-                document.getElementById("webauthn-status").value = "failed";
-
-                // Notify Streamlit about failure
-                window.parent.postMessage({ status: "failed" }, "*");
+                // Send failure status to Streamlit
+                window.parent.postMessage({ status: "failed", error: error.message }, "*");
+                document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error.message;
             }
         }
+
+        // Listen for messages from Streamlit
+        window.addEventListener("message", (event) => {
+            if (event.data === "authenticate") {
+                authenticate();
+            }
+        });
     </script>
     <button onclick="authenticate()">Authenticate with Fingerprint</button>
     <p id="webauthn-result"></p>
-    <input type="hidden" id="webauthn-status" name="webauthn-status" value="pending">
     """
     return script
 
@@ -1112,7 +1114,7 @@ elif menu == "Student Login":
 
     if not device_id:
         st.error("Could not fetch device ID. Login cannot proceed.")
-    
+
     if st.button("Login") and not st.session_state.get('bluetooth_selected', False):
         # Verify user ID and password
         cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
@@ -1127,15 +1129,20 @@ elif menu == "Student Login":
                     st.success("You have passed the location check and your location has been verified.")
                     st.success("Your registered device has been verified successfully.")
 
-                    # WebAuthn integration
+                    # **WebAuthn Integration**
                     st.subheader("Fingerprint Authentication")
                     st.warning("Please proceed with fingerprint authentication to continue!")
 
                     # Inject WebAuthn script
-                    webauthn_result = st.components.v1.html(webauthn_script(), height=300)
+                    webauthn_script_html = webauthn_script()
+                    auth_container = st.empty()
+                    auth_container.components.v1.html(webauthn_script_html, height=300)
 
-                    # Fetch authentication result
-                    auth_status = st.session_state.get("webauthn_status", "pending")
+                    # Fetch WebAuthn status from session state
+                    if "webauthn_status" not in st.session_state:
+                        st.session_state.webauthn_status = "pending"
+
+                    auth_status = st.session_state.webauthn_status
                     if auth_status == "pending":
                         st.warning("Waiting for fingerprint authentication...")
                         st.stop()
@@ -1144,121 +1151,124 @@ elif menu == "Student Login":
                         st.stop()
                     elif auth_status == "success":
                         st.success("Fingerprint authentication successful. Proceeding with login...")
-                    # Check for Bluetooth signal during login session
-                    st.info("just a step away from your dashboard !! Scanning for physical verification devices...")
+                        auth_container.empty()
 
-                    # Replace the original BLE signal detection logic
-                    ble_signal = get_ble_signal_from_api()
-                    time.sleep(3)
-                    st.success("you are in your classroom, have a nice study time! We will mark your attendance shortly!")
-                    if ble_signal:
-                        if isinstance(ble_signal, dict) and "status" in ble_signal:
-                            # Handle API status response (e.g., Bluetooth is off)
-                            st.warning(ble_signal["status"])
-                        else:
-                            st.info("verification devices found. Listing all available devices...")
-                            
-                            # Display all available Bluetooth devices
-                            st.write("Available physical verification devices:")
-                            for device_name, mac_address in ble_signal.items():
-                                st.write(f"Device Name: {mac_address}, MAC Address: {device_name}")
-                    
-                            # Automatically check if the required Bluetooth device is in the list
-                            required_device_name = "76:6B:E1:0F:92:09"
-                            required_mac_id = "INSTITUTE BLE VERIFY SIGNA"  # Replace with the actual MAC address if known
-                    
-                            found_device = False
-                            for device_name, mac_address in ble_signal.items():
-                                if required_device_name in device_name or mac_address == required_mac_id:
-                                    st.success(f"Required verifying device found! MAC Address: {device_name}, Device Name: {mac_address}")
-                                    found_device = True
-                                    break
-                    
-                            if found_device:
-                                # Save user login to session state
-                                st.session_state.logged_in = True
-                                st.session_state.user_id = user_id  # Replace with actual user ID if available
-                                st.session_state.bluetooth_selected = True  # Mark Bluetooth as selected
+                        # Continue with BLE signal detection and attendance logic
+                        st.info("Just a step away from your dashboard! Scanning for physical verification devices...")
 
+                        # Replace the original BLE signal detection logic
+                        ble_signal = get_ble_signal_from_api()
+                        time.sleep(3)
+                        st.success("You are in your classroom, have a nice study time! We will mark your attendance shortly!")
+                        if ble_signal:
+                            if isinstance(ble_signal, dict) and "status" in ble_signal:
+                                # Handle API status response (e.g., Bluetooth is off)
+                                st.warning(ble_signal["status"])
                             else:
-                                st.error("Required verifying device not found. Login failed.")
+                                st.info("Verification devices found. Listing all available devices...")
+                                
+                                # Display all available Bluetooth devices
+                                st.write("Available physical verification devices:")
+                                for device_name, mac_address in ble_signal.items():
+                                    st.write(f"Device Name: {mac_address}, MAC Address: {device_name}")
+                        
+                                # Automatically check if the required Bluetooth device is in the list
+                                required_device_name = "76:6B:E1:0F:92:09"
+                                required_mac_id = "INSTITUTE BLE VERIFY SIGNA"  # Replace with the actual MAC address if known
+                        
+                                found_device = False
+                                for device_name, mac_address in ble_signal.items():
+                                    if required_device_name in device_name or mac_address == required_mac_id:
+                                        st.success(f"Required verifying device found! MAC Address: {device_name}, Device Name: {mac_address}")
+                                        found_device = True
+                                        break
+                        
+                                if found_device:
+                                    # Save user login to session state
+                                    st.session_state.logged_in = True
+                                    st.session_state.user_id = user_id  # Replace with actual user ID if available
+                                    st.session_state.bluetooth_selected = True  # Mark Bluetooth as selected
 
-                            # Define constant for period times
-                            PERIOD_TIMES = {
-                                "Period 1": ("09:30", "10:20"),
-                                "Period 2": ("10:20", "11:10"),
-                                "Period 3": ("11:10", "12:00"),
-                                "Period 4": ("12:00", "12:50"),
-                                "Period 5": ("13:40", "14:30"),
-                                "Period 6": ("14:30", "15:20"),
-                                "Period 7": ("15:20", "16:10")
-                            }
 
-                    
-
-                            # Attendance Marking Logic
-                            current_period = get_current_period()
-
-                            if current_period:
-                                st.success(f"Attendance for {current_period} is being marked automatically. Waiting for confirmation from the server!")
-
-                                current_day = datetime.now().strftime("%A")  # Get current weekday name
-
-                                try:
-                                    # Fetch timetable details
-                                    cursor.execute("""
-                                        SELECT subject, teacher FROM timetable 
-                                        WHERE day = ? AND period = ?
-                                    """, (current_day, current_period))
-                                    period_details = cursor.fetchone()
-
-                                    if period_details:
-                                        subject, teacher = period_details
-                                        st.info(f"Subject: {subject} | Teacher: {teacher}")
-
-                                        # Check for existing attendance record
+                                else:
+                                    st.error("Required verifying device not found. Login failed.")
+    
+                                # Define constant for period times
+                                PERIOD_TIMES = {
+                                    "Period 1": ("09:30", "10:20"),
+                                    "Period 2": ("10:20", "11:10"),
+                                    "Period 3": ("11:10", "12:00"),
+                                    "Period 4": ("12:00", "12:50"),
+                                    "Period 5": ("13:40", "14:30"),
+                                    "Period 6": ("14:30", "15:20"),
+                                    "Period 7": ("15:20", "16:10")
+                                }
+    
+                        
+    
+                                # Attendance Marking Logic
+                                current_period = get_current_period()
+    
+                                if current_period:
+                                    st.success(f"Attendance for {current_period} is being marked automatically. Waiting for confirmation from the server!")
+    
+                                    current_day = datetime.now().strftime("%A")  # Get current weekday name
+    
+                                    try:
+                                        # Fetch timetable details
                                         cursor.execute("""
-                                            SELECT * FROM attendance WHERE student_id = ? AND date = ? AND day = ?
-                                        """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
-                                        existing_record = cursor.fetchone()
-
-                                        period_column = f"period_{list(PERIOD_TIMES.keys()).index(current_period) + 1}"
-
-                                        if existing_record:
-                                            # Update attendance
-                                            cursor.execute(f"""
-                                                UPDATE attendance 
-                                                SET {period_column} = 1, subject = ?, teacher = ?
-                                                WHERE student_id = ? AND date = ? AND day = ?
-                                            """, (subject, teacher, user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
-                                            conn.commit()
-                                            st.success(f"Attendance updated for {current_period} ({subject}) by {teacher} on {current_day}!")
-                                        else:
-                                            # Prepare attendance data
-                                            attendance_data = {period: 0 for period in PERIOD_TIMES.keys()}
-                                            attendance_data[current_period] = 1
-
-                                            # Insert new attendance record
+                                            SELECT subject, teacher FROM timetable 
+                                            WHERE day = ? AND period = ?
+                                        """, (current_day, current_period))
+                                        period_details = cursor.fetchone()
+    
+                                        if period_details:
+                                            subject, teacher = period_details
+                                            st.info(f"Subject: {subject} | Teacher: {teacher}")
+    
+                                            # Check for existing attendance record
                                             cursor.execute("""
-                                                INSERT INTO attendance (student_id, date, day, period_1, period_2, period_3, period_4, period_5, period_6, period_7, subject, teacher)
-                                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                            """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day, *attendance_data.values(), subject, teacher))
-                                            conn.commit()
-                                            st.success(f"Attendance for {current_period} ({subject}) by {teacher} marked successfully for {current_day}!")
-                                    else:
-                                        st.error(f"No timetable entry found for {current_period} on {current_day}.")
-                                except Exception as e:
-                                    st.error(f"An error occurred: {e}")
-                            else:
-                                st.warning("No active class period at the moment.")
+                                                SELECT * FROM attendance WHERE student_id = ? AND date = ? AND day = ?
+                                            """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
+                                            existing_record = cursor.fetchone()
+    
+                                            period_column = f"period_{list(PERIOD_TIMES.keys()).index(current_period) + 1}"
+    
+                                            if existing_record:
+                                                # Update attendance
+                                                cursor.execute(f"""
+                                                    UPDATE attendance 
+                                                    SET {period_column} = 1, subject = ?, teacher = ?
+                                                    WHERE student_id = ? AND date = ? AND day = ?
+                                                """, (subject, teacher, user_id, datetime.now().strftime('%Y-%m-%d'), current_day))
+                                                conn.commit()
+                                                st.success(f"Attendance updated for {current_period} ({subject}) by {teacher} on {current_day}!")
+                                            else:
+                                                # Prepare attendance data
+                                                attendance_data = {period: 0 for period in PERIOD_TIMES.keys()}
+                                                attendance_data[current_period] = 1
+    
+                                                # Insert new attendance record
+                                                cursor.execute("""
+                                                    INSERT INTO attendance (student_id, date, day, period_1, period_2, period_3, period_4, period_5, period_6, period_7, subject, teacher)
+                                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                                """, (user_id, datetime.now().strftime('%Y-%m-%d'), current_day, *attendance_data.values(), subject, teacher))
+                                                conn.commit()
+                                                st.success(f"Attendance for {current_period} ({subject}) by {teacher} marked successfully for {current_day}!")
+                                        else:
+                                            st.error(f"No timetable entry found for {current_period} on {current_day}.")
+                                    except Exception as e:
+                                        st.error(f"An error occurred: {e}")
+                                else:
+                                    st.warning("No active class period at the moment.")
+                        else:
+                            st.error("No verifying devices found. Maybe you are not in your institution")
                     else:
-                        st.error("No verifying devices found. Maybe you are not in your institution")
+                        st.error("You must be in Kolkata to login.")
                 else:
-                    st.error("You must be in Kolkata to login.")
+                    st.error("Device ID does not match.Please login from your registered device.")
             else:
-                st.error("Device ID does not match.Please login from your registered device.")
-        else:
-            st.error("Invalid user ID or password.please try again!")
+                st.error("Invalid user ID or password.please try again!")
 
     # Display student attendance search form
     if st.session_state.get('logged_in', False):
