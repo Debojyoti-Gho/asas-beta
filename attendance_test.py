@@ -1130,7 +1130,8 @@ elif menu == "Student Login":
 
     # Listen for the message from WebAuthn script
     auth_response = st.experimental_get_query_params().get("auth_status", [None])[0]
-    
+    st.write(f"auth_response: {auth_response}")  # Debugging line
+
     if auth_response == "success":
         st.success("Fingerprint accepted. Waiting for server confirmation!")
         auth_successful = True
@@ -1174,14 +1175,15 @@ elif menu == "Student Login":
     
                         # Replace the original BLE signal detection logic
                         ble_signal = get_ble_signal_from_api()
+                        st.write(f"Bluetooth Signal: {ble_signal}")  # Debugging line
                         time.sleep(3)
-                        st.success("you are in your classroom, have a nice study time! We will mark your attendance shortly!")
+                        st.success("You are in your classroom, have a nice study time! We will mark your attendance shortly!")
                         if ble_signal:
                             if isinstance(ble_signal, dict) and "status" in ble_signal:
                                 # Handle API status response (e.g., Bluetooth is off)
                                 st.warning(ble_signal["status"])
                             else:
-                                st.info("verification devices found. Listing all available devices...")
+                                st.info("Verification devices found. Listing all available devices...")
                                 
                                 # Display all available Bluetooth devices
                                 st.write("Available physical verification devices:")
@@ -1279,10 +1281,11 @@ elif menu == "Student Login":
                     else:
                         st.error("You must be in Kolkata to login.")
                 else:
-                    st.error("Device ID does not match.Please login from your registered device.")
+                    st.error("Device ID does not match. Please login from your registered device.")
             else:
-                st.error("Invalid user ID or password.please try again!")
+                st.error("Invalid user ID or password. Please try again!")
 
+    
     # Display student attendance search form
     if st.session_state.get('logged_in', False):
         st.subheader("Search Attendance Records")
