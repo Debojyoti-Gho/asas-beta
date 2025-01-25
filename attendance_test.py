@@ -890,78 +890,41 @@ def webauthn_register_script():
 import os
 import base64
 
+import os
+import base64
+
 def generate_challenge():
     # Generate a random challenge (32 bytes for security)
     challenge = os.urandom(32)
     return base64.urlsafe_b64encode(challenge).decode('utf-8')  # Base64 encoding for URL compatibility
 
 def webauthn_script(challenge):
-    script = f"""
+    script = """
     <script>
-        // Declare the authenticate function in the global scope
         async function authenticate() {{
             const publicKey = {{
-                challenge: Uint8Array.from("{challenge}", c => c.charCodeAt(0)),  // Dynamic server-generated challenge
+                challenge: Uint8Array.from(atob("{challenge}"), c => c.charCodeAt(0)), // Secure challenge
                 timeout: 60000,
                 userVerification: "required"
             }};
 
             try {{
                 const credential = await navigator.credentials.get({{ publicKey }});
-
-                // Serialize the credential object (extract only the necessary fields)
-                const credentialData = {{
-                    id: credential.id,
-                    rawId: Array.from(new Uint8Array(credential.rawId)),
-                    response: {{
-                        clientDataJSON: Array.from(new Uint8Array(credential.response.clientDataJSON)),
-                        authenticatorData: Array.from(new Uint8Array(credential.response.authenticatorData)),
-                        signature: Array.from(new Uint8Array(credential.response.signature)),
-                        userHandle: credential.response.userHandle ? Array.from(new Uint8Array(credential.response.userHandle)) : null
-                    }}
-                }};
-
-                // Send the serialized data to Streamlit via postMessage
-                window.parent.postMessage({{ status: "success", data: credentialData }}, "*");
-                document.getElementById("webauthn-result").innerHTML = 'Authentication successful! Please wait for the next steps!';
+                document.getElementById("webauthn-result").innerHTML = JSON.stringify(credential);
+                document.getElementById("webauthn-result").innerHTML += '<br>Registration successful! Please wait for the next steps!';
+                document.getElementById("webauthn-status").value = "success";
             }} catch (error) {{
-                // Send failure status to Streamlit
-                window.parent.postMessage({{ status: "failed", error: error.message }}, "*");
-                document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error.message;
+                document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error;
+                document.getElementById("webauthn-status").value = "failed";
             }}
         }}
-
-        // Listen for messages from Streamlit
-        window.addEventListener("message", (event) => {{
-            if (event.data === "authenticate") {{
-                authenticate();
-            }}
-        }});
     </script>
     <button onclick="authenticate()">Authenticate with Fingerprint</button>
     <p id="webauthn-result"></p>
+    <input type="hidden" id="webauthn-status" name="webauthn-status" value="pending">
     """
     return script
 
-def handle_webauthn_response():
-    # Check if 'auth_status' is available in query parameters
-    auth_response = st.query_params.get("auth_status", [None])[0]
-    if auth_response:
-        # Try to load the response as JSON
-        try:
-            auth_response = json.loads(auth_response)
-            if auth_response.get("status") == "success":
-                st.success("Fingerprint authentication successful!")
-                # You can handle further steps here based on the response
-            elif auth_response.get("status") == "failed":
-                st.error(f"Fingerprint authentication failed. Error: {auth_response.get('error', 'Unknown error')}")
-            else:
-                st.warning("Unknown response from authentication.")
-        except Exception as e:
-            st.error(f"Error parsing authentication response: {str(e)}")
-    else:
-        st.error("No authentication response received.")
-        
 # Streamlit UI
 st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
@@ -1144,17 +1107,25 @@ elif menu == "Register":
 
 elif menu == "Student Login":
     st.header("Student Login")
-    # WebAuthn Integration
+    # WebAuthn Integration in Streamlit
     st.subheader("Fingerprint Authentication")
-    st.warning("please procced with the fingerprint authentication first to continue with login !") 
+    st.warning("Please proceed with fingerprint authentication first to continue with login!")
     
-    # Integrate fingerprint authentication script
-    auth_successful = st.components.v1.html(webauthn_script())  # Replace with actual WebAuthn logic
-
+    # Generate a challenge
+    challenge = generate_challenge()
+    
+    # Integrate fingerprint authentication script with the generated challenge
+    auth_script = webauthn_script(challenge)
+    
+    # Embed the WebAuthn script into the Streamlit app
+    auth_successful = st.components.v1.html(auth_script)  # This will render the authentication UI
+    
+    # Add flow control based on authentication success
     if not auth_successful:
         st.error("Fingerprint authentication failed. Please try again.")
-        st.stop()  # Stop execution until authentication is successful 
-    st.success("fingerprint accepted.waiting for server confirmation!!")
+        st.stop()  # Stop execution until authentication is successful
+    else:
+        st.success("Fingerprint accepted. Waiting for server confirmation!")
     
     user_id = st.text_input("User ID")
     password = st.text_input("Password", type="password")
