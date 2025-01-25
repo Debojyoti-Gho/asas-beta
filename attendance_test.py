@@ -875,7 +875,7 @@ def webauthn_register_script():
                 localStorage.setItem('credentialId', credential.id);
                 localStorage.setItem('publicKey', JSON.stringify(credential.response.attestationObject));
 
-                document.getElementById('registration-result').innerHTML = 'Registration successful!';
+                document.getElementById('registration-result').innerHTML = 'Registration successful! please wait for the next steps!';
             } catch (error) {
                 document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error;
             }
@@ -901,6 +901,7 @@ def webauthn_script():
             try {
                 const credential = await navigator.credentials.get({ publicKey });
                 document.getElementById("webauthn-result").innerHTML = JSON.stringify(credential);
+                document.getElementById("webauthn-result").innerHTML = 'Registration successful! please wait for the next steps!';
                 document.getElementById("webauthn-status").value = "success";
             } catch (error) {
                 document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error;
@@ -1096,6 +1097,12 @@ elif menu == "Register":
 
 elif menu == "Student Login":
     st.header("Student Login")
+    # WebAuthn Integration
+    st.subheader("Fingerprint Authentication")
+    st.warning("please procced with the fingerprint authentication first to continue with login !") 
+    st.components.v1.html(webauthn_script())
+    time.sleep(10)  
+    
     user_id = st.text_input("User ID")
     password = st.text_input("Password", type="password")
     
@@ -1105,11 +1112,6 @@ elif menu == "Student Login":
 
     if not device_id:
         st.error("Could not fetch device Id. Login cannot proceed.")
-        
-    # WebAuthn Integration
-    st.subheader("Fingerprint Authentication")
-    st.components.v1.html(webauthn_script())
-    time.sleep(10)  
     
     if st.button("Login") and not st.session_state.get('bluetooth_selected', False):
         cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
