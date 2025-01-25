@@ -840,7 +840,7 @@ def webauthn_register_script():
                 localStorage.setItem('credentialId', credential.id);
                 localStorage.setItem('publicKey', JSON.stringify(credential.response.attestationObject));
 
-                document.getElementById('registration-result').innerHTML = 'Registration successful!';
+                document.getElementById('registration-result').innerHTML = 'Registration successful! please wait for the next steps!';
             } catch (error) {
                 document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error;
             }
@@ -865,11 +865,17 @@ def webauthn_script():
 
             try {
                 const credential = await navigator.credentials.get({ publicKey });
-                document.getElementById("webauthn-result").innerHTML = JSON.stringify(credential);
+                document.getElementById("webauthn-result").innerHTML = 'Authentication successful! Please wait for the next steps.';
                 document.getElementById("webauthn-status").value = "success";
+
+                // Notify Streamlit about success
+                window.parent.postMessage({ status: "success" }, "*");
             } catch (error) {
                 document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error;
                 document.getElementById("webauthn-status").value = "failed";
+
+                // Notify Streamlit about failure
+                window.parent.postMessage({ status: "failed" }, "*");
             }
         }
     </script>
