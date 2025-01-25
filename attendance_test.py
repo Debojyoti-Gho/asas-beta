@@ -812,48 +812,44 @@ def get_current_period():
 
     return None
 
-# JavaScript code for WebAuthn registration
+# WebAuthn Registration Script (JavaScript) for capturing fingerprint data
 def webauthn_register_script():
     script = """
     <script>
-        async function registerPasskey() {
+        async function registerFingerprint() {
             try {
-                // WebAuthn registration options
+                // Generate WebAuthn registration options
                 const publicKey = {
-                    challenge: Uint8Array.from('randomChallenge123', c => c.charCodeAt(0)),
-                    rp: {
-                        name: "My Website"
-                    },
+                    challenge: Uint8Array.from('someRandomChallenge123', c => c.charCodeAt(0)),
+                    rp: { name: 'WebAuthn Example' },
                     user: {
-                        id: new TextEncoder().encode('user123'),  // Example user ID, replace with actual
-                        name: "user@example.com",  // Example email, replace with actual
-                        displayName: "Example User"
+                        id: new Uint8Array(16),
+                        name: 'user@example.com',
+                        displayName: 'Example User'
                     },
-                    pubKeyCredParams: [
-                        { type: "public-key", alg: -7 }  // ECDSA with SHA-256
-                    ],
+                    pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+                    authenticatorAttachment: 'platform',
                     timeout: 60000,
-                    userVerification: "required"
+                    userVerification: 'required'
                 };
 
-                // Create WebAuthn credential
+                // Call WebAuthn API to register the credential
                 const credential = await navigator.credentials.create({ publicKey });
 
-                // Store the credential ID and attestation object for future use
+                // Store the registration response (public key and credential ID)
                 localStorage.setItem('credentialId', credential.id);
-                localStorage.setItem('attestationObject', JSON.stringify(credential.response.attestationObject));
+                localStorage.setItem('publicKey', JSON.stringify(credential.response.attestationObject));
 
-                document.getElementById('registration-result').innerHTML = 'Passkey registered successfully!';
+                document.getElementById('registration-result').innerHTML = 'Registration successful!';
             } catch (error) {
                 document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error;
             }
         }
     </script>
-    <button onclick="registerPasskey()">Register Passkey</button>
+    <button onclick="registerFingerprint()">Register Fingerprint</button>
     <p id="registration-result"></p>
     """
     return script
-
 
 # Placeholder for WebAuthn integration script
 def webauthn_script():
