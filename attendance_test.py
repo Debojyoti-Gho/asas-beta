@@ -994,57 +994,6 @@ elif menu == "Student Login":
 
     if not device_id:
         st.error("Could not fetch device Id. Login cannot proceed.")
-
-    # Include WebAuthn JavaScript for fingerprint authentication
-    def inject_webauthn_script():
-        webauthn_script = """
-        <script>
-        async function authenticate() {
-            const publicKey = {
-                challenge: new Uint8Array([/* Server-provided challenge */]).buffer,
-                allowCredentials: [
-                    {
-                        id: new Uint8Array([/* Server-provided credential ID */]).buffer,
-                        type: "public-key"
-                    }
-                ],
-                timeout: 60000,
-                userVerification: "required"
-            };
-            try {
-                const credential = await navigator.credentials.get({ publicKey });
-                const response = {
-                    id: credential.id,
-                    rawId: Array.from(new Uint8Array(credential.rawId)),
-                    type: credential.type,
-                    response: {
-                        authenticatorData: Array.from(new Uint8Array(credential.response.authenticatorData)),
-                        clientDataJSON: Array.from(new Uint8Array(credential.response.clientDataJSON)),
-                        signature: Array.from(new Uint8Array(credential.response.signature))
-                    }
-                };
-                document.getElementById("auth-result").value = JSON.stringify(response);
-                document.getElementById("auth-form").submit();
-            } catch (err) {
-                console.error("Authentication failed:", err);
-                alert("Authentication failed. Please try again.");
-            }
-        }
-        </script>
-        <form id="auth-form" action="" method="post">
-            <input type="hidden" id="auth-result" name="auth-result" />
-            <button type="button" onclick="authenticate()">Authenticate with Fingerprint</button>
-        </form>
-        """
-        st.markdown(webauthn_script, unsafe_allow_html=True)
-
-    inject_webauthn_script()
-
-    # Capture the result of the WebAuthn process
-    auth_result = st.experimental_get_query_params().get("auth-result", [None])[0]
-
-    if auth_result:
-        st.success("Fingerprint authentication successful!")
     
     if st.button("Login") and not st.session_state.get('bluetooth_selected', False):
         cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
