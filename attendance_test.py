@@ -23,7 +23,7 @@ from PIL import Image
 import io
 import streamlit.components.v1 as components
 import json
-from streamlit_js_eval import streamlit_js
+from streamlit_js_eval import streamlit_js_eval
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
