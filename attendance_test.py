@@ -1067,12 +1067,12 @@ elif menu == "Register":
                     st.warning("WebAuthn registration has not been completed yet. Please try again after capturing your fingerprint.")
                 else:
                     st.success("WebAuthn registration completed successfully!")
-        
+                    
             # Step 2: Registration button after WebAuthn credentials are available
-            credential_id = st.session_state.get("credential_id")
-            attestation_object = st.session_state.get("public_key")
+            if "credential_id" in st.session_state and "public_key" in st.session_state:
+                credential_id = st.session_state["credential_id"]
+                attestation_object = st.session_state["public_key"]
         
-            if credential_id and attestation_object:
                 with st.form("registration_form"):
                     # Display the Register button only after WebAuthn registration is completed
                     if st.form_submit_button("Register"):
@@ -1120,7 +1120,9 @@ elif menu == "Register":
                                                     st.warning("From now on, this device will be considered the only registered and verified device for future logins.")
                                                     st.info("Please proceed to the Student Login page.")
             else:
-                st.warning("WebAuthn registration is not completed yet. Please try again after capturing your fingerprint.")
+                # WebAuthn credentials are not available yet, prompt the user
+                st.warning("WebAuthn registration is not completed yet. Please complete the fingerprint capture first.")
+
 
 
     
