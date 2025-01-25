@@ -1084,26 +1084,29 @@ elif menu == "Register":
                     if not device_id:
                         st.error("Could not fetch device ID, registration cannot proceed.")
                     else:
-                        # Save WebAuthn credentials in the database
-                        insert_fingerprint_data(user_id, name, email, credential_id, attestation_object)
+                        # Check if the user_id already exists in the students table
+                        cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
+                        existing_user = cursor.fetchone()
 
-                        # Check if the device ID is already registered
-                        cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
-                        if cursor.fetchone():
-                            st.error("This device has already been used for registration. Only one registration is allowed per device. Please refresh and start again!")
+                        if existing_user:
+                            st.error(f"The user ID {user_id} is already registered. Please use a different user ID.")
                         else:
-                            # Check for duplicate entries in the database for email, roll, user ID, and enrollment number
-                            cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
+                            # Save WebAuthn credentials in the database
+                            insert_fingerprint_data(user_id, name, email, credential_id, attestation_object)
+
+                            # Check if the device ID is already registered
+                            cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
                             if cursor.fetchone():
-                                st.error("This email is already registered. Please refresh and start again!")
+                                st.error("This device has already been used for registration. Only one registration is allowed per device. Please refresh and start again!")
                             else:
-                                cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
+                                # Check for duplicate entries in the database for email, roll, user ID, and enrollment number
+                                cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
                                 if cursor.fetchone():
-                                    st.error("This roll number is already registered. Please refresh and start again!")
+                                    st.error("This email is already registered. Please refresh and start again!")
                                 else:
-                                    cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
+                                    cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
                                     if cursor.fetchone():
-                                        st.error("This user ID is already registered. Please refresh and start again!")
+                                        st.error("This roll number is already registered. Please refresh and start again!")
                                     else:
                                         cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (enrollment_no,))
                                         if cursor.fetchone():
