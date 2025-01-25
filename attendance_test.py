@@ -900,12 +900,17 @@ def webauthn_script():
 
             try {
                 const credential = await navigator.credentials.get({ publicKey });
-                document.getElementById("webauthn-result").innerHTML = JSON.stringify(credential);
-                document.getElementById("webauthn-result").innerHTML = 'Registration successful! please wait for the next steps!';
+                document.getElementById("webauthn-result").innerHTML = 'Authentication successful! Please wait for the next steps.';
                 document.getElementById("webauthn-status").value = "success";
+
+                // Notify Streamlit about success
+                window.parent.postMessage({ status: "success" }, "*");
             } catch (error) {
                 document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error;
                 document.getElementById("webauthn-status").value = "failed";
+
+                // Notify Streamlit about failure
+                window.parent.postMessage({ status: "failed" }, "*");
             }
         }
     </script>
@@ -914,6 +919,7 @@ def webauthn_script():
     <input type="hidden" id="webauthn-status" name="webauthn-status" value="pending">
     """
     return script
+
 
 # Streamlit UI
 st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
@@ -1111,17 +1117,25 @@ elif menu == "Student Login":
         cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
         user = cursor.fetchone()
         if user:
-            # WebAuthn Integration
+            # Step 1: Fingerprint Authentication
             st.subheader("Fingerprint Authentication")
-            st.warning("please procced with the fingerprint authentication first to continue with login !") 
+            st.warning("Please proceed with fingerprint authentication to continue.")
+            # Display the WebAuthn script in Streamlit
+            auth_result = st.components.v1.html(webauthn_script(), height=300)
             
-            # Integrate fingerprint authentication script
-            auth_successful = st.components.v1.html(webauthn_script())  # Replace with actual WebAuthn logic
-        
-            if not auth_successful:
-                st.error("Fingerprint authentication failed. Please try again.")
-                st.stop()  # Stop execution until authentication is successful 
+            # Add a hidden element to check if the authentication was successful
+            status = st.session_state.get("webauthn_status", "pending")
+            
+            if st.button("Check Authentication"):
+                # Simulate fetching the status from the WebAuthn script
+                if "success" in status:
+                    st.success("Fingerprint authentication successful!")
+                elif "failed" in status:
+                    st.error("Fingerprint authentication failed.")
+                else:
+                    st.warning("Authentication is still pending.")
             st.success("fingerprint accepted.waiting for server confirmation!!")
+            
             if user[9] == device_id:  # Match device_id from IP address
                 location = get_precise_location()
                 st.write(f"Your current location is: {location}")
