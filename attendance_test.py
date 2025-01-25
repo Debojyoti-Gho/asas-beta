@@ -1050,24 +1050,27 @@ elif menu == "Register":
             if st.form_submit_button("Register"):
                 if face_image:  # Ensure face image is captured
         
-                    # WebAuthn registration via JavaScript
+                    # Render WebAuthn registration UI using JavaScript
                     st.components.v1.html(webauthn_register_script(), height=500)
         
-                    # Get WebAuthn credentials from local storage (browser side)
+                    # Wait until the WebAuthn credentials are available
                     credential_id = st.session_state.get("credential_id")
                     attestation_object = st.session_state.get("public_key")
-                    
-                    # Fetch the device ID (UUID based)
-                    device_id = device_id_from_cookies
-                    st.success(f"Your unique device ID is: {device_id_from_cookies}")
         
-                    if credential_id and attestation_object:
-                        # Save WebAuthn credentials in the database
-                        insert_fingerprint_data(user_id, name, email, credential_id, attestation_object)
+                    # If credentials are missing, inform the user
+                    if not credential_id or not attestation_object:
+                        st.warning("WebAuthn registration has not been completed yet. Please try again after capturing your fingerprint.")
+                    else:
+                        # Fetch the device ID (UUID based)
+                        device_id = device_id_from_cookies
+                        st.success(f"Your unique device ID is: {device_id_from_cookies}")
         
                         if not device_id:
                             st.error("Could not fetch device ID, registration cannot proceed.")
                         else:
+                            # Save WebAuthn credentials in the database
+                            insert_fingerprint_data(user_id, name, email, credential_id, attestation_object)
+        
                             # Check if the device ID is already registered
                             cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
                             if cursor.fetchone():
@@ -1099,8 +1102,7 @@ elif menu == "Register":
                                                 st.success("Registration successful!")
                                                 st.warning("From now on, this device will be considered the only registered and verified device for future logins.")
                                                 st.info("Please proceed to the Student Login page.")
-                    else:
-                        st.error("WebAuthn registration failed. Please try again.")
+        
 
     
 
