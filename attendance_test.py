@@ -1129,7 +1129,10 @@ elif menu == "Student Login":
     st.components.v1.html(auth_script, height=600)
 
     # Listen for the message from WebAuthn script
-    auth_response = st.experimental_get_query_params().get("auth_status", [None])[0]
+    auth_params = st.experimental_get_query_params()
+    st.write(f"All query parameters: {auth_params}")  # Debugging line
+    
+    auth_response = auth_params.get("auth_status", [None])[0]
     st.write(f"auth_response: {auth_response}")  # Debugging line
 
     if auth_response == "success":
