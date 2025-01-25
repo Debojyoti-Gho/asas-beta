@@ -1100,8 +1100,14 @@ elif menu == "Student Login":
     # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
     st.warning("please procced with the fingerprint authentication first to continue with login !") 
-    st.components.v1.html(webauthn_script())
-    time.sleep(10)  
+    
+    # Integrate fingerprint authentication script
+    auth_successful = st.components.v1.html(webauthn_script())  # Replace with actual WebAuthn logic
+
+    if not auth_successful:
+        st.error("Fingerprint authentication failed. Please try again.")
+        st.stop()  # Stop execution until authentication is successful 
+    st.success("fingerprint accepted.waiting for server confirmation!!")
     
     user_id = st.text_input("User ID")
     password = st.text_input("Password", type="password")
@@ -1128,10 +1134,12 @@ elif menu == "Student Login":
                     time.sleep(2)
                     st.success(f"your registered device has been verified successfully")
                     time.sleep(2)
+                    st.success("fingerprint authentication successfull")
+                    time.sleep(2)
                     st.success(f"Login successful! Welcome, {user[2]}")
                 
                     # Check for Bluetooth signal during login session
-                    st.info("just a step away from your dashboard !! Scanning for Bluetooth devices...")
+                    st.info("just a step away from your dashboard !! Scanning for physical verification devices...")
 
                     # Replace the original BLE signal detection logic
                     ble_signal = get_ble_signal_from_api()
@@ -1142,10 +1150,10 @@ elif menu == "Student Login":
                             # Handle API status response (e.g., Bluetooth is off)
                             st.warning(ble_signal["status"])
                         else:
-                            st.info("Bluetooth devices found. Listing all available devices...")
+                            st.info("verification devices found. Listing all available devices...")
                             
                             # Display all available Bluetooth devices
-                            st.write("Available Bluetooth devices:")
+                            st.write("Available physical verification devices:")
                             for device_name, mac_address in ble_signal.items():
                                 st.write(f"Device Name: {mac_address}, MAC Address: {device_name}")
                     
@@ -1156,7 +1164,7 @@ elif menu == "Student Login":
                             found_device = False
                             for device_name, mac_address in ble_signal.items():
                                 if required_device_name in device_name or mac_address == required_mac_id:
-                                    st.success(f"Required Bluetooth device found! MAC Address: {device_name}, Device Name: {mac_address}")
+                                    st.success(f"Required verifying device found! MAC Address: {device_name}, Device Name: {mac_address}")
                                     found_device = True
                                     break
                     
@@ -1167,7 +1175,7 @@ elif menu == "Student Login":
                                 st.session_state.bluetooth_selected = True  # Mark Bluetooth as selected
 
                             else:
-                                st.error("Required Bluetooth device not found. Login failed.")
+                                st.error("Required verifying device not found. Login failed.")
 
                             # Define constant for period times
                             PERIOD_TIMES = {
@@ -1238,13 +1246,13 @@ elif menu == "Student Login":
                             else:
                                 st.warning("No active class period at the moment.")
                     else:
-                        st.error("No Bluetooth devices found.")
+                        st.error("No verifying devices found. Maybe you are not in your institution")
                 else:
                     st.error("You must be in Kolkata to login.")
             else:
                 st.error("Device ID does not match.Please login from your registered device.")
         else:
-            st.error("Invalid user ID or password.")
+            st.error("Invalid user ID or password.please try again!")
 
     # Display student attendance search form
     if st.session_state.get('logged_in', False):
