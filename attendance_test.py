@@ -890,9 +890,6 @@ def webauthn_register_script():
 import os
 import base64
 
-import os
-import base64
-
 def generate_challenge():
     # Generate a random challenge (32 bytes for security)
     challenge = os.urandom(32)
@@ -1119,7 +1116,7 @@ elif menu == "Student Login":
     
     # Embed the WebAuthn script into the Streamlit app
     auth_successful = st.components.v1.html(auth_script)  # This will render the authentication UI
-    
+    time.sleep(10)
     # Add flow control based on authentication success
     if not auth_successful:
         st.error("Fingerprint authentication failed. Please try again.")
