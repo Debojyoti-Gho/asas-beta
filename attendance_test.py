@@ -811,6 +811,31 @@ def get_current_period():
 
     return None
 
+# Placeholder for WebAuthn integration script
+def webauthn_script():
+    script = """
+    <script>
+        async function authenticate() {
+            const publicKey = {
+                challenge: Uint8Array.from("YourServerChallenge", c => c.charCodeAt(0)), // Replace with a secure challenge
+                timeout: 60000,
+                userVerification: "required"
+            };
+
+            try {
+                const credential = await navigator.credentials.get({ publicKey });
+                document.getElementById("webauthn-result").innerHTML = "Authentication successful: " + JSON.stringify(credential);
+            } catch (error) {
+                document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error;
+            }
+        }
+    </script>
+    <button onclick="authenticate()">Authenticate with Fingerprint</button>
+    <p id="webauthn-result"></p>
+    """
+    return script
+
+
 # Streamlit UI
 st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
@@ -994,6 +1019,10 @@ elif menu == "Student Login":
 
     if not device_id:
         st.error("Could not fetch device Id. Login cannot proceed.")
+        
+     # WebAuthn Integration
+    st.subheader("Fingerprint Authentication")
+    st.components.v1.html(webauthn_script(), height=200)
     
     if st.button("Login") and not st.session_state.get('bluetooth_selected', False):
         cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
