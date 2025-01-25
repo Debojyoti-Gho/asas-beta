@@ -1038,7 +1038,7 @@ elif menu == "Register":
         # OTP Verification
         if st.session_state.email_otp and not st.session_state.email_verified:
             otp_input = st.text_input("Enter the OTP sent to your email")
-            otp_verify_button = st.button("Verify OTP")
+            otp_verify_button = st.form_submit_button("Verify OTP")
             if otp_verify_button:
                 if otp_input == st.session_state.email_otp:
                     st.session_state.email_verified = True
