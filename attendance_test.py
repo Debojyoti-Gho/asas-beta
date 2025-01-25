@@ -1048,7 +1048,7 @@ elif menu == "Register":
         if st.session_state.email_verified:
             st.subheader("Complete Registration")
         
-            # Step 1: WebAuthn Registration (before the Register button)
+            # Step 1: Check if WebAuthn credentials are already set
             if "credential_id" not in st.session_state or "public_key" not in st.session_state:
                 st.warning("Please complete the WebAuthn registration by capturing your fingerprint.")
         
@@ -1067,14 +1067,11 @@ elif menu == "Register":
                     st.warning("WebAuthn registration has not been completed yet. Please try again after capturing your fingerprint.")
                 else:
                     st.success("WebAuthn registration completed successfully!")
-                    
-            # Step 2: Registration button after WebAuthn credentials are available
-            if "credential_id" in st.session_state and "public_key" in st.session_state:
-                credential_id = st.session_state["credential_id"]
-                attestation_object = st.session_state["public_key"]
-        
+            else:
+                # If WebAuthn credentials are available, show the registration form with the "Register" button
                 with st.form("registration_form"):
                     # Display the Register button only after WebAuthn registration is completed
+                    st.subheader("Complete the Registration")
                     if st.form_submit_button("Register"):
                         # Ensure the face image is captured
                         if face_image:  
@@ -1119,9 +1116,7 @@ elif menu == "Register":
                                                     st.success("Registration successful!")
                                                     st.warning("From now on, this device will be considered the only registered and verified device for future logins.")
                                                     st.info("Please proceed to the Student Login page.")
-            else:
-                # WebAuthn credentials are not available yet, prompt the user
-                st.warning("WebAuthn registration is not completed yet. Please complete the fingerprint capture first.")
+
 
 
 
