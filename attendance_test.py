@@ -821,7 +821,7 @@ def webauthn_register_script():
                 // Generate WebAuthn registration options
                 const publicKey = {
                     challenge: Uint8Array.from('someRandomChallenge123', c => c.charCodeAt(0)),
-                    rp: { name: 'WebAuthn Example' },
+                    rp: { name: 'window.location.hostname' },
                     user: {
                         id: new Uint8Array(16),
                         name: 'user@example.com',
