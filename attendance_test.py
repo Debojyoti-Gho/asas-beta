@@ -1075,8 +1075,6 @@ elif menu == "Register":
                 else:
                     st.success("WebAuthn registration completed successfully!")
                     
-                # If WebAuthn credentials are available, show the registration form with the "Register" button
-                with st.form("registration_form"):
                     # Display the Register button only after WebAuthn registration is completed
                     st.subheader("Complete the Registration")
                     if st.form_submit_button("Register"):
