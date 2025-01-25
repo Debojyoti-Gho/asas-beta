@@ -1098,8 +1098,8 @@ elif menu == "Register":
                                                 st.success("Registration successful!")
                                                 st.warning("From now on this device will be considered the only registered and verified device for future logins")
                                                 st.info("Please proceed to the Student Login page.")
-                     else:
-                        st.error("WebAuthn registration failed. Please try again.")
+                 else:
+                    st.error("WebAuthn registration failed. Please try again.")
     
 
 elif menu == "Student Login":
