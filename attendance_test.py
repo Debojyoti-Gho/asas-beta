@@ -838,7 +838,6 @@ def webauthn_script():
     """
     return script
 
-
 # Streamlit UI
 st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
@@ -1011,6 +1010,7 @@ elif menu == "Register":
                                             st.info("Please proceed to the Student Login page.")
 
 
+# Streamlit app
 elif menu == "Student Login":
     st.header("Student Login")
     user_id = st.text_input("User ID")
@@ -1021,88 +1021,26 @@ elif menu == "Student Login":
     st.success(f"Your unique device ID is: {device_id_from_cookies}")
 
     if not device_id:
-        st.error("Could not fetch device ID. Login cannot proceed.")
-    
-    # WebAuthn Integration for Fingerprint Authentication
+        st.error("Could not fetch device Id. Login cannot proceed.")
+
+    # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
-    webauthn_status = st.empty()
-    if st.button("Scan Fingerprint"):
-        # WebAuthn Script for Fingerprint Scanning
-        webauthn_script = """
-        <script>
-            async function performWebAuthn() {
-                try {
-                    const options = {
-                        publicKey: {
-                            challenge: Uint8Array.from(window.atob('YourServerChallenge'), c => c.charCodeAt(0)),
-                            allowCredentials: [
-                                {
-                                    id: Uint8Array.from(window.atob('Base64EncodedCredentialID'), c => c.charCodeAt(0)),
-                                    type: "public-key",
-                                    transports: ["usb", "nfc", "ble", "internal"]
-                                }
-                            ],
-                            timeout: 60000,
-                            userVerification: "required"
-                        }
-                    };
-                    
-                    const assertion = await navigator.credentials.get(options);
-                    const clientDataJSON = assertion.response.clientDataJSON;
-                    const authenticatorData = assertion.response.authenticatorData;
-                    const signature = assertion.response.signature;
-                    const credentialID = assertion.id;
-    
-                    // Send data to the Streamlit app for verification
-                    const response = await fetch("/validate_webauthn", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(clientDataJSON))),
-                            authenticatorData: btoa(String.fromCharCode(...new Uint8Array(authenticatorData))),
-                            signature: btoa(String.fromCharCode(...new Uint8Array(signature))),
-                            credentialID: credentialID
-                        })
-                    });
-    
-                    const result = await response.json();
-                    if (result.success) {
-                        Streamlit.setComponentValue("success");
-                    } else {
-                        Streamlit.setComponentValue("failed");
-                    }
-                } catch (error) {
-                    console.error("WebAuthn failed", error);
-                    Streamlit.setComponentValue("failed");
-                }
-            }
-    
-            performWebAuthn();
-        </script>
-        """
-        st.components.v1.html(webauthn_script, height=300)
-        webauthn_status.text("Scanning fingerprint...")
-    
-    # Instead of st.text_input, use st.session_state for WebAuthn result storage
-    if "webauthn_result" not in st.session_state:
-        st.session_state.webauthn_result = "pending"
-    
-    # Button to check result and update session state
-    if st.button("Check WebAuthn Result"):
-        if st.session_state.webauthn_result == "success":
-            st.success("Fingerprint authentication successful!")
-        elif st.session_state.webauthn_result == "failed":
-            st.error("Fingerprint authentication failed. Please try again.")
-    
-    # Login logic
-    if st.button("Login") and st.session_state.webauthn_result == "success" and not st.session_state.get('bluetooth_selected', False):
-        cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
-        user = cursor.fetchone()
-        if user:
-            if user[9] == device_id:  # Match device_id from IP address
-                location = get_precise_location()
-                st.write(f"Your current location is: {location}")
-                if location and "The Dalles" in location:
+    webauthn_html = st.components.v1.html(webauthn_script(), height=300)
+
+    # Placeholder for authentication status
+    webauthn_status = st.text_input("WebAuthn Status", value="pending", type="hidden")
+
+    if st.button("Login"):
+        if webauthn_status != "success":
+            st.error("Fingerprint authentication is required to proceed.")
+        else:
+            cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
+            user = cursor.fetchone()
+            if user:
+                if user[9] == device_id:  # Match device_id
+                    location = get_precise_location()
+                    st.write(f"Your current location is: {location}")
+                    if location and "The Dalles" in location:
                     st.success("User ID and password verification successful!")
                     st.success("Location verified!")
                     st.success(f"Your registered device has been verified successfully!")
