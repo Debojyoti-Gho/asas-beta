@@ -1021,16 +1021,77 @@ elif menu == "Student Login":
     st.success(f"Your unique device ID is: {device_id_from_cookies}")
 
     if not device_id:
-        st.error("Could not fetch device Id. Login cannot proceed.")
-        
-     # WebAuthn Integration
-    st.subheader("Fingerprint Authentication")
-    webauthn_html = st.components.v1.html(webauthn_script(), height=300)
-
-    # Placeholder for authentication status
-    webauthn_status = st.text_input("WebAuthn Status", value="pending", type="hidden")
+        st.error("Could not fetch device ID. Login cannot proceed.")
     
-    if st.button("Login") and not st.session_state.get('bluetooth_selected', False):
+    # WebAuthn Integration
+    st.subheader("Fingerprint Authentication")
+    webauthn_status = st.empty()
+    if st.button("Scan Fingerprint"):
+        # WebAuthn Script for Fingerprint Scanning
+        webauthn_script = """
+        <script>
+            async function performWebAuthn() {
+                try {
+                    const options = {
+                        publicKey: {
+                            challenge: Uint8Array.from(window.atob('YourServerChallenge'), c => c.charCodeAt(0)),
+                            allowCredentials: [
+                                {
+                                    id: Uint8Array.from(window.atob('Base64EncodedCredentialID'), c => c.charCodeAt(0)),
+                                    type: "public-key",
+                                    transports: ["usb", "nfc", "ble", "internal"]
+                                }
+                            ],
+                            timeout: 60000,
+                            userVerification: "required"
+                        }
+                    };
+                    
+                    const assertion = await navigator.credentials.get(options);
+                    const clientDataJSON = assertion.response.clientDataJSON;
+                    const authenticatorData = assertion.response.authenticatorData;
+                    const signature = assertion.response.signature;
+                    const credentialID = assertion.id;
+
+                    // Send data to the Streamlit app for verification
+                    const response = await fetch("/validate_webauthn", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(clientDataJSON))),
+                            authenticatorData: btoa(String.fromCharCode(...new Uint8Array(authenticatorData))),
+                            signature: btoa(String.fromCharCode(...new Uint8Array(signature))),
+                            credentialID: credentialID
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        Streamlit.setComponentValue("success");
+                    } else {
+                        Streamlit.setComponentValue("failed");
+                    }
+                } catch (error) {
+                    console.error("WebAuthn failed", error);
+                    Streamlit.setComponentValue("failed");
+                }
+            }
+
+            performWebAuthn();
+        </script>
+        """
+        st.components.v1.html(webauthn_script, height=300)
+        webauthn_status.text("Scanning fingerprint...")
+
+    # Placeholder to capture WebAuthn status from the frontend
+    webauthn_result = st.text_input("WebAuthn Result", value="pending", type="hidden")
+
+    if webauthn_result == "success":
+        st.success("Fingerprint authentication successful!")
+    elif webauthn_result == "failed":
+        st.error("Fingerprint authentication failed. Please try again.")
+    
+    if st.button("Login") and webauthn_result == "success" and not st.session_state.get('bluetooth_selected', False):
         cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
         user = cursor.fetchone()
         if user:
@@ -1038,13 +1099,9 @@ elif menu == "Student Login":
                 location = get_precise_location()
                 st.write(f"Your current location is: {location}")
                 if location and "The Dalles" in location:
-                    time.sleep(2)
-                    st.success("user ID and password verification succesfull!")
-                    time.sleep(2)
-                    st.success("you have passed the location check and your location has been verified")
-                    time.sleep(2)
-                    st.success(f"your registered device has been verified successfully")
-                    time.sleep(2)
+                    st.success("User ID and password verification successful!")
+                    st.success("Location verified!")
+                    st.success(f"Your registered device has been verified successfully!")
                     st.success(f"Login successful! Welcome, {user[2]}")
                 
                     # Check for Bluetooth signal during login session
