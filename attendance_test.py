@@ -954,19 +954,6 @@ if menu == "Home":
         st.subheader(item["question"])
         st.write(item["answer"])
 
-# Assume get_device_ip() and get_device_uuid() are defined elsewhere in your code.
-import io
-from PIL import Image
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import numpy as np
-import sqlite3  # Assuming you're using SQLite for the database
-
-# Assuming you already have a database connection like so:
-conn = sqlite3.connect("students.db")
-cursor = conn.cursor()
-
 elif menu == "Register":
     st.header("Student Registration")
 
