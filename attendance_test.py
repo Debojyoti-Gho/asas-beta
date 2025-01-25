@@ -23,6 +23,7 @@ from PIL import Image
 import io
 import streamlit.components.v1 as components
 import json
+from streamlit_js_eval import streamlit_js
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
@@ -859,9 +860,9 @@ def webauthn_register_script():
                     challenge: Uint8Array.from('someRandomChallenge123', c => c.charCodeAt(0)),
                     rp: { name: 'WebAuthn Example' },
                     user: {
-                        id: new Uint8Array(16),
-                        name: 'user@example.com',
-                        displayName: 'Example User'
+                        id: Uint8Array.from(window.userId, c => c.charCodeAt(0)),
+                        name: window.userEmail,
+                        displayName: window.userName
                     },
                     pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
                     authenticatorAttachment: 'platform',
@@ -872,13 +873,16 @@ def webauthn_register_script():
                 // Call WebAuthn API to register the credential
                 const credential = await navigator.credentials.create({ publicKey });
 
-                // Store the registration response (public key and credential ID)
-                localStorage.setItem('credentialId', credential.id);
-                localStorage.setItem('publicKey', JSON.stringify(credential.response.attestationObject));
+                // Prepare the data to send to Python
+                const credentialId = credential.id;
+                const attestationObject = btoa(String.fromCharCode(...new Uint8Array(credential.response.attestationObject)));
 
-                document.getElementById('registration-result').innerHTML = 'Registration successful! please wait for the next steps!';
+                // Streamlit setComponentValue API to send data to Python
+                window.parent.postMessage({ credentialId, attestationObject }, "*");
+
+                document.getElementById('registration-result').innerHTML = 'Registration successful!';
             } catch (error) {
-                document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error;
+                document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error.message;
             }
         }
     </script>
@@ -886,6 +890,7 @@ def webauthn_register_script():
     <p id="registration-result"></p>
     """
     return script
+
 
 import os
 import base64
@@ -1005,11 +1010,11 @@ elif menu == "Register":
             st.success("Face captured successfully!")
 
             st.warning("Please complete the WebAuthn registration by capturing your fingerprint.")
-            st.warning("you have to complete fingerprint registration within 30 secs")
+            st.warning("You have to complete fingerprint registration within 30 secs")
             # Render WebAuthn registration UI using JavaScript
             st.components.v1.html(webauthn_register_script())
             
-            # Mock the WebAuthn registration after 5 seconds
+            # Mock the WebAuthn registration after 30 seconds
             time.sleep(30)  # Simulate waiting for the WebAuthn registration process
 
         st.subheader("Email Verification")
@@ -1073,35 +1078,43 @@ elif menu == "Register":
                         # Check if the device ID is already registered
                         cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
                         if cursor.fetchone():
-                            st.error("This device has already been used for registration. Only one registration is allowed per device.Please refresh and start again!")
+                            st.error("This device has already been used for registration. Only one registration is allowed per device. Please refresh and start again!")
                         else:
                             # Check for duplicate entries in the database for email, roll, user ID, and enrollment number
                             cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
                             if cursor.fetchone():
-                                st.error("This email is already registered.Please refresh and start again!")
+                                st.error("This email is already registered. Please refresh and start again!")
                             else:
                                 cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
                                 if cursor.fetchone():
-                                    st.error("This roll number is already registered.Please refresh and start again!")
+                                    st.error("This roll number is already registered. Please refresh and start again!")
                                 else:
                                     cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
                                     if cursor.fetchone():
-                                        st.error("This user ID is already registered.Please refresh and start again!")
+                                        st.error("This user ID is already registered. Please refresh and start again!")
                                     else:
                                         cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (enrollment_no,))
                                         if cursor.fetchone():
-                                            st.error("This enrollment number is already registered.Please refresh and start again!")
+                                            st.error("This enrollment number is already registered. Please refresh and start again!")
                                         else:
                                             # Insert into database
                                             cursor.execute("""
                                             INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
                                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                                             """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
+                                            
+                                            # Insert WebAuthn data into the fingerprint table
+                                            # Assuming WebAuthn data (credential_id and attestation_object) are available via Streamlit's postMessage API
+                                            credential_id = st.session_state.get("credential_id")
+                                            attestation_object = st.session_state.get("attestation_object")
+
+                                            if credential_id and attestation_object:
+                                                insert_fingerprint_data(user_id, name, email, credential_id, attestation_object)
+                                            
                                             conn.commit()
                                             st.success("Registration successful!")
-                                            st.warning("From now on this device will be considered the only registered and verified device for future logins")
+                                            st.warning("From now on this device will be considered the only registered and verified device for future logins.")
                                             st.info("Please proceed to the Student Login page.")
-
 
 elif menu == "Student Login":
     st.header("Student Login")
