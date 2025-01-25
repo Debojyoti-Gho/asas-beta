@@ -967,6 +967,8 @@ elif menu == "Register":
         st.session_state.email_otp = None
     if "email_verified" not in st.session_state:
         st.session_state.email_verified = False
+    if "webAuthn_completed" not in st.session_state:
+        st.session_state.webAuthn_completed = False  # Track WebAuthn completion
 
     # Registration Form
     with st.form("registration_form"):
@@ -998,9 +1000,55 @@ elif menu == "Register":
 
             st.success("Face captured successfully!")
 
-        # WebAuthn Registration
-        if "credential_id" not in st.session_state or "public_key" not in st.session_state:
-            st.warning("Please complete the WebAuthn registration by capturing your fingerprint.")
+        submit_button = st.form_submit_button("Submit Registration")
+
+        if submit_button:
+            # Send OTP only after clicking submit
+            if email:
+                otp = str(np.random.randint(100000, 999999))
+                st.session_state.email_otp = otp
+
+                # SMTP Configuration
+                smtp_server = 'smtp-relay.brevo.com'
+                smtp_port = 587
+                smtp_user = '823c6b001@smtp-brevo.com'
+                smtp_password = '6tOJHT2F4x8ZGmMw'
+                from_email = 'debojyotighoshmain@gmail.com'
+
+                try:
+                    # Send OTP via email
+                    message = MIMEMultipart()
+                    message["From"] = from_email
+                    message["To"] = email
+                    message["Subject"] = "Your OTP for Student Registration"
+
+                    body = f"Your OTP for registration is: {otp}\n\nPlease enter this OTP to verify your email."
+                    message.attach(MIMEText(body, "plain"))
+
+                    with smtplib.SMTP(smtp_server, smtp_port) as server:
+                        server.starttls()
+                        server.login(smtp_user, smtp_password)
+                        server.sendmail(from_email, email, message.as_string())
+
+                    st.success(f"OTP sent to {email}. Please check your email.")
+                    st.session_state.email_verified = False  # Reset email_verified for re-checking
+                except Exception as e:
+                    st.error(f"Failed to send OTP: {e}")
+
+        # OTP Verification
+        if st.session_state.email_otp and not st.session_state.email_verified:
+            otp_input = st.text_input("Enter the OTP sent to your email")
+            otp_verify_button = st.button("Verify OTP")
+            if otp_verify_button:
+                if otp_input == st.session_state.email_otp:
+                    st.session_state.email_verified = True
+                    st.success("Email verified successfully! You can proceed with WebAuthn registration.")
+                else:
+                    st.error("Invalid OTP. Please try again.")
+
+        # WebAuthn Registration (only after OTP verification)
+        if st.session_state.email_verified and not st.session_state.webAuthn_completed:
+            st.subheader("Capture Your Fingerprint (WebAuthn)")
 
             # Render WebAuthn registration UI using JavaScript
             st.components.v1.html(webauthn_register_script(), height=500)
@@ -1009,69 +1057,17 @@ elif menu == "Register":
             credential_id = st.session_state.get("credential_id")
             attestation_object = st.session_state.get("public_key")
 
-            # Debug: Print session state values
-            st.write(f"Session State: {st.session_state}")
-
-            # If credentials are still not available, show a warning
-            if not credential_id or not attestation_object:
-                st.warning("WebAuthn registration has not been completed yet. Please try again after capturing your fingerprint.")
-            else:
+            if credential_id and attestation_object:
                 st.success("WebAuthn registration completed successfully!")
-
-        else:
-            # Email Verification After WebAuthn
-            st.subheader("Email Verification")
-            if not st.session_state.email_verified:
-                # Send OTP Button
-                otp_button = st.form_submit_button("Send OTP")
-                if otp_button and email:
-                    otp = str(np.random.randint(100000, 999999))
-                    st.session_state.email_otp = otp
-
-                    # SMTP Configuration
-                    smtp_server = 'smtp-relay.brevo.com'
-                    smtp_port = 587
-                    smtp_user = '823c6b001@smtp-brevo.com'
-                    smtp_password = '6tOJHT2F4x8ZGmMw'
-                    from_email = 'debojyotighoshmain@gmail.com'
-
-                    try:
-                        # Send OTP via email
-                        message = MIMEMultipart()
-                        message["From"] = from_email
-                        message["To"] = email
-                        message["Subject"] = "Your OTP for Student Registration"
-
-                        body = f"Your OTP for registration is: {otp}\n\nPlease enter this OTP to verify your email."
-                        message.attach(MIMEText(body, "plain"))
-
-                        with smtplib.SMTP(smtp_server, smtp_port) as server:
-                            server.starttls()
-                            server.login(smtp_user, smtp_password)
-                            server.sendmail(from_email, email, message.as_string())
-
-                        st.success(f"OTP sent to {email}. Please check your email.")
-                    except Exception as e:
-                        st.error(f"Failed to send OTP: {e}")
-                elif not email:
-                    st.error("Please enter a valid email address.")
-
-            # OTP Verification
-            if st.session_state.email_otp and not st.session_state.email_verified:
-                otp_input = st.text_input("Enter the OTP sent to your email")
-                otp_verify_button = st.form_submit_button("Verify OTP")
-                if otp_verify_button:
-                    if otp_input == st.session_state.email_otp:
-                        st.session_state.email_verified = True
-                        st.success("Email verified successfully! You can proceed with registration.")
-                    else:
-                        st.error("Invalid OTP. Please try again.")
+                st.session_state.webAuthn_completed = True  # Mark WebAuthn as completed
+            else:
+                st.warning("Please complete the WebAuthn registration by capturing your fingerprint.")
 
         # Registration logic after WebAuthn and email verification
-        if st.session_state.email_verified and "credential_id" in st.session_state and "public_key" in st.session_state:
+        if st.session_state.email_verified and st.session_state.webAuthn_completed:
             st.subheader("Complete the Registration")
 
-            with st.form("registration_form"):
+            with st.form("final_registration_form"):
                 # Display the Register button after WebAuthn and email verification are complete
                 register_button = st.form_submit_button("Register")
                 if register_button:
