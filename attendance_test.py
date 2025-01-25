@@ -812,42 +812,6 @@ def get_current_period():
 
     return None
 
-# Function to initialize the database (if not already initialized)
-def initialize_db():
-    conn = sqlite3.connect("student_fingerprint.db")  # This will create a new database in the app's file system
-    cursor = conn.cursor()
-
-    # Create a table for storing fingerprint data (if it doesn't exist)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS student_fingerprint (
-        user_id TEXT PRIMARY KEY,
-        name TEXT,
-        email TEXT,
-        credential_id TEXT,
-        attestation_object TEXT
-    )
-    """)
-    conn.commit()
-    conn.close()
-
-# Function to insert WebAuthn data into the database
-def insert_fingerprint_data(user_id, name, email, credential_id, attestation_object):
-    try:
-        conn = sqlite3.connect("student_fingerprint.db")
-        cursor = conn.cursor()
-
-        # Insert the fingerprint credentials into the database
-        cursor.execute("""
-        INSERT INTO student_fingerprint (user_id, name, email, credential_id, attestation_object)
-        VALUES (?, ?, ?, ?, ?)
-        """, (user_id, name, email, credential_id, attestation_object))
-        
-        conn.commit()
-        conn.close()
-        st.success("Fingerprint registered successfully!")
-    except Exception as e:
-        st.error(f"Error saving fingerprint data: {e}")
-
 # WebAuthn Registration Script (JavaScript) for capturing fingerprint data
 def webauthn_register_script():
     script = """
@@ -876,7 +840,7 @@ def webauthn_register_script():
                 localStorage.setItem('credentialId', credential.id);
                 localStorage.setItem('publicKey', JSON.stringify(credential.response.attestationObject));
 
-                document.getElementById('registration-result').innerHTML = 'Registration successful! please wait for the next steps!';
+                document.getElementById('registration-result').innerHTML = 'Registration successful!';
             } catch (error) {
                 document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error;
             }
@@ -887,13 +851,6 @@ def webauthn_register_script():
     """
     return script
 
-import os
-import base64
-
-def generate_challenge():
-    # Generate a random challenge (32 bytes for security)
-    challenge = os.urandom(32)
-    return base64.urlsafe_b64encode(challenge).decode('utf-8')  # Base64 encoding for URL compatibility
 
 # Placeholder for WebAuthn integration script
 def webauthn_script():
@@ -909,7 +866,6 @@ def webauthn_script():
             try {
                 const credential = await navigator.credentials.get({ publicKey });
                 document.getElementById("webauthn-result").innerHTML = JSON.stringify(credential);
-                document.getElementById("webauthn-result").innerHTML = 'Registration successful! please wait for the next steps!';
                 document.getElementById("webauthn-status").value = "success";
             } catch (error) {
                 document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error;
@@ -922,7 +878,7 @@ def webauthn_script():
     <input type="hidden" id="webauthn-status" name="webauthn-status" value="pending">
     """
     return script
-
+    
 # Streamlit UI
 st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
