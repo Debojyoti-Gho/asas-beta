@@ -935,6 +935,21 @@ def webauthn_script():
     """
     return script
 
+# In Streamlit, add this to handle the postMessage response
+def handle_webauthn_response():
+    auth_response = st.experimental_get_query_params().get("auth_status", [None])[0]
+    if auth_response:
+        auth_response = json.loads(auth_response)
+        if auth_response["status"] == "success":
+            st.success("Fingerprint authentication successful!")
+            # You can handle further steps here based on the response
+        elif auth_response["status"] == "failed":
+            st.error(f"Fingerprint authentication failed. Error: {auth_response.get('error', 'Unknown error')}")
+        else:
+            st.warning("Unknown response from authentication.")
+    else:
+        st.error("No authentication response received.")
+        
 # Streamlit UI
 st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
@@ -1127,7 +1142,8 @@ elif menu == "Student Login":
 
     # Display the WebAuthn script
     st.components.v1.html(auth_script, height=600)
-
+     # Listen for the response from WebAuthn and update accordingly
+    handle_webauthn_response()
     # Listen for the message from WebAuthn script
     auth_params = st.experimental_get_query_params()
     st.write(f"All query parameters: {auth_params}")  # Debugging line
