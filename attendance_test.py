@@ -1023,7 +1023,7 @@ elif menu == "Student Login":
     if not device_id:
         st.error("Could not fetch device ID. Login cannot proceed.")
     
-    # WebAuthn Integration
+    # WebAuthn Integration for Fingerprint Authentication
     st.subheader("Fingerprint Authentication")
     webauthn_status = st.empty()
     if st.button("Scan Fingerprint"):
@@ -1052,7 +1052,7 @@ elif menu == "Student Login":
                     const authenticatorData = assertion.response.authenticatorData;
                     const signature = assertion.response.signature;
                     const credentialID = assertion.id;
-
+    
                     // Send data to the Streamlit app for verification
                     const response = await fetch("/validate_webauthn", {
                         method: "POST",
@@ -1064,7 +1064,7 @@ elif menu == "Student Login":
                             credentialID: credentialID
                         })
                     });
-
+    
                     const result = await response.json();
                     if (result.success) {
                         Streamlit.setComponentValue("success");
@@ -1076,22 +1076,26 @@ elif menu == "Student Login":
                     Streamlit.setComponentValue("failed");
                 }
             }
-
+    
             performWebAuthn();
         </script>
         """
         st.components.v1.html(webauthn_script, height=300)
         webauthn_status.text("Scanning fingerprint...")
-
-    # Placeholder to capture WebAuthn status from the frontend
-    webauthn_result = st.text_input("WebAuthn Result", value="pending", type="hidden")
-
-    if webauthn_result == "success":
-        st.success("Fingerprint authentication successful!")
-    elif webauthn_result == "failed":
-        st.error("Fingerprint authentication failed. Please try again.")
     
-    if st.button("Login") and webauthn_result == "success" and not st.session_state.get('bluetooth_selected', False):
+    # Instead of st.text_input, use st.session_state for WebAuthn result storage
+    if "webauthn_result" not in st.session_state:
+        st.session_state.webauthn_result = "pending"
+    
+    # Button to check result and update session state
+    if st.button("Check WebAuthn Result"):
+        if st.session_state.webauthn_result == "success":
+            st.success("Fingerprint authentication successful!")
+        elif st.session_state.webauthn_result == "failed":
+            st.error("Fingerprint authentication failed. Please try again.")
+    
+    # Login logic
+    if st.button("Login") and st.session_state.webauthn_result == "success" and not st.session_state.get('bluetooth_selected', False):
         cursor.execute("SELECT * FROM students WHERE user_id = ? AND password = ?", (user_id, password))
         user = cursor.fetchone()
         if user:
