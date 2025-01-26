@@ -818,31 +818,43 @@ def webauthn_register_script():
     <script>
         async function registerFingerprint() {
             try {
-                // Generate WebAuthn registration options
-                const publicKey = {
-                    challenge: Uint8Array.from('someRandomChallenge123', c => c.charCodeAt(0)),
-                    rp: { name: 'asas-beta-by-debojyotighosh.streamlit.app' },
-                    user: {
-                        id: new Uint8Array(16),
-                        name: 'user@example.com',
-                        displayName: 'Example User'
-                    },
-                    pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-                    authenticatorAttachment: 'platform',
-                    timeout: 60000,
-                    userVerification: 'required'
-                };
+                // Fetch registration options from the server
+                const response = await fetch('/webauthn/register-options', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'user@example.com' })
+                });
+                const publicKey = await response.json();
 
                 // Call WebAuthn API to register the credential
                 const credential = await navigator.credentials.create({ publicKey });
 
-                // Store the registration response (public key and credential ID)
-                localStorage.setItem('credentialId', credential.id);
-                localStorage.setItem('publicKey', JSON.stringify(credential.response.attestationObject));
+                // Convert response for server compatibility
+                const credentialData = {
+                    id: credential.id,
+                    rawId: Array.from(new Uint8Array(credential.rawId)),
+                    type: credential.type,
+                    response: {
+                        attestationObject: Array.from(new Uint8Array(credential.response.attestationObject)),
+                        clientDataJSON: Array.from(new Uint8Array(credential.response.clientDataJSON))
+                    }
+                };
 
-                document.getElementById('registration-result').innerHTML = 'Registration successful!';
+                // Send the registration data to the server
+                const registerResponse = await fetch('/webauthn/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(credentialData)
+                });
+
+                if (registerResponse.ok) {
+                    document.getElementById('registration-result').innerHTML = 'Registration successful!';
+                } else {
+                    const error = await registerResponse.text();
+                    document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error;
+                }
             } catch (error) {
-                document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error;
+                document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error.message;
             }
         }
     </script>
@@ -850,7 +862,7 @@ def webauthn_register_script():
     <p id="registration-result"></p>
     """
     return script
-
+    
 # Placeholder for WebAuthn integration script
 def webauthn_script():
     script = """
