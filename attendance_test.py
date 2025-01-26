@@ -825,66 +825,37 @@ def get_current_period():
 # WebAuthn Registration Script (JavaScript) for capturing fingerprint data
 def webauthn_register_script():
     script = """
-            <script>
+    <script>
         async function registerFingerprint() {
             try {
-                // Fetch WebAuthn registration options from the server
-                const response = await fetch('/webauthn/register-options', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: 'user@example.com' }) // Replace with actual username
-                });
-    
-                // Check if the response is okay and is JSON
-                if (!response.ok) {
-                    const errorText = await response.text(); // Read full response
-                    throw new Error(`Server Error: ${errorText}`);
-                }
-    
-                const publicKey = await response.json();
-    
-                // Ensure pubKeyCredParams includes ES256 and RS256
-                publicKey.pubKeyCredParams = [
-                    { type: 'public-key', alg: -7 },   // ES256 (ECDSA with SHA-256)
-                    { type: 'public-key', alg: -257 } // RS256 (RSASSA-PKCS1-v1_5 with SHA-256)
-                ];
-    
-                // Convert challenge and user ID from base64url to Uint8Array
-                publicKey.challenge = Uint8Array.from(atob(publicKey.challenge), c => c.charCodeAt(0));
-                publicKey.user.id = Uint8Array.from(atob(publicKey.user.id), c => c.charCodeAt(0));
-    
-                // Call WebAuthn API to create a new credential
+                // Generate WebAuthn registration options
+                const publicKey = {
+                    challenge: Uint8Array.from('someRandomChallenge123', c => c.charCodeAt(0)),
+                    rp: { name: 'WebAuthn Example' },
+                    user: {
+                        id: new Uint8Array(16),
+                        name: 'user@example.com',
+                        displayName: 'Example User'
+                    },
+                    pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+                    authenticatorAttachment: 'platform',
+                    timeout: 60000,
+                    userVerification: 'required'
+                };
+
+                // Call WebAuthn API to register the credential
                 const credential = await navigator.credentials.create({ publicKey });
-    
-                // Send the credential response to the server for validation and storage
-                const result = await fetch('/webauthn/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: credential.id,
-                        rawId: Array.from(new Uint8Array(credential.rawId)),
-                        type: credential.type,
-                        response: {
-                            attestationObject: Array.from(new Uint8Array(credential.response.attestationObject)),
-                            clientDataJSON: Array.from(new Uint8Array(credential.response.clientDataJSON))
-                        }
-                    })
-                });
-    
-                // Check the server's response for the registration result
-                const serverResult = await result.json();
-                if (serverResult.success) {
-                    document.getElementById('registration-result').innerHTML = 'Registration successful!';
-                } else {
-                    document.getElementById('registration-result').innerHTML = `Registration failed: ${serverResult.error}`;
-                }
+
+                // Store the registration response (public key and credential ID)
+                localStorage.setItem('credentialId', credential.id);
+                localStorage.setItem('publicKey', JSON.stringify(credential.response.attestationObject));
+
+                document.getElementById('registration-result').innerHTML = 'Registration successful!';
             } catch (error) {
-                document.getElementById('registration-result').innerHTML = `Registration failed: ${error.message}`;
+                document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error;
             }
         }
     </script>
-    
-    <!-- UI Components -->
     <button onclick="registerFingerprint()">Register Fingerprint</button>
     <p id="registration-result"></p>
     """
