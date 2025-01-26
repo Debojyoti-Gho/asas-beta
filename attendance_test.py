@@ -1081,7 +1081,7 @@ elif menu == "Student Login":
     # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
     st.warning("please procced with the fingerprint authentication first to continue with login !") 
-    st.info("if no passkeys are available this step will be Bypassed.Please Wait!!")
+    st.info("passkeys will only be available if you have registered through desktop.in case of unavailabilty this step will be Bypassed.Please Wait!!")
     # Integrate fingerprint authentication script
     auth_successful = st.components.v1.html(webauthn_script())  # Replace with actual WebAuthn logic
     time.sleep(20)
@@ -1089,7 +1089,7 @@ elif menu == "Student Login":
         st.error("Fingerprint authentication failed. Please try again.")
         st.stop()  # Stop execution until authentication is successful 
     st.success("fingerprint accepted.waiting for server confirmation!!")
-    st.info("fingerprint passkey authentication is still under development so can be bypassed sometimes.However later on this will be mandatory!! ")
+    st.info("fingerprint passkey authentication is still under development for android, so it can be bypassed sometimes.However later on this will be mandatory!! ")
     
     user_id = st.text_input("User ID")
     password = st.text_input("Password", type="password")
