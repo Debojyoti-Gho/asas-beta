@@ -822,56 +822,59 @@ def get_current_period():
 
     return None
 
-# WebAuthn Registration Script (JavaScript) for capturing fingerprint data
-def webauthn_register_script():
-    script = """
-    <script>
-        async function registerFingerprint() {
-            try {
-                // Fetch registration options from the server
-                const response = await fetch('/webauthn/register-options', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: 'user@example.com' })
-                });
-                const publicKey = await response.json();
+<script>
+    async function registerFingerprint() {
+        const registrationResult = document.getElementById('registration-result');
+        try {
+            // Fetch registration options
+            const response = await fetch('https://your-api-domain/webauthn/register-options', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: 'user@example.com' })
+            });
 
-                // Call WebAuthn API to register the credential
-                const credential = await navigator.credentials.create({ publicKey });
-
-                // Convert response for server compatibility
-                const credentialData = {
-                    id: credential.id,
-                    rawId: Array.from(new Uint8Array(credential.rawId)),
-                    type: credential.type,
-                    response: {
-                        attestationObject: Array.from(new Uint8Array(credential.response.attestationObject)),
-                        clientDataJSON: Array.from(new Uint8Array(credential.response.clientDataJSON))
-                    }
-                };
-
-                // Send the registration data to the server
-                const registerResponse = await fetch('/webauthn/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(credentialData)
-                });
-
-                if (registerResponse.ok) {
-                    document.getElementById('registration-result').innerHTML = 'Registration successful!';
-                } else {
-                    const error = await registerResponse.text();
-                    document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error;
-                }
-            } catch (error) {
-                document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error.message;
+            if (!response.ok) {
+                throw new Error('Failed to fetch registration options');
             }
+
+            const publicKey = await response.json();
+
+            // Call WebAuthn API
+            const credential = await navigator.credentials.create({ publicKey });
+
+            const credentialData = {
+                id: credential.id,
+                rawId: Array.from(new Uint8Array(credential.rawId)),
+                type: credential.type,
+                response: {
+                    attestationObject: Array.from(new Uint8Array(credential.response.attestationObject)),
+                    clientDataJSON: Array.from(new Uint8Array(credential.response.clientDataJSON))
+                }
+            };
+
+            // Send registration data to the server
+            const registerResponse = await fetch('https://your-api-domain/webauthn/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(credentialData)
+            });
+
+            if (registerResponse.ok) {
+                registrationResult.innerHTML = 'Registration successful!';
+            } else {
+                const error = await registerResponse.text();
+                registrationResult.innerHTML = 'Registration failed: ' + error;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            registrationResult.innerHTML = 'Registration failed: ' + error.message;
         }
-    </script>
-    <button onclick="registerFingerprint()">Register Fingerprint</button>
-    <p id="registration-result"></p>
-    """
-    return script
+    }
+</script>
+
+<button onclick="registerFingerprint()">Register Fingerprint</button>
+<p id="registration-result"></p>
+
     
 # Placeholder for WebAuthn integration script
 def webauthn_script():
