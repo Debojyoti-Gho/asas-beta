@@ -25,12 +25,14 @@ import streamlit.components.v1 as components
 import json
 
 st.set_page_config( 
-
     page_title="ASAS-Beta",  
-
     page_icon="playstore-icon.png"  
-
 ) 
+
+manifest_code = """
+<link rel="manifest" href="/manifest.json">
+"""
+components.html(manifest_code, height=0)
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
