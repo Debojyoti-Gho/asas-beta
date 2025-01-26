@@ -26,7 +26,7 @@ import json
 
 st.set_page_config( 
     page_title="ASAS-Beta",  
-    page_icon="playstore-icon.png"  
+    page_icon="playstore-icon.png"   
 ) 
 
 manifest_code = """
