@@ -825,7 +825,7 @@ def get_current_period():
 # WebAuthn Registration Script (JavaScript) for capturing fingerprint data
 def webauthn_register_script():
     script = """
-        <script>
+            <script>
         async function registerFingerprint() {
             try {
                 // Fetch WebAuthn registration options from the server
@@ -834,11 +834,18 @@ def webauthn_register_script():
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: 'user@example.com' }) // Replace with actual username
                 });
+    
+                // Check if the response is okay and is JSON
+                if (!response.ok) {
+                    const errorText = await response.text(); // Read full response
+                    throw new Error(`Server Error: ${errorText}`);
+                }
+    
                 const publicKey = await response.json();
     
                 // Ensure pubKeyCredParams includes ES256 and RS256
                 publicKey.pubKeyCredParams = [
-                    { type: 'public-key', alg: -7 }, // ES256 (ECDSA with SHA-256)
+                    { type: 'public-key', alg: -7 },   // ES256 (ECDSA with SHA-256)
                     { type: 'public-key', alg: -257 } // RS256 (RSASSA-PKCS1-v1_5 with SHA-256)
                 ];
     
@@ -864,17 +871,20 @@ def webauthn_register_script():
                     })
                 });
     
+                // Check the server's response for the registration result
                 const serverResult = await result.json();
                 if (serverResult.success) {
                     document.getElementById('registration-result').innerHTML = 'Registration successful!';
                 } else {
-                    document.getElementById('registration-result').innerHTML = 'Registration failed: ' + serverResult.error;
+                    document.getElementById('registration-result').innerHTML = `Registration failed: ${serverResult.error}`;
                 }
             } catch (error) {
-                document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error.message;
+                document.getElementById('registration-result').innerHTML = `Registration failed: ${error.message}`;
             }
         }
     </script>
+    
+    <!-- UI Components -->
     <button onclick="registerFingerprint()">Register Fingerprint</button>
     <p id="registration-result"></p>
     """
