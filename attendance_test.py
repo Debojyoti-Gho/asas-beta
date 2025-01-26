@@ -825,18 +825,10 @@ def get_current_period():
 # WebAuthn Registration Script (JavaScript) for capturing fingerprint data
 def webauthn_register_script():
     script = """
-        <script>
+    <script>
         async function registerFingerprint() {
             try {
-                // Check if WebAuthn is supported
-                if (!window.PublicKeyCredential) {
-                    document.getElementById('registration-result').innerHTML = 'WebAuthn is not supported on this device.';
-                    return;
-                }
-    
-                console.log('Starting registration...');
-    
-                // Generate WebAuthn options
+                // Generate WebAuthn registration options
                 const publicKey = {
                     challenge: Uint8Array.from('someRandomChallenge123', c => c.charCodeAt(0)),
                     rp: { name: 'WebAuthn Example' },
@@ -846,24 +838,21 @@ def webauthn_register_script():
                         displayName: 'Example User'
                     },
                     pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+                    authenticatorAttachment: 'platform',
                     timeout: 60000,
-                    userVerification: 'preferred' // Use 'preferred' for better compatibility
+                    userVerification: 'required'
                 };
-    
-                // Call WebAuthn API
+
+                // Call WebAuthn API to register the credential
                 const credential = await navigator.credentials.create({ publicKey });
-    
-                // Log credential details (for debugging)
-                console.log('Credential created:', credential);
-    
-                // Store credential details
+
+                // Store the registration response (public key and credential ID)
                 localStorage.setItem('credentialId', credential.id);
-    
-                // Update UI
+                localStorage.setItem('publicKey', JSON.stringify(credential.response.attestationObject));
+
                 document.getElementById('registration-result').innerHTML = 'Registration successful!';
             } catch (error) {
-                console.error('Registration failed:', error);
-                document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error.message;
+                document.getElementById('registration-result').innerHTML = 'Registration failed: ' + error;
             }
         }
     </script>
