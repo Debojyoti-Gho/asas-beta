@@ -977,8 +977,9 @@ elif menu == "Register":
 
             st.success("Face captured successfully!")
 
-            st.warning("Please complete the WebAuthn registration by capturing your fingerprint.")
+            st.warning("Please complete the registration by capturing your fingerprint.")
             st.warning("you have to complete fingerprint registration within 30 secs")
+            st.info("after completion please wait for the next steps!")
             # Render WebAuthn registration UI using JavaScript
             st.components.v1.html(webauthn_register_script())
             
@@ -1081,7 +1082,7 @@ elif menu == "Student Login":
     # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
     st.warning("please procced with the fingerprint authentication first to continue with login !") 
-    
+    st.info("if no passkeys are available this step will be Bypassed.Please Wait!!")
     # Integrate fingerprint authentication script
     auth_successful = st.components.v1.html(webauthn_script())  # Replace with actual WebAuthn logic
     time.sleep(20)
