@@ -24,6 +24,14 @@ import io
 import streamlit.components.v1 as components
 import json
 
+st.set_page_config( 
+
+    page_title="ASAS-Beta",  
+
+    page_icon="playstore-icon.png"  
+
+) 
+
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
 cursor = conn.cursor()
