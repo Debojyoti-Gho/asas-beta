@@ -34,36 +34,6 @@ manifest_code = """
 """
 components.html(manifest_code, height=0)
 
-# Custom CSS for hamburger menu icon
-custom_css = """
-<style>
-[data-testid="stSidebarNav"] > button {
-    font-size: 20px; /* Adjust size */
-    color: #333; /* Icon color */
-    background: none; /* Remove default background */
-    border: none; /* Remove border */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-[data-testid="stSidebarNav"] > button::before {
-    content: "\\2630"; /* Unicode for hamburger menu icon (☰) */
-    font-size: 24px; /* Hamburger icon size */
-    color: #007bff; /* Custom color for the icon */
-    margin-right: 0; /* Adjust spacing if necessary */
-}
-
-[data-testid="stSidebarNav"] > button:hover {
-    color: #0056b3; /* Hover color for icon */
-    cursor: pointer;
-}
-</style>
-"""
-
-# Inject CSS
-st.markdown(custom_css, unsafe_allow_html=True)
-
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
 cursor = conn.cursor()
