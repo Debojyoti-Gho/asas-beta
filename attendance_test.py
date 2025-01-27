@@ -984,9 +984,8 @@ elif menu == "Register":
             
             # Mock the WebAuthn registration after 5 seconds
             time.sleep(30)  # Simulate waiting for the WebAuthn registration process
-            st.write("⏬⏬")
-            time.sleep(2)
-            st.write("⏬⏬")
+            st.write("please scroll down")
+            
         st.subheader("Email Verification")
         if not st.session_state.email_verified:
             # Send OTP Button
