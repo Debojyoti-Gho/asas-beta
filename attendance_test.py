@@ -1028,9 +1028,9 @@ st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
 
-tabs = st.tabs(["Home", "Registration", "Student Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
+menu = st.sidebar.radio("Navigation Menu", ["Home", "Registration", "Student Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
-with tabs[0] :
+if menu == "Home":
     st.write("Welcome to the Student Management System!")
     st.subheader("Frequently Asked Questions (FAQs)")
 
@@ -1065,7 +1065,7 @@ with tabs[0] :
 
 # Assume get_device_ip() and get_device_uuid() are defined elsewhere in your code.
 # Main registration logic
-with tabs[1]:
+elif menu == "Register":
     st.header("Student Registration")
 
     # Initialize session state variables for OTP and verification
@@ -1205,7 +1205,7 @@ with tabs[1]:
                                             st.info("Please proceed to the Student Login page.")
 
 
-with tabs[2]:
+elif menu == "Student Login":
     st.header("Student Login")
     # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
@@ -1456,7 +1456,7 @@ with tabs[2]:
             st.rerun()
 
 # Admin Login Flow
-with tabs[3]:
+elif menu == "Admin Login":
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False  # Initially, no one is logged in
     
@@ -2679,7 +2679,7 @@ with tabs[3]:
 
                 
 # Section for Admin Management
-with tabs[4]:
+elif menu == "Admin Management":
     st.header("Admin Account Management")
 
     # Session state for OTP, Admin login, and Admin credentials
@@ -2883,7 +2883,7 @@ with tabs[4]:
                 conn.commit()
                 st.success("Default admin account has been restored.")
 
-with tabs[5] : 
+elif menu == "Lab Examination System" : 
     st.title("AI-Enabled Lab Examination System")
     st.title("AILES")
     st.success("Welcome to the Lab Examination System. Get started with your lab journey!")
@@ -2914,7 +2914,7 @@ with tabs[5] :
         """,
         unsafe_allow_html=True,
     )
-with tabs[6]:
+
+elif menu == "Teacher's Registration" :
     st.title("Teacher's Registration")
     st.info("comming soon!!")
-
