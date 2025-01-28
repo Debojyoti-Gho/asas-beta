@@ -47,28 +47,46 @@ def show_intro_video():
                 display: flex; 
                 justify-content: center; 
                 align-items: center; 
-                background-color: #111;
-                font-family: 'Arial', sans-serif;
+                background: linear-gradient(135deg, #00c6ff, #0072ff); /* Soft gradient like Google/Meta */
+                font-family: 'Poppins', sans-serif; /* Clean modern font */
+                overflow: hidden;
             }
             .title {
                 font-size: 4em;
-                color: #00BFFF;
-                font-weight: bold;
-                text-transform: uppercase;
-                animation: fadeIn 2s ease-in-out, slideUp 1.5s ease-out;
+                color: white;
+                font-weight: 600;
+                letter-spacing: 0.05em;
                 opacity: 0;
+                text-align: center;
+                line-height: 1.2;
+                animation: fadeIn 1.5s ease-out forwards, slideIn 1s ease-out 1.5s forwards;
+                text-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
             }
-            .title.visible {
-                opacity: 1;
+            .title span {
+                display: inline-block;
+                opacity: 0;
+                animation: fadeInLetters 0.4s ease-out forwards;
             }
+            .title span:nth-child(odd) {
+                animation-delay: 0.3s;
+            }
+            .title span:nth-child(even) {
+                animation-delay: 0.5s;
+            }
+
             @keyframes fadeIn {
                 0% { opacity: 0; }
                 100% { opacity: 1; }
             }
-            @keyframes slideUp {
-                0% { transform: translateY(30px); }
+            @keyframes slideIn {
+                0% { transform: translateY(40px); }
                 100% { transform: translateY(0); }
             }
+            @keyframes fadeInLetters {
+                0% { opacity: 0; }
+                100% { opacity: 1; }
+            }
+
             @media (max-width: 600px) {
                 .title {
                     font-size: 3em;
@@ -77,22 +95,33 @@ def show_intro_video():
         </style>
     </head>
     <body>
-        <div class="title">Advanced Student Attendance System (ASAS-Beta)</div>
+        <!-- Audio Element to play the intro sound -->
+        <audio id="introAudio" autoplay loop>
+            <source src="https://www.example.com/your-intro-sound.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        
+        <div class="title">
+            <span>A</span><span>d</span><span>v</span><span>a</span><span>n</span><span>c</span><span>e</span><span>d</span> 
+            <span>S</span><span>t</span><span>u</span><span>d</span><span>e</span><span>n</span><span>t</span> 
+            <span>A</span><span>t</span><span>t</span><span>end</span><span>a</span><span>n</span><span>c</span><span>e</span> 
+            <span>S</span><span>y</span><span>s</span><span>t</span><span>e</span><span>m</span> 
+            <span>(</span><span>A</span><span>S</span><span>A</span><span>S</span>-<span>B</span><span>e</span><span>t</span><span>a</span><span>)</span>
+        </div>
+        
         <script>
             window.onload = function() {
                 setTimeout(function() {
-                    document.querySelector('.title').classList.add('visible');
-                }, 100);
-                setTimeout(function() {
                     window.location.href = window.location.href;
-                }, 4000);  // Redirect after 4 seconds to reload the page and show the app
+                }, 4000);  // Transition after 4 seconds
             }
         </script>
     </body>
     </html>
     """
     st.markdown(intro_html, unsafe_allow_html=True)
-    time.sleep(4)  # Simulate intro video duration before redirect
+    time.sleep(4)  # Allow time for the intro animation
+    
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
