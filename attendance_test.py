@@ -35,6 +35,7 @@ manifest_code = """
 components.html(manifest_code, height=0)
 
 
+
 # Function to display the fancy intro with the app name
 def show_intro_video():
     intro_html = """
@@ -54,7 +55,6 @@ def show_intro_video():
             }
             .title {
                 font-size: 5em;
-                color: #fff;
                 font-weight: bold;
                 text-transform: uppercase;
                 letter-spacing: 0.1em;
@@ -77,6 +77,31 @@ def show_intro_video():
             .title span:nth-child(even) {
                 animation-delay: 0.4s;
             }
+            .title span:nth-child(1) { color: #4285F4; }
+            .title span:nth-child(2) { color: #34A853; }
+            .title span:nth-child(3) { color: #FBBC05; }
+            .title span:nth-child(4) { color: #EA4335; }
+            .title span:nth-child(5) { color: #4285F4; }
+            .title span:nth-child(6) { color: #34A853; }
+            .title span:nth-child(7) { color: #FBBC05; }
+            .title span:nth-child(8) { color: #EA4335; }
+            .title span:nth-child(9) { color: #4285F4; }
+            .title span:nth-child(10) { color: #34A853; }
+            .title span:nth-child(11) { color: #FBBC05; }
+            .title span:nth-child(12) { color: #EA4335; }
+            .title span:nth-child(13) { color: #4285F4; }
+            .title span:nth-child(14) { color: #34A853; }
+            .title span:nth-child(15) { color: #FBBC05; }
+            .title span:nth-child(16) { color: #EA4335; }
+            .title span:nth-child(17) { color: #4285F4; }
+            .title span:nth-child(18) { color: #34A853; }
+            .title span:nth-child(19) { color: #FBBC05; }
+            .title span:nth-child(20) { color: #EA4335; }
+            .title span:nth-child(21) { color: #4285F4; }
+            .title span:nth-child(22) { color: #34A853; }
+            .title span:nth-child(23) { color: #FBBC05; }
+            .title span:nth-child(24) { color: #EA4335; }
+            .title span:nth-child(25) { color: #4285F4; }
 
             @keyframes fadeIn {
                 0% { opacity: 0; }
@@ -112,21 +137,29 @@ def show_intro_video():
         </style>
     </head>
     <body>
-        <div class="title">
+        <div class="title" id="introText">
             <span>A</span><span>d</span><span>v</span><span>a</span><span>n</span><span>c</span><span>e</span><span>d</span> 
             <span>S</span><span>t</span><span>u</span><span>d</span><span>e</span><span>n</span><span>t</span> 
             <span>A</span><span>t</span><span>t</span><span>end</span><span>a</span><span>n</span><span>c</span><span>e</span> 
             <span>S</span><span>y</span><span>s</span><span>t</span><span>e</span><span>m</span> 
             <span>(</span><span>A</span><span>S</span><span>A</span><span>S</span>-<span>B</span><span>e</span><span>t</span><span>a</span><span>)</span>
         </div>
+        <script>
+            window.onload = function() {
+                setTimeout(function() {
+                    document.getElementById("introText").classList.add("hidden");
+                    window.location.reload();  // Reload the page to hide intro and show main content
+                }, 6000);  // 6 seconds to allow full animation
+            }
+        </script>
     </body>
     </html>
     """
     st.markdown(intro_html, unsafe_allow_html=True)
 
-# Display the intro and then wait for 5 seconds
+# Show the fancy intro first
 show_intro_video()
-time.sleep(5)  # Allow time for the intro animation to play
+
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
