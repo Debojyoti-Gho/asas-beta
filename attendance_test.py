@@ -70,6 +70,9 @@ def show_intro_video():
                 display: inline-block;
                 opacity: 0;
                 animation: fadeIn 0.5s ease-out forwards;
+                background-image: linear-gradient(to right, #6a11cb, #2575fc);
+                -webkit-background-clip: text;
+                color: transparent;
             }
             .title span:nth-child(odd) {
                 animation-delay: 0.2s;
@@ -77,31 +80,31 @@ def show_intro_video():
             .title span:nth-child(even) {
                 animation-delay: 0.4s;
             }
-            .title span:nth-child(1) { color: #4285F4; }
-            .title span:nth-child(2) { color: #34A853; }
-            .title span:nth-child(3) { color: #FBBC05; }
-            .title span:nth-child(4) { color: #EA4335; }
-            .title span:nth-child(5) { color: #4285F4; }
-            .title span:nth-child(6) { color: #34A853; }
-            .title span:nth-child(7) { color: #FBBC05; }
-            .title span:nth-child(8) { color: #EA4335; }
-            .title span:nth-child(9) { color: #4285F4; }
-            .title span:nth-child(10) { color: #34A853; }
-            .title span:nth-child(11) { color: #FBBC05; }
-            .title span:nth-child(12) { color: #EA4335; }
-            .title span:nth-child(13) { color: #4285F4; }
-            .title span:nth-child(14) { color: #34A853; }
-            .title span:nth-child(15) { color: #FBBC05; }
-            .title span:nth-child(16) { color: #EA4335; }
-            .title span:nth-child(17) { color: #4285F4; }
-            .title span:nth-child(18) { color: #34A853; }
-            .title span:nth-child(19) { color: #FBBC05; }
-            .title span:nth-child(20) { color: #EA4335; }
-            .title span:nth-child(21) { color: #4285F4; }
-            .title span:nth-child(22) { color: #34A853; }
-            .title span:nth-child(23) { color: #FBBC05; }
-            .title span:nth-child(24) { color: #EA4335; }
-            .title span:nth-child(25) { color: #4285F4; }
+            .title span:nth-child(1) { background-image: linear-gradient(to right, #FF5F6D, #FFC371); }
+            .title span:nth-child(2) { background-image: linear-gradient(to right, #4FACFE, #00F2FE); }
+            .title span:nth-child(3) { background-image: linear-gradient(to right, #FF416C, #FF4B2B); }
+            .title span:nth-child(4) { background-image: linear-gradient(to right, #4e54c8, #8f94fb); }
+            .title span:nth-child(5) { background-image: linear-gradient(to right, #FF5F6D, #FFC371); }
+            .title span:nth-child(6) { background-image: linear-gradient(to right, #4FACFE, #00F2FE); }
+            .title span:nth-child(7) { background-image: linear-gradient(to right, #FF416C, #FF4B2B); }
+            .title span:nth-child(8) { background-image: linear-gradient(to right, #4e54c8, #8f94fb); }
+            .title span:nth-child(9) { background-image: linear-gradient(to right, #FF5F6D, #FFC371); }
+            .title span:nth-child(10) { background-image: linear-gradient(to right, #4FACFE, #00F2FE); }
+            .title span:nth-child(11) { background-image: linear-gradient(to right, #FF416C, #FF4B2B); }
+            .title span:nth-child(12) { background-image: linear-gradient(to right, #4e54c8, #8f94fb); }
+            .title span:nth-child(13) { background-image: linear-gradient(to right, #FF5F6D, #FFC371); }
+            .title span:nth-child(14) { background-image: linear-gradient(to right, #4FACFE, #00F2FE); }
+            .title span:nth-child(15) { background-image: linear-gradient(to right, #FF416C, #FF4B2B); }
+            .title span:nth-child(16) { background-image: linear-gradient(to right, #4e54c8, #8f94fb); }
+            .title span:nth-child(17) { background-image: linear-gradient(to right, #FF5F6D, #FFC371); }
+            .title span:nth-child(18) { background-image: linear-gradient(to right, #4FACFE, #00F2FE); }
+            .title span:nth-child(19) { background-image: linear-gradient(to right, #FF416C, #FF4B2B); }
+            .title span:nth-child(20) { background-image: linear-gradient(to right, #4e54c8, #8f94fb); }
+            .title span:nth-child(21) { background-image: linear-gradient(to right, #FF5F6D, #FFC371); }
+            .title span:nth-child(22) { background-image: linear-gradient(to right, #4FACFE, #00F2FE); }
+            .title span:nth-child(23) { background-image: linear-gradient(to right, #FF416C, #FF4B2B); }
+            .title span:nth-child(24) { background-image: linear-gradient(to right, #4e54c8, #8f94fb); }
+            .title span:nth-child(25) { background-image: linear-gradient(to right, #FF5F6D, #FFC371); }
 
             @keyframes fadeIn {
                 0% { opacity: 0; }
@@ -142,7 +145,7 @@ def show_intro_video():
             <span>S</span><span>t</span><span>u</span><span>d</span><span>e</span><span>n</span><span>t</span> 
             <span>A</span><span>t</span><span>t</span><span>end</span><span>a</span><span>n</span><span>c</span><span>e</span> 
             <span>S</span><span>y</span><span>s</span><span>t</span><span>e</span><span>m</span> 
-            <span>A</span><span>S</span><span>A</span><span>S</span>-<span>B</span><span>e</span><span>t</span><span>a</span>
+            <span>(</span><span>A</span><span>S</span><span>A</span><span>S</span>-<span>B</span><span>e</span><span>t</span><span>a</span><span>)</span>
         </div>
         <script>
             window.onload = function() {
@@ -159,7 +162,7 @@ def show_intro_video():
 
 # Show the fancy intro first
 show_intro_video()
-
+time.sleep(4)
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
