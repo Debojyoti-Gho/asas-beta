@@ -121,7 +121,6 @@ def show_intro_video():
 
 # Show the fancy intro first
 show_intro_video()
-time.sleep(5)  # Allow time for the intro animation to play
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
