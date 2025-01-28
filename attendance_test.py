@@ -48,7 +48,7 @@ def show_intro_video():
                 display: flex; 
                 justify-content: center; 
                 align-items: center; 
-                background: linear-gradient(135deg, #1D2B64, #F8C8DC); 
+                background: linear-gradient(135deg, #4285F4, #34A853, #FBBC05, #EA4335); 
                 font-family: 'Roboto', sans-serif;
                 overflow: hidden;
             }
@@ -61,10 +61,10 @@ def show_intro_video():
                 opacity: 0;
                 text-align: center;
                 line-height: 1.5;
-                animation: fadeInLetters 1s ease-out forwards, 
+                animation: fadeInLetters 1.5s ease-out forwards, 
                           spinZoom 3s ease-out 1s forwards, 
                           glowExit 1.5s ease-out 3s forwards, 
-                          exitRight 1s ease-out 4s forwards;
+                          exitRight 1s ease-out 5s forwards;
             }
             .title span {
                 display: inline-block;
@@ -104,6 +104,11 @@ def show_intro_video():
                     font-size: 3em;
                 }
             }
+
+            /* Hide the intro after animation completes */
+            .hidden {
+                display: none;
+            }
         </style>
     </head>
     <body>
@@ -119,8 +124,9 @@ def show_intro_video():
     """
     st.markdown(intro_html, unsafe_allow_html=True)
 
-# Show the fancy intro first
+# Display the intro and then wait for 5 seconds
 show_intro_video()
+time.sleep(5)  # Allow time for the intro animation to play
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
