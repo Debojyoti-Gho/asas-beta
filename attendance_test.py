@@ -1028,7 +1028,7 @@ st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
 
-tab = st.tab("Navigation Menu", ["Home", "Registration", "Student Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
+tabs = st.tabs("Navigation Menu", ["Home", "Registration", "Student Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
 with tabs[0] :
     st.write("Welcome to the Student Management System!")
@@ -1205,7 +1205,7 @@ with tabs[1]:
                                             st.info("Please proceed to the Student Login page.")
 
 
-elif menu == "Student Login":
+with tabs[2]:
     st.header("Student Login")
     # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
@@ -1456,7 +1456,7 @@ elif menu == "Student Login":
             st.rerun()
 
 # Admin Login Flow
-elif menu == "Teacher's Login":
+with tabs[3]:
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False  # Initially, no one is logged in
     
@@ -2679,7 +2679,7 @@ elif menu == "Teacher's Login":
 
                 
 # Section for Admin Management
-elif menu == "Admin Management":
+with tabs[4]:
     st.header("Admin Account Management")
 
     # Session state for OTP, Admin login, and Admin credentials
@@ -2883,7 +2883,7 @@ elif menu == "Admin Management":
                 conn.commit()
                 st.success("Default admin account has been restored.")
 
-elif menu == "Lab Examination System" : 
+with tabs[5] : 
     st.title("AI-Enabled Lab Examination System")
     st.title("AILES")
     st.success("Welcome to the Lab Examination System. Get started with your lab journey!")
@@ -2914,8 +2914,7 @@ elif menu == "Lab Examination System" :
         """,
         unsafe_allow_html=True,
     )
-
-elif menu == "Teacher's Registration" :
+with tabs[6]:
     st.title("Teacher's Registration")
     st.info("comming soon!!")
 
