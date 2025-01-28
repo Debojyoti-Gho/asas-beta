@@ -160,7 +160,7 @@ def show_intro_video():
 
 # Show the fancy intro first
 show_intro_video()
-time.sleep(4)
+time.sleep(3)
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
@@ -962,8 +962,8 @@ def webauthn_register_script():
                     rp: { name: 'WebAuthn Example' },
                     user: {
                         id: new Uint8Array(16),
-                        name: 'user@example.com',
-                        displayName: 'Example User'
+                        name: 'asas-beta@user.com',
+                        displayName: 'Student User'
                     },
                     pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
                     authenticatorAttachment: 'platform',
@@ -1028,7 +1028,7 @@ st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
 
-menu = st.sidebar.selectbox("Menu", ["Home", "Register", "Student Login", "Admin Login", "Admin Management", "Lab Examination System"])
+menu = st.sidebar.radio("Navigation Menu", ["Home", "Registration", "Student Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
 if menu == "Home":
     st.write("Welcome to the Student Management System!")
@@ -2914,3 +2914,8 @@ elif menu == "Lab Examination System" :
         """,
         unsafe_allow_html=True,
     )
+
+elif menu == "Teacher's Registration" :
+    st.title("Teacher's Registration")
+    st.info("comming soon!!")
+
