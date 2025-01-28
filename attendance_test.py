@@ -26,7 +26,8 @@ import json
 
 st.set_page_config( 
     page_title="ASAS-Beta",  
-    page_icon="playstore-icon.png"   
+    page_icon="🎓", layout="wide", 
+    initial_sidebar_state="collapsed"   
 ) 
 
 manifest_code = """
@@ -34,7 +35,8 @@ manifest_code = """
 """
 components.html(manifest_code, height=0)
 
-
+# Adding a Font Awesome icon to the sidebar
+st.sidebar.markdown('<i class="fa fa-bars"></i> Menu', unsafe_allow_html=True)
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
@@ -163,11 +165,6 @@ def show_intro_video():
 # Show the fancy intro first
 show_intro_video()
 time.sleep(4)
-
-# Adding a Font Awesome icon to the sidebar
-st.sidebar.markdown('<i class="fa fa-bars"></i> Menu', unsafe_allow_html=True)
-
-st.set_page_config(page_title="ASAS-Beta", page_icon="🎓", layout="wide", initial_sidebar_state="collapsed")
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
