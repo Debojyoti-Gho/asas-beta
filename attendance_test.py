@@ -1028,11 +1028,11 @@ st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
 
-# Hamburger Menu with HTML and CSS
+# Hamburger Menu with Custom HTML and CSS
 st.markdown(
     """
     <style>
-    /* Hide default Streamlit menu */
+    /* Hide default Streamlit sidebar */
     [data-testid="stSidebar"] {
         display: none;
     }
@@ -1114,13 +1114,12 @@ st.markdown(
         streamlitInput.dispatchEvent(new Event("change"));
     }
     </script>
-
     """,
     unsafe_allow_html=True,
 )
 
 # Hidden input to capture menu selection
-menu = st.text_input("streamlit-input", key="menu-input", label_visibility="hidden")
+menu = st.text_input("streamlit-input", key="menu", label_visibility="hidden")
 
 if menu == "Home":
     st.write("Welcome to the Student Management System!")
