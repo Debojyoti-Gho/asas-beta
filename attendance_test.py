@@ -164,6 +164,9 @@ def show_intro_video():
 show_intro_video()
 time.sleep(4)
 
+# Adding a Font Awesome icon to the sidebar
+st.sidebar.markdown('<i class="fa fa-bars"></i> Menu', unsafe_allow_html=True)
+
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
 cursor = conn.cursor()
