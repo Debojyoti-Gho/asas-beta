@@ -94,9 +94,6 @@ def show_intro_video():
     st.markdown(intro_html, unsafe_allow_html=True)
     time.sleep(4)  # Simulate intro video duration before redirect
 
-# Show the fancy intro first
-show_intro_video()
-
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
 cursor = conn.cursor()
@@ -959,6 +956,8 @@ def webauthn_script():
     return script
     
 # Streamlit UI
+# Show the fancy intro first
+show_intro_video()
 st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
