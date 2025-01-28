@@ -26,17 +26,13 @@ import json
 
 st.set_page_config( 
     page_title="ASAS-Beta",  
-    page_icon="🎓", layout="wide", 
-    initial_sidebar_state="collapsed"   
+    page_icon="🎓"   
 ) 
 
 manifest_code = """
 <link rel="manifest" href="/manifest.json">
 """
 components.html(manifest_code, height=0)
-
-# Adding a Font Awesome icon to the sidebar
-st.sidebar.markdown('<i class="fa fa-bars"></i> Menu', unsafe_allow_html=True)
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
