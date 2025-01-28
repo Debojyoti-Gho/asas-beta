@@ -34,6 +34,69 @@ manifest_code = """
 """
 components.html(manifest_code, height=0)
 
+# Function to display the fancy intro with the app name
+def show_intro_video():
+    intro_html = """
+    <html>
+    <head>
+        <style>
+            body { 
+                margin: 0; 
+                padding: 0; 
+                height: 100vh; 
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                background-color: #111;
+                font-family: 'Arial', sans-serif;
+            }
+            .title {
+                font-size: 4em;
+                color: #00BFFF;
+                font-weight: bold;
+                text-transform: uppercase;
+                animation: fadeIn 2s ease-in-out, slideUp 1.5s ease-out;
+                opacity: 0;
+            }
+            .title.visible {
+                opacity: 1;
+            }
+            @keyframes fadeIn {
+                0% { opacity: 0; }
+                100% { opacity: 1; }
+            }
+            @keyframes slideUp {
+                0% { transform: translateY(30px); }
+                100% { transform: translateY(0); }
+            }
+            @media (max-width: 600px) {
+                .title {
+                    font-size: 3em;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="title">Advanced Student Attendance System (ASAS-Beta)</div>
+        <script>
+            window.onload = function() {
+                setTimeout(function() {
+                    document.querySelector('.title').classList.add('visible');
+                }, 100);
+                setTimeout(function() {
+                    window.location.href = window.location.href;
+                }, 4000);  // Redirect after 4 seconds to reload the page and show the app
+            }
+        </script>
+    </body>
+    </html>
+    """
+    st.markdown(intro_html, unsafe_allow_html=True)
+    time.sleep(4)  # Simulate intro video duration before redirect
+
+# Show the fancy intro first
+show_intro_video()
+
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
 cursor = conn.cursor()
