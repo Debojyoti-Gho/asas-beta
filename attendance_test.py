@@ -1028,7 +1028,7 @@ st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
 
-menu = st.sidebar.radio("Navigation Menu", ["Home", "Registration", "Student Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
+menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Registration", "Student Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
 if menu == "Home":
     st.write("Welcome to the Student Management System!")
