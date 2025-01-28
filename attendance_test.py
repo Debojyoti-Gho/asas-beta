@@ -54,7 +54,7 @@ def show_intro_video():
                 overflow: hidden;
             }
             .title {
-                font-size: 5em;
+                font-size: 2.5em;  /* Reduced font size by 50% */
                 font-weight: bold;
                 text-transform: uppercase;
                 letter-spacing: 0.1em;
@@ -126,7 +126,7 @@ def show_intro_video():
 
             @media (max-width: 600px) {
                 .title {
-                    font-size: 3em;
+                    font-size: 2em;
                 }
             }
 
