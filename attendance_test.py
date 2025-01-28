@@ -48,31 +48,31 @@ def show_intro_video():
                 display: flex; 
                 justify-content: center; 
                 align-items: center; 
-                background: linear-gradient(135deg, #1D2B64, #F8C8DC); 
-                font-family: 'Roboto', sans-serif;
+                background: linear-gradient(135deg, #00c6ff, #0072ff); /* Soft gradient like Google/Meta */
+                font-family: 'Poppins', sans-serif; /* Clean modern font */
                 overflow: hidden;
             }
             .title {
-                font-size: 5em;
-                color: #fff;
-                font-weight: bold;
-                text-transform: uppercase;
-                letter-spacing: 0.1em;
+                font-size: 4em;
+                color: white;
+                font-weight: 600;
+                letter-spacing: 0.05em;
                 opacity: 0;
-                animation: fadeIn 2s ease-out forwards, slideIn 1.5s ease-out 2s forwards;
                 text-align: center;
-                line-height: 1.5;
+                line-height: 1.2;
+                animation: fadeIn 1.5s ease-out forwards, slideIn 1s ease-out 1.5s forwards;
+                text-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
             }
             .title span {
                 display: inline-block;
                 opacity: 0;
-                animation: fadeInLetters 0.5s ease-out forwards;
+                animation: fadeInLetters 0.4s ease-out forwards;
             }
             .title span:nth-child(odd) {
-                animation-delay: 0.2s;
+                animation-delay: 0.3s;
             }
             .title span:nth-child(even) {
-                animation-delay: 0.4s;
+                animation-delay: 0.5s;
             }
 
             @keyframes fadeIn {
@@ -80,7 +80,7 @@ def show_intro_video():
                 100% { opacity: 1; }
             }
             @keyframes slideIn {
-                0% { transform: translateY(50px); }
+                0% { transform: translateY(40px); }
                 100% { transform: translateY(0); }
             }
             @keyframes fadeInLetters {
@@ -96,6 +96,12 @@ def show_intro_video():
         </style>
     </head>
     <body>
+        <!-- Audio Element to play the intro sound -->
+        <audio id="introAudio" autoplay loop>
+            <source src="https://www.example.com/your-intro-sound.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        
         <div class="title">
             <span>A</span><span>d</span><span>v</span><span>a</span><span>n</span><span>c</span><span>e</span><span>d</span> 
             <span>S</span><span>t</span><span>u</span><span>d</span><span>e</span><span>n</span><span>t</span> 
@@ -103,19 +109,22 @@ def show_intro_video():
             <span>S</span><span>y</span><span>s</span><span>t</span><span>e</span><span>m</span> 
             <span>(</span><span>A</span><span>S</span><span>A</span><span>S</span>-<span>B</span><span>e</span><span>t</span><span>a</span><span>)</span>
         </div>
+
         <script>
             window.onload = function() {
                 setTimeout(function() {
+                    // Hide the intro video and content
+                    document.body.style.display = 'none';
+                    // Reload the page after 4 seconds to show the main content
                     window.location.href = window.location.href;
-                }, 5000);  // Redirect after 5 seconds
+                }, 4000);  // Transition after 4 seconds
             }
         </script>
     </body>
     </html>
     """
+    # Rendering HTML content with unsafe_allow_html=True
     st.markdown(intro_html, unsafe_allow_html=True)
-    time.sleep(5)  # Allow time for the intro animation
-
     
 
 # Database setup
