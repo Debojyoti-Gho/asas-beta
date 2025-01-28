@@ -1028,7 +1028,99 @@ st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
 
-menu = st.sidebar.radio("Navigation Menu", ["Home", "Registration", "Student Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
+# Hamburger Menu with HTML and CSS
+st.markdown(
+    """
+    <style>
+    /* Hide default Streamlit menu */
+    [data-testid="stSidebar"] {
+        display: none;
+    }
+
+    /* Hamburger menu container */
+    .hamburger-menu {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 9999;
+        cursor: pointer;
+    }
+
+    .hamburger-lines {
+        width: 30px;
+        height: 3px;
+        background-color: black;
+        margin: 6px 0;
+        transition: 0.4s;
+    }
+
+    /* Sidebar menu */
+    .custom-sidebar {
+        height: 100%;
+        width: 0;
+        position: fixed;
+        z-index: 10000;
+        top: 0;
+        left: 0;
+        background-color: #111;
+        overflow-x: hidden;
+        transition: 0.5s;
+        padding-top: 60px;
+        color: white;
+    }
+
+    .custom-sidebar a {
+        padding: 10px 15px;
+        text-decoration: none;
+        font-size: 18px;
+        color: white;
+        display: block;
+        transition: 0.3s;
+    }
+
+    .custom-sidebar a:hover {
+        background-color: #575757;
+    }
+
+    /* Open sidebar */
+    .custom-sidebar.open {
+        width: 250px;
+    }
+
+    </style>
+
+    <div class="hamburger-menu" onclick="toggleSidebar()">
+        <div class="hamburger-lines"></div>
+        <div class="hamburger-lines"></div>
+        <div class="hamburger-lines"></div>
+    </div>
+
+    <div id="sidebar" class="custom-sidebar">
+        <a href="#" onclick="selectMenuItem('Home')">Home</a>
+        <a href="#" onclick="selectMenuItem('About')">About</a>
+        <a href="#" onclick="selectMenuItem('Settings')">Settings</a>
+        <a href="#" onclick="selectMenuItem('Contact')">Contact</a>
+    </div>
+
+    <script>
+    function toggleSidebar() {
+        var sidebar = document.getElementById("sidebar");
+        sidebar.classList.toggle("open");
+    }
+
+    function selectMenuItem(page) {
+        var streamlitInput = document.getElementById("streamlit-input");
+        streamlitInput.value = page;
+        streamlitInput.dispatchEvent(new Event("change"));
+    }
+    </script>
+
+    """,
+    unsafe_allow_html=True,
+)
+
+# Hidden input to capture menu selection
+menu = st.text_input("streamlit-input", key="menu-input", label_visibility="hidden")
 
 if menu == "Home":
     st.write("Welcome to the Student Management System!")
@@ -1456,7 +1548,7 @@ elif menu == "Student Login":
             st.rerun()
 
 # Admin Login Flow
-elif menu == "Admin Login":
+elif menu == "Teacher's Login":
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False  # Initially, no one is logged in
     
