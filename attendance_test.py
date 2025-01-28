@@ -167,6 +167,8 @@ time.sleep(4)
 # Adding a Font Awesome icon to the sidebar
 st.sidebar.markdown('<i class="fa fa-bars"></i> Menu', unsafe_allow_html=True)
 
+st.set_page_config(page_title="ASAS-Beta", page_icon="🎓", layout="wide", initial_sidebar_state="collapsed")
+
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
 cursor = conn.cursor()
