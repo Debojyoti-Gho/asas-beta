@@ -34,6 +34,7 @@ manifest_code = """
 """
 components.html(manifest_code, height=0)
 
+
 # Function to display the fancy intro with the app name
 def show_intro_video():
     intro_html = """
@@ -47,8 +48,8 @@ def show_intro_video():
                 display: flex; 
                 justify-content: center; 
                 align-items: center; 
-                background: linear-gradient(135deg, #00c6ff, #0072ff); /* Soft gradient like Google/Meta */
-                font-family: 'Poppins', sans-serif; /* Clean modern font */
+                background: linear-gradient(135deg, #00c6ff, #0072ff);
+                font-family: 'Poppins', sans-serif; 
                 overflow: hidden;
             }
             .title {
@@ -108,7 +109,7 @@ def show_intro_video():
             <span>S</span><span>y</span><span>s</span><span>t</span><span>e</span><span>m</span> 
             <span>(</span><span>A</span><span>S</span><span>A</span><span>S</span>-<span>B</span><span>e</span><span>t</span><span>a</span><span>)</span>
         </div>
-        
+
         <script>
             window.onload = function() {
                 setTimeout(function() {
@@ -119,8 +120,9 @@ def show_intro_video():
     </body>
     </html>
     """
+    # Rendering HTML content with unsafe_allow_html=True
     st.markdown(intro_html, unsafe_allow_html=True)
-    time.sleep(4)  # Allow time for the intro animation
+
     
 
 # Database setup
