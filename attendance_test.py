@@ -142,7 +142,8 @@ def show_intro_video():
             <span>S</span><span>t</span><span>u</span><span>d</span><span>e</span><span>n</span><span>t</span> 
             <span>A</span><span>t</span><span>t</span><span>end</span><span>a</span><span>n</span><span>c</span><span>e</span> 
             <span>S</span><span>y</span><span>s</span><span>t</span><span>e</span><span>m</span> 
-            <span>(</span><span>A</span><span>S</span><span>A</span><span>S</span>-<span>B</span><span>e</span><span>t</span><span>a</span><span>)</span>
+            
+            <span>A</span><span>S</span><span>A</span><span>S</span>-<span>B</span><span>e</span><span>t</span><span>a</span>
         </div>
         <script>
             window.onload = function() {
