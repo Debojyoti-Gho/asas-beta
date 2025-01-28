@@ -1028,7 +1028,7 @@ st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
 st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
 st.subheader("developed by Debojyoti Ghosh")
 
-menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Registration", "Student Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
+menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
 if menu == "Home":
     st.write("Welcome to the Student Management System!")
@@ -1065,7 +1065,7 @@ if menu == "Home":
 
 # Assume get_device_ip() and get_device_uuid() are defined elsewhere in your code.
 # Main registration logic
-elif menu == "Register":
+elif menu == "Student's Registration":
     st.header("Student Registration")
 
     # Initialize session state variables for OTP and verification
@@ -1205,7 +1205,7 @@ elif menu == "Register":
                                             st.info("Please proceed to the Student Login page.")
 
 
-elif menu == "Student Login":
+elif menu == "Student's Login":
     st.header("Student Login")
     # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
@@ -1456,7 +1456,7 @@ elif menu == "Student Login":
             st.rerun()
 
 # Admin Login Flow
-elif menu == "Admin Login":
+elif menu == "Teacher's Login":
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False  # Initially, no one is logged in
     
