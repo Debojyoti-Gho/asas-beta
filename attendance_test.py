@@ -777,36 +777,30 @@ def calculate_cosine_similarity(stored_face, captured_face):
 
     return similarity_score
 
-# Function to check if the face is already registered
-def is_face_registered(new_face_blob):
-    # Convert the new face image to a format suitable for DeepFace comparison
-    img = Image.open(io.BytesIO(new_face_blob))
-    img_array = np.array(img)
-    
-    # DeepFace uses its internal model to extract face embeddings and compare
-    # Temporarily save the new face image
+
+def is_face_registered(face_blob):
     new_face_path = "/tmp/new_face.jpg"
-    img.save(new_face_path)
+    
+    with open(new_face_path, "wb") as f:
+        f.write(face_blob)
 
-    # Fetch all registered faces and compare
     cursor.execute("SELECT student_face FROM students")
-    all_faces = cursor.fetchall()
+    stored_faces = cursor.fetchall()
 
-    for stored_face in all_faces:
-        stored_face_blob = stored_face[0]
-        
-        # Temporarily save the stored face image
+    for stored_face in stored_faces:
         stored_face_path = "/tmp/stored_face.jpg"
-        stored_face_img = Image.open(io.BytesIO(stored_face_blob))
-        stored_face_img.save(stored_face_path)
+        
+        with open(stored_face_path, "wb") as f:
+            f.write(stored_face[0])  # Assuming student_face is stored as BLOB
 
-        # Use DeepFace to compare the two faces
-        result = deepface.DeepFace.verify(new_face_path, stored_face_path)
+        try:
+            result = DeepFace.verify(new_face_path, stored_face_path)
+            if result["verified"]:
+                return True
+        except Exception as e:
+            print(f"DeepFace error: {e}")
 
-        if result["verified"]:
-            return True  # Faces match
-
-    return False  # No match found
+    return False
 
     
 # Database setup to store device IDs
