@@ -797,7 +797,7 @@ def is_face_registered(face_blob):
     stored_faces = cursor.fetchall()
 
     # Define a suitable similarity threshold
-    THRESHOLD = 0.5  # Adjust based on testing (0.5-0.7 is reasonable)
+    THRESHOLD = 0.76 # Adjust based on testing (0.5-0.7 is reasonable)
 
     for stored_face in stored_faces:
         stored_face_path = "/tmp/stored_face.jpg"
