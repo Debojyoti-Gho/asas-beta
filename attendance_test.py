@@ -1371,29 +1371,29 @@ elif menu == "Student's Login":
                             img_bytes = io.BytesIO()
                             img.save(img_bytes, format="JPEG")
                             captured_face_blob = img_bytes.getvalue()
-
-                            # Try specifying the model explicitly
-                            model_name = "VGG-Face"  # You can choose other models like "Facenet", "OpenFace", etc.
-                            
-                            # This initializes the DeepFace model explicitly
-                            model = DeepFace.build_model(model_name)
-
-                            # Save the captured face image to a temporary file for DeepFace to work with
+                        
+                            # Specify the DeepFace model
+                            model_name = "VGG-Face"  # Or other models like "Facenet", "OpenFace", etc.
+                        
+                            # Save captured face to a temporary file
                             captured_face_path = "captured_face.jpg"
                             with open(captured_face_path, "wb") as f:
                                 f.write(captured_face_blob)
-
-                            # DeepFace verification
+                        
+                            # Fetch stored face image from database
+                            stored_face_image = user[10]  # Assuming index 10 holds the face BLOB
+                            stored_face_path = "stored_face.jpg"
+                            with open(stored_face_path, "wb") as f:
+                                f.write(stored_face_image)
+                        
+                            # Perform face verification with specified model
                             try:
-                                # Fetch stored face image from the database (already in binary)
-                                stored_face_image = user[10]  # Example: Stored in the database as a blob
-                                stored_face_path = "stored_face.jpg"
-                                with open(stored_face_path, "wb") as f:
-                                    f.write(stored_face_image)
-
-                                # Perform face verification using DeepFace
-                                result = DeepFace.verify(captured_face_path, stored_face_path)
-
+                                result = DeepFace.verify(
+                                    img1_path=captured_face_path,
+                                    img2_path=stored_face_path,
+                                    model_name=model_name  # Specify model here
+                                )
+                        
                                 if result["verified"]:
                                     st.success("Face recognized successfully!")
                                     # Proceed with the rest of the login process (location, Bluetooth, etc.)
