@@ -731,27 +731,34 @@ mp_drawing = mp.solutions.drawing_utils
 def extract_face_features(image_bytes):
     image = Image.open(io.BytesIO(image_bytes))
     image = np.array(image)
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    
+    if image is None or image.size == 0:
+        raise ValueError("Invalid image input.")
+
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)  # Ensure correct color format
 
     with mp_face_detection.FaceDetection(min_detection_confidence=0.9) as face_detection:
         results = face_detection.process(image_rgb)
 
         if results.detections:
-            for detection in results.detections:
-                bboxC = detection.location_data.relative_bounding_box
-                ih, iw, _ = image.shape
-                bbox = int(bboxC.xmin * iw), int(bboxC.ymin * ih), \
-                       int(bboxC.width * iw), int(bboxC.height * ih)
+            detection = results.detections[0]  # Use the first detected face
+            bboxC = detection.location_data.relative_bounding_box
+            ih, iw, _ = image.shape
+            x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), \
+                         int(bboxC.width * iw), int(bboxC.height * ih)
 
-            face_image = image[bbox[1]:bbox[1] + bbox[3], bbox[0]:bbox[0] + bbox[2]]
+            # Ensure bounding box is within the image limits
+            x, y, w, h = max(0, x), max(0, y), min(iw, w), min(ih, h)
+
+            face_image = image[y:y+h, x:x+w]
+
+            if face_image.size == 0:
+                raise ValueError("Extracted face is empty.")
 
             # Resize face image to standard size for feature extraction
-            face_image_resized = resize_face(face_image)
-
-            return face_image_resized
+            return resize_face(face_image)
         else:
-            print("No face detected.")
-            return None
+            return None  # No face detected
 
 # Flatten the face images
 def flatten_face(image):
@@ -759,25 +766,24 @@ def flatten_face(image):
 
 # Cosine similarity calculation
 def calculate_cosine_similarity(stored_face, captured_face):
+    if stored_face is None or captured_face is None:
+        raise ValueError("Invalid face images provided for comparison.")
+
     # Resize both images to the same size
-    captured_face_resized = resize_face(captured_face)
     stored_face_resized = resize_face(stored_face)
+    captured_face_resized = resize_face(captured_face)
 
     # Flatten both images
     stored_face_flat = flatten_face(stored_face_resized)
     captured_face_flat = flatten_face(captured_face_resized)
 
-    # Check that the flattened feature vectors have the same length
+    # Ensure the feature vectors have the same length
     if stored_face_flat.shape[0] != captured_face_flat.shape[0]:
-        print("Feature vector sizes do not match!")
-        return None
+        raise ValueError("Feature vector sizes do not match!")
 
     # Calculate cosine similarity
-    similarity_score = 1 - cosine(stored_face_flat, captured_face_flat)
-
-    return similarity_score
-
-
+    return 1 - cosine(stored_face_flat, captured_face_flat)
+    
 def is_face_registered(face_blob):
     new_face_path = "/tmp/new_face.jpg"
 
@@ -1204,6 +1210,7 @@ elif menu == "Student's Registration":
             # Check if this face is already registered
             if is_face_registered(face_blob):
                 st.error("This face is already registered. Please use a different face or login.")
+                st.stop()  # This stops further execution immediately
             else:
                 st.success("Face captured successfully!")
 
