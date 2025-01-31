@@ -30,6 +30,7 @@ import json
 import cv2
 import mediapipe as mp
 from scipy.spatial.distance import cosine
+from sklearn.preprocessing import normalize
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
@@ -717,15 +718,14 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
-# Resize function for consistent dimensions
+# Resize function with proper interpolation
 def resize_face(image, target_size=(224, 224)):
-    return cv2.resize(image, target_size)
+    return cv2.resize(image, target_size, interpolation=cv2.INTER_AREA)
 
-# Initialize mediapipe face detection
+# Initialize MediaPipe Face Detection
 mp_face_detection = mp.solutions.face_detection
-mp_drawing = mp.solutions.drawing_utils
 
-# Function to extract face features
+# Extract face features from image
 def extract_face_features(image_bytes):
     image = Image.open(io.BytesIO(image_bytes))
     image = np.array(image)
@@ -735,15 +735,19 @@ def extract_face_features(image_bytes):
         results = face_detection.process(image_rgb)
 
         if results.detections:
-            for detection in results.detections:
-                bboxC = detection.location_data.relative_bounding_box
-                ih, iw, _ = image.shape
-                bbox = int(bboxC.xmin * iw), int(bboxC.ymin * ih), \
-                       int(bboxC.width * iw), int(bboxC.height * ih)
+            detection = results.detections[0]  # Use first detected face
+            bboxC = detection.location_data.relative_bounding_box
+            ih, iw, _ = image.shape
+            x, y, w, h = (int(bboxC.xmin * iw), int(bboxC.ymin * ih), 
+                          int(bboxC.width * iw), int(bboxC.height * ih))
 
-            face_image = image[bbox[1]:bbox[1] + bbox[3], bbox[0]:bbox[0] + bbox[2]]
+            # Ensure valid bounding box
+            x, y, w, h = max(x, 0), max(y, 0), min(w, iw - x), min(h, ih - y)
+            if w == 0 or h == 0:
+                return None  # Invalid face area
 
-            # Resize face image to standard size for feature extraction
+            # Extract face and resize
+            face_image = image[y:y + h, x:x + w]
             face_image_resized = resize_face(face_image)
 
             return face_image_resized
@@ -751,28 +755,29 @@ def extract_face_features(image_bytes):
             print("No face detected.")
             return None
 
-# Flatten the face images
+# Convert face image to 1D feature vector
 def flatten_face(image):
-    return image.flatten()
+    return image.ravel()  # Ensures correct feature vector format
 
-# Cosine similarity calculation
+# Compute cosine similarity between two face images
 def calculate_cosine_similarity(stored_face, captured_face):
-    # Resize both images to the same size
-    captured_face_resized = resize_face(captured_face)
-    stored_face_resized = resize_face(stored_face)
-
-    # Flatten both images
-    stored_face_flat = flatten_face(stored_face_resized)
-    captured_face_flat = flatten_face(captured_face_resized)
-
-    # Check that the flattened feature vectors have the same length
-    if stored_face_flat.shape[0] != captured_face_flat.shape[0]:
-        print("Feature vector sizes do not match!")
+    if stored_face is None or captured_face is None:
+        print("Face extraction failed.")
         return None
 
-    # Calculate cosine similarity
-    similarity_score = 1 - cosine(stored_face_flat, captured_face_flat)
+    stored_face_resized = resize_face(stored_face)
+    captured_face_resized = resize_face(captured_face)
 
+    stored_face_flat = flatten_face(stored_face_resized).reshape(1, -1)
+    captured_face_flat = flatten_face(captured_face_resized).reshape(1, -1)
+
+    # Normalize feature vectors
+    stored_face_flat = normalize(stored_face_flat)
+    captured_face_flat = normalize(captured_face_flat)
+
+    # Compute cosine similarity
+    similarity_score = 1 - cosine(stored_face_flat, captured_face_flat)
+    
     return similarity_score
 
 # Database setup to store device IDs
