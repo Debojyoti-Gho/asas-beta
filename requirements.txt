@@ -10,3 +10,4 @@ streamlit-js-eval
 opencv-python
 mediapipe
 Pillow
+scikit-learn
