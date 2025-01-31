@@ -15,7 +15,7 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import uuid
 import requests
-import numpy as np
+import numpy as np 
 import time
 import logging
 import smtplib
