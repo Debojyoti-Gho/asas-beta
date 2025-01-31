@@ -729,7 +729,7 @@ mp_face_detection = mp.solutions.face_detection
 def extract_face_features(image_bytes):
     image = Image.open(io.BytesIO(image_bytes))
     image = np.array(image)
-    
+
     if len(image.shape) == 2:  # Convert grayscale to RGB
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
@@ -764,6 +764,7 @@ def flatten_face(image):
 
 def calculate_cosine_similarity(stored_face, captured_face):
     if stored_face is None or captured_face is None:
+        print("Face extraction failed.")
         return None  # Handle missing face data
 
     # Resize both images
@@ -774,25 +775,28 @@ def calculate_cosine_similarity(stored_face, captured_face):
     stored_face_flat = flatten_face(stored_face_resized)
     captured_face_flat = flatten_face(captured_face_resized)
 
+    # Debugging: Check vector shapes
+    print(f"Stored face vector shape: {stored_face_flat.shape}")
+    print(f"Captured face vector shape: {captured_face_flat.shape}")
+
     # Ensure vectors have the same size
     if stored_face_flat.shape != captured_face_flat.shape:
+        print("Feature vector sizes do not match!")
         return None  # Mismatched vector sizes
 
     # Normalize vectors
-    stored_face_flat = stored_face_flat.reshape(1, -1)
-    captured_face_flat = captured_face_flat.reshape(1, -1)
-    stored_face_flat = normalize(stored_face_flat, axis=1)
-    captured_face_flat = normalize(captured_face_flat, axis=1)
+    stored_face_flat = normalize(stored_face_flat.reshape(1, -1), axis=1).ravel()
+    captured_face_flat = normalize(captured_face_flat.reshape(1, -1), axis=1).ravel()
 
-    # Convert back to 1D
-    stored_face_flat = stored_face_flat.ravel()
-    captured_face_flat = captured_face_flat.ravel()
+    # Debugging: Check final reshaped vectors
+    print(f"Final Stored vector shape: {stored_face_flat.shape}")
+    print(f"Final Captured vector shape: {captured_face_flat.shape}")
 
     # Compute cosine similarity
     similarity_score = 1 - cosine(stored_face_flat, captured_face_flat)
 
     return similarity_score
-
+    
 # Database setup to store device IDs
 def create_connection():
     conn = sqlite3.connect("device_ids.db")
