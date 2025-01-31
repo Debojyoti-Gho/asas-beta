@@ -718,82 +718,60 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
-# Resize function with proper interpolation
+# Resize function for consistent dimensions
 def resize_face(image, target_size=(224, 224)):
-    return cv2.resize(image, target_size, interpolation=cv2.INTER_AREA)
+    return cv2.resize(image, target_size)
 
-# Initialize MediaPipe Face Detection
+# Initialize mediapipe face detection
 mp_face_detection = mp.solutions.face_detection
+mp_drawing = mp.solutions.drawing_utils
 
-# Extract face features from image
+# Function to extract face features
 def extract_face_features(image_bytes):
     image = Image.open(io.BytesIO(image_bytes))
     image = np.array(image)
-
-    if len(image.shape) == 2:  # Convert grayscale to RGB
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     with mp_face_detection.FaceDetection(min_detection_confidence=0.9) as face_detection:
         results = face_detection.process(image_rgb)
 
         if results.detections:
-            detection = results.detections[0]  # Use first detected face
-            bboxC = detection.location_data.relative_bounding_box
-            ih, iw, _ = image.shape
-            x, y, w, h = (int(bboxC.xmin * iw), int(bboxC.ymin * ih), 
-                          int(bboxC.width * iw), int(bboxC.height * ih))
+            for detection in results.detections:
+                bboxC = detection.location_data.relative_bounding_box
+                ih, iw, _ = image.shape
+                bbox = int(bboxC.xmin * iw), int(bboxC.ymin * ih), \
+                       int(bboxC.width * iw), int(bboxC.height * ih)
 
-            # Ensure valid bounding box
-            x, y, w, h = max(x, 0), max(y, 0), min(w, iw - x), min(h, ih - y)
-            if w == 0 or h == 0:
-                return None  # Invalid face area
+            face_image = image[bbox[1]:bbox[1] + bbox[3], bbox[0]:bbox[0] + bbox[2]]
 
-            # Extract face and resize
-            face_image = image[y:y + h, x:x + w]
+            # Resize face image to standard size for feature extraction
             face_image_resized = resize_face(face_image)
 
             return face_image_resized
         else:
-            return None  # No face detected
+            print("No face detected.")
+            return None
 
+# Flatten the face images
 def flatten_face(image):
-    flattened = image.flatten().astype(np.float32)  # Ensure it's float32 for consistency
-    print(f"Flattened face shape: {flattened.shape}, type: {type(flattened)}")
-    return flattened
+    return image.flatten()
 
+# Cosine similarity calculation
 def calculate_cosine_similarity(stored_face, captured_face):
-    if stored_face is None or captured_face is None:
-        print("Face extraction failed.")
-        return None  # Handle missing face data
-
-    # Resize both images
-    stored_face_resized = resize_face(stored_face)
+    # Resize both images to the same size
     captured_face_resized = resize_face(captured_face)
+    stored_face_resized = resize_face(stored_face)
 
-    # Flatten both images to 1D
+    # Flatten both images
     stored_face_flat = flatten_face(stored_face_resized)
     captured_face_flat = flatten_face(captured_face_resized)
 
-    # Debugging: Check vector shapes
-    print(f"Stored face vector shape: {stored_face_flat.shape}, type: {type(stored_face_flat)}")
-    print(f"Captured face vector shape: {captured_face_flat.shape}, type: {type(captured_face_flat)}")
-
-    # Ensure vectors have the same size
-    if stored_face_flat.shape != captured_face_flat.shape:
+    # Check that the flattened feature vectors have the same length
+    if stored_face_flat.shape[0] != captured_face_flat.shape[0]:
         print("Feature vector sizes do not match!")
-        return None  # Mismatched vector sizes
+        return None
 
-    # Normalize vectors
-    stored_face_flat = normalize(stored_face_flat.reshape(1, -1)).ravel()
-    captured_face_flat = normalize(captured_face_flat.reshape(1, -1)).ravel()
-
-    # Debugging: Check final reshaped vectors
-    print(f"Final Stored vector shape: {stored_face_flat.shape}, type: {type(stored_face_flat)}")
-    print(f"Final Captured vector shape: {captured_face_flat.shape}, type: {type(captured_face_flat)}")
-
-    # Compute cosine similarity
+    # Calculate cosine similarity
     similarity_score = 1 - cosine(stored_face_flat, captured_face_flat)
 
     return similarity_score
@@ -1146,68 +1124,61 @@ if menu == "Home":
 elif menu == "Student's Registration":
     st.header("Student Registration")
 
+    # Initialize session state variables for OTP and verification
     if "email_otp" not in st.session_state:
         st.session_state.email_otp = None
     if "email_verified" not in st.session_state:
         st.session_state.email_verified = False
 
+    # Registration Form
     with st.form("registration_form"):
+        # Input fields for student details
         st.subheader("Student Details")
         name = st.text_input("Name")
         roll = st.text_input("Roll Number")
         section = st.text_input("Section")
-        email = st.text_input("Email")
+        email = st.text_input("Email")  # Use this email for OTP verification
         enrollment_no = st.text_input("Enrollment Number")
         year = st.text_input("Year")
         semester = st.text_input("Semester")
         user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
 
+        # Capture face photo
         st.subheader("Capture Your Face")
         face_image = st.camera_input("Capture your face")
 
         if face_image:
+            # Display the captured face image
             st.image(face_image, caption="Captured Face", use_container_width=True)
 
+            # Convert the image to binary for database storage
             img = Image.open(face_image)
             img_bytes = io.BytesIO()
             img.save(img_bytes, format="JPEG")
-            face_blob = img_bytes.getvalue()
+            face_blob = img_bytes.getvalue()  # Convert to binary data
 
-            extracted_face = extract_face_features(face_blob)
+            st.success("Face captured successfully!")
 
-            if extracted_face is None:
-                st.error("No face detected. Please try capturing again.")
-            else:
-                cursor.execute("SELECT student_face FROM students")
-                stored_faces = cursor.fetchall()
-
-                face_already_registered = False
-                for stored_face_blob in stored_faces:
-                    stored_face = extract_face_features(stored_face_blob[0])
-                    if stored_face is not None:
-                        similarity = calculate_cosine_similarity(stored_face, extracted_face)
-                        if similarity is not None and similarity >= 0.1: # Similarity threshold
-                            st.info(f"Similarity Score: {similarity:.4f}")  # Display similarity score with 4 decimal places
-                            face_already_registered = True
-                            break
-
-                if face_already_registered:
-                    st.error("This face has already been registered. Duplicate registration is not allowed.")
-                else:
-                    st.success("Face verified as unique. Proceed with registration.")
-
-                    st.warning("Complete fingerprint registration within 30 seconds.")
-                    st.components.v1.html(webauthn_register_script())
-                    time.sleep(30)
-
+            st.warning("Please complete the registration by capturing your fingerprint.")
+            st.warning("you have to complete fingerprint registration within 30 secs")
+            st.info("after completion please wait for the next steps!")
+            # Render WebAuthn registration UI using JavaScript
+            st.components.v1.html(webauthn_register_script())
+            
+            # Mock the WebAuthn registration after 5 seconds
+            time.sleep(30)  # Simulate waiting for the WebAuthn registration process
+            st.write("please scroll down")
+            
         st.subheader("Email Verification")
         if not st.session_state.email_verified:
+            # Send OTP Button
             if st.form_submit_button("Send OTP"):
                 if email:
                     otp = str(np.random.randint(100000, 999999))
                     st.session_state.email_otp = otp
 
+                    # SMTP Configuration
                     smtp_server = 'smtp-relay.brevo.com'
                     smtp_port = 587
                     smtp_user = '823c6b001@smtp-brevo.com'
@@ -1215,67 +1186,79 @@ elif menu == "Student's Registration":
                     from_email = 'debojyotighoshmain@gmail.com'
 
                     try:
+                        # Send OTP via email
                         message = MIMEMultipart()
                         message["From"] = from_email
                         message["To"] = email
                         message["Subject"] = "Your OTP for Student Registration"
-                        message.attach(MIMEText(f"Your OTP is: {otp}", "plain"))
+
+                        body = f"Your OTP for registration is: {otp}\n\nPlease enter this OTP to verify your email."
+                        message.attach(MIMEText(body, "plain"))
 
                         with smtplib.SMTP(smtp_server, smtp_port) as server:
                             server.starttls()
                             server.login(smtp_user, smtp_password)
                             server.sendmail(from_email, email, message.as_string())
 
-                        st.success(f"OTP sent to {email}.")
+                        st.success(f"OTP sent to {email}. Please check your email.")
                     except Exception as e:
                         st.error(f"Failed to send OTP: {e}")
                 else:
                     st.error("Please enter a valid email address.")
 
+        # OTP Verification
         if st.session_state.email_otp and not st.session_state.email_verified:
-            otp_input = st.text_input("Enter OTP")
+            otp_input = st.text_input("Enter the OTP sent to your email")
             if st.form_submit_button("Verify OTP"):
                 if otp_input == st.session_state.email_otp:
                     st.session_state.email_verified = True
-                    st.success("Email verified successfully!")
+                    st.success("Email verified successfully! You can proceed with registration.")
                 else:
-                    st.error("Invalid OTP.")
+                    st.error("Invalid OTP. Please try again.")
 
-        if st.session_state.email_verified and not face_already_registered:
+        # Registration Button
+        if st.session_state.email_verified:
             st.subheader("Complete Registration")
             if st.form_submit_button("Register"):
-                device_id = device_id_from_cookies
-                if not device_id:
-                    st.error("Could not fetch device ID.")
-                else:
-                    cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
-                    if cursor.fetchone():
-                        st.error("This device is already registered.")
+                if face_image:  # Ensure face image is captured
+                    # Fetch the device ID (UUID based)
+                    device_id = device_id_from_cookies
+                    st.success(f"Your unique device ID is: {device_id_from_cookies}")
+
+                    if not device_id:
+                        st.error("Could not fetch device ID, registration cannot proceed.")
                     else:
-                        cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
+                        # Check if the device ID is already registered
+                        cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
                         if cursor.fetchone():
-                            st.error("This email is already registered.")
+                            st.error("This device has already been used for registration. Only one registration is allowed per device.Please refresh and start again!")
                         else:
-                            cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
+                            # Check for duplicate entries in the database for email, roll, user ID, and enrollment number
+                            cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
                             if cursor.fetchone():
-                                st.error("This roll number is already registered.")
+                                st.error("This email is already registered.Please refresh and start again!")
                             else:
-                                cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
+                                cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
                                 if cursor.fetchone():
-                                    st.error("This user ID is already registered.")
+                                    st.error("This roll number is already registered.Please refresh and start again!")
                                 else:
-                                    cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (enrollment_no,))
+                                    cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
                                     if cursor.fetchone():
-                                        st.error("This enrollment number is already registered.")
+                                        st.error("This user ID is already registered.Please refresh and start again!")
                                     else:
-                                        cursor.execute("""
+                                        cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (enrollment_no,))
+                                        if cursor.fetchone():
+                                            st.error("This enrollment number is already registered.Please refresh and start again!")
+                                        else:
+                                            # Insert into database
+                                            cursor.execute("""
                                             INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
                                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                        """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
-                                        conn.commit()
-                                        st.success("Registration successful!")
-                                        st.info("This device is now the only verified device for logins.")
-
+                                            """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
+                                            conn.commit()
+                                            st.success("Registration successful!")
+                                            st.warning("From now on this device will be considered the only registered and verified device for future logins")
+                                            st.info("Please proceed to the Student Login page.")
                                             
                                                 
 # Student Login Page Logic
