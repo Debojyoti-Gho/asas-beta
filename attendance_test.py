@@ -30,7 +30,7 @@ import json
 import cv2
 import mediapipe as mp
 from scipy.spatial.distance import cosine
-from sklearn.preprocessing import normalize
+import deepface
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
@@ -776,6 +776,37 @@ def calculate_cosine_similarity(stored_face, captured_face):
 
     return similarity_score
 
+# Function to check if the face is already registered
+def is_face_registered(new_face_blob):
+    # Convert the new face image to a format suitable for DeepFace comparison
+    img = Image.open(io.BytesIO(new_face_blob))
+    img_array = np.array(img)
+    
+    # DeepFace uses its internal model to extract face embeddings and compare
+    # Temporarily save the new face image
+    new_face_path = "/tmp/new_face.jpg"
+    img.save(new_face_path)
+
+    # Fetch all registered faces and compare
+    cursor.execute("SELECT student_face FROM students")
+    all_faces = cursor.fetchall()
+
+    for stored_face in all_faces:
+        stored_face_blob = stored_face[0]
+        
+        # Temporarily save the stored face image
+        stored_face_path = "/tmp/stored_face.jpg"
+        stored_face_img = Image.open(io.BytesIO(stored_face_blob))
+        stored_face_img.save(stored_face_path)
+
+        # Use DeepFace to compare the two faces
+        result = deepface.DeepFace.verify(new_face_path, stored_face_path)
+
+        if result["verified"]:
+            return True  # Faces match
+
+    return False  # No match found
+
     
 # Database setup to store device IDs
 def create_connection():
@@ -1158,7 +1189,11 @@ elif menu == "Student's Registration":
             img.save(img_bytes, format="JPEG")
             face_blob = img_bytes.getvalue()  # Convert to binary data
 
-            st.success("Face captured successfully!")
+            # Check if this face is already registered
+            if is_face_registered(face_blob):
+                st.error("This face is already registered. Please use a different face or login.")
+            else:
+                st.success("Face captured successfully!")
 
             st.warning("Please complete the registration by capturing your fingerprint.")
             st.warning("you have to complete fingerprint registration within 30 secs")
