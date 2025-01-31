@@ -7,7 +7,6 @@ uuid==1.30
 streamlit-cookies-manager
 reportlab==4.2.5
 streamlit-js-eval
-streamlit
 opencv-python
 mediapipe
 Pillow
