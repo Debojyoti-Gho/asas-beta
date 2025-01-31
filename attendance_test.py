@@ -794,14 +794,17 @@ def is_face_registered(face_blob):
             f.write(stored_face[0])  # Assuming student_face is stored as BLOB
 
         try:
-            result = DeepFace.verify(new_face_path, stored_face_path)
+            result = DeepFace.verify(
+                new_face_path, stored_face_path,
+                model_name="Facenet",  # Try "ArcFace" or "Facenet512" for better accuracy
+                distance_metric="cosine"  # "euclidean" or "euclidean_l2" are alternatives
+            )
             if result["verified"]:
                 return True
         except Exception as e:
             print(f"DeepFace error: {e}")
 
     return False
-
     
 # Database setup to store device IDs
 def create_connection():
