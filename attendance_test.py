@@ -879,6 +879,7 @@ if not device_id_from_cookies:
 # Insert the device ID into the database
 insert_device_id(device_id_from_cookies)
 
+
 def get_precise_location(api_key=None):
     if api_key:
         # Google Maps Geocode API URL
@@ -940,24 +941,24 @@ def get_precise_location(api_key=None):
             st.error(f"Google Maps API request failed: {str(e)}")
             return "Error with Google Maps API request."
 
-    # If no API key is provided, use ipinfo.io as a fallback
+    # If no API key is provided, use ip-api as a fallback
     else:
-        url = 'https://ipinfo.io/json'  # Using ipinfo.io API to get location details
+        url = 'http://ip-api.com/json'  # Using ip-api for location lookup
         try:
-            st.info("Requesting location from ipinfo.io as fallback...")
+            st.info("Requesting location from ip-api as fallback...")
             response = requests.get(url)
 
             if response.status_code == 200:
                 data = response.json()
                 city = data.get('city', 'Unknown city')  # Fetch city name
-                st.info("Using ipinfo.io as fallback for location as Google maps API is unavailable.")
+                st.info("Using ip-api as fallback for location as Google maps API is unavailable.")
                 return city
             else:
-                st.error("Error fetching location from ipinfo.io.")
+                st.error("Error fetching location from ip-api.")
                 return "Error fetching location."
         except requests.exceptions.RequestException as e:
-            st.error(f"ipinfo.io request failed: {str(e)}")
-            return "Error with ipinfo.io request."
+            st.error(f"ip-api request failed: {str(e)}")
+            return "Error with ip-api request."
 
 def measure_latency(flask_server_url):
     """
