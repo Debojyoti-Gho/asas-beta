@@ -1372,6 +1372,12 @@ elif menu == "Student's Login":
                             img.save(img_bytes, format="JPEG")
                             captured_face_blob = img_bytes.getvalue()
 
+                            # Try specifying the model explicitly
+                            model_name = "VGG-Face"  # You can choose other models like "Facenet", "OpenFace", etc.
+                            
+                            # This initializes the DeepFace model explicitly
+                            model = DeepFace.build_model(model_name)
+
                             # Save the captured face image to a temporary file for DeepFace to work with
                             captured_face_path = "captured_face.jpg"
                             with open(captured_face_path, "wb") as f:
@@ -1384,9 +1390,6 @@ elif menu == "Student's Login":
                                 stored_face_path = "stored_face.jpg"
                                 with open(stored_face_path, "wb") as f:
                                     f.write(stored_face_image)
-
-                                # Ensure DeepFace model is properly loaded
-                                from deepface import DeepFace
 
                                 # Perform face verification using DeepFace
                                 result = DeepFace.verify(captured_face_path, stored_face_path)
