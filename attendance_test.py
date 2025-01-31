@@ -1159,14 +1159,14 @@ elif menu == "Student's Registration":
             st.success("Face captured successfully!")
 
             st.warning("Please complete the registration by capturing your fingerprint.")
-            st.warning("you have to complete fingerprint registration within 30 secs")
-            st.info("after completion please wait for the next steps!")
+            st.warning("You have to complete fingerprint registration within 30 secs.")
+            st.info("After completion, please wait for the next steps!")
             # Render WebAuthn registration UI using JavaScript
             st.components.v1.html(webauthn_register_script())
             
             # Mock the WebAuthn registration after 5 seconds
             time.sleep(30)  # Simulate waiting for the WebAuthn registration process
-            st.write("please scroll down")
+            st.write("Please scroll down.")
             
         st.subheader("Email Verification")
         if not st.session_state.email_verified:
@@ -1229,29 +1229,29 @@ elif menu == "Student's Registration":
                         # Check if the device ID is already registered
                         cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
                         if cursor.fetchone():
-                            st.error("This device has already been used for registration. Only one registration is allowed per device.Please refresh and start again!")
+                            st.error("This device has already been used for registration. Only one registration is allowed per device. Please refresh and start again!")
                         else:
                             # Check for duplicate entries in the database for email, roll, user ID, and enrollment number
                             cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
                             if cursor.fetchone():
-                                st.error("This email is already registered.Please refresh and start again!")
+                                st.error("This email is already registered. Please refresh and start again!")
                             else:
                                 cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
                                 if cursor.fetchone():
-                                    st.error("This roll number is already registered.Please refresh and start again!")
+                                    st.error("This roll number is already registered. Please refresh and start again!")
                                 else:
                                     cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
                                     if cursor.fetchone():
-                                        st.error("This user ID is already registered.Please refresh and start again!")
+                                        st.error("This user ID is already registered. Please refresh and start again!")
                                     else:
                                         cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (enrollment_no,))
                                         if cursor.fetchone():
-                                            st.error("This enrollment number is already registered.Please refresh and start again!")
+                                            st.error("This enrollment number is already registered. Please refresh and start again!")
                                         else:
                                             # Fetch all stored faces for comparison
                                             cursor.execute("SELECT student_face FROM students")
                                             stored_faces = cursor.fetchall()
-                                            
+
                                             duplicate_face_found = False
                                             for stored_face in stored_faces:
                                                 # Convert the stored face bytes back to an image
@@ -1260,14 +1260,18 @@ elif menu == "Student's Registration":
                                                 # Ensure the face image is resized to (224, 224) for consistency
                                                 if stored_face_image.size != 224 * 224 * 3:
                                                     stored_face_image = cv2.resize(stored_face_image, (224, 224))
-                                            
+                                                
+                                                # Resize captured face image for comparison
+                                                captured_face_image = np.array(img)
+                                                captured_face_resized = cv2.resize(captured_face_image, (224, 224))
+
                                                 # Perform face comparison
-                                                similarity = calculate_cosine_similarity(stored_face_image, captured_face)
-                                            
+                                                similarity = calculate_cosine_similarity(stored_face_image, captured_face_resized)
+
                                                 if similarity and similarity > 0.85:  # If similarity is greater than a threshold, consider it a match
                                                     duplicate_face_found = True
                                                     break
-                                            
+
                                             if duplicate_face_found:
                                                 st.error("This face is already registered. Please try a different face.")
                                             else:
@@ -1278,10 +1282,9 @@ elif menu == "Student's Registration":
                                                 """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
                                                 conn.commit()
                                                 st.success("Registration successful!")
-                                                st.warning("From now on this device will be considered the only registered and verified device for future logins")
+                                                st.warning("From now on this device will be considered the only registered and verified device for future logins.")
                                                 st.info("Please proceed to the Student Login page.")
                                             
-
                                                 
 
 # Student Login Page Logic
