@@ -771,7 +771,7 @@ def calculate_cosine_similarity(stored_face, captured_face):
     stored_face_resized = resize_face(stored_face)
     captured_face_resized = resize_face(captured_face)
 
-    # Flatten both images
+    # Flatten both images to 1D
     stored_face_flat = flatten_face(stored_face_resized)
     captured_face_flat = flatten_face(captured_face_resized)
 
@@ -785,8 +785,8 @@ def calculate_cosine_similarity(stored_face, captured_face):
         return None  # Mismatched vector sizes
 
     # Normalize vectors
-    stored_face_flat = normalize(stored_face_flat.reshape(1, -1), axis=1).ravel()
-    captured_face_flat = normalize(captured_face_flat.reshape(1, -1), axis=1).ravel()
+    stored_face_flat = normalize(stored_face_flat.reshape(1, -1)).ravel()
+    captured_face_flat = normalize(captured_face_flat.reshape(1, -1)).ravel()
 
     # Debugging: Check final reshaped vectors
     print(f"Final Stored vector shape: {stored_face_flat.shape}")
@@ -796,6 +796,7 @@ def calculate_cosine_similarity(stored_face, captured_face):
     similarity_score = 1 - cosine(stored_face_flat, captured_face_flat)
 
     return similarity_score
+
     
 # Database setup to store device IDs
 def create_connection():
