@@ -1304,7 +1304,7 @@ elif menu == "Student's Login":
                     location = get_precise_location()
                     st.write(f"Your current location is: {location}")
 
-                    if location and "Kolkata" in location:
+                    if location and "The Dalles" in location:
                         time.sleep(2)
                         st.success("User ID and password verification successful!")
 
