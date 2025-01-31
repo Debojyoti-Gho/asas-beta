@@ -1,5 +1,9 @@
-import sqlite3
 import streamlit as st
+st.set_page_config( 
+    page_title="ASAS-Beta",  
+    page_icon="🎓"   
+) 
+import sqlite3
 import datetime
 from datetime import date, datetime,timedelta,timezone
 from reportlab.lib.pagesizes import letter
@@ -26,11 +30,6 @@ import json
 import cv2
 import mediapipe as mp
 from scipy.spatial.distance import cosine
-
-st.set_page_config( 
-    page_title="ASAS-Beta",  
-    page_icon="🎓"   
-) 
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
