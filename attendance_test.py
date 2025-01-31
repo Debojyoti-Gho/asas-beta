@@ -2006,7 +2006,7 @@ elif menu == "Teacher's Login":
                 
                     # Add option to upload or capture a new face image
                     st.subheader("Update Face Image")
-                    new_face_image = st.camera_input("Capture a new face image") or st.file_uploader("Upload a new face image", type=["png", "jpg", "jpeg"])
+                    new_face_image = st.camera_input("Capture a new face image", key="new_face_capture") or st.file_uploader("Upload a new face image", type=["png", "jpg", "jpeg"])
                 
                     # Pre-fill existing student data into form fields
                     new_name = st.text_input("Name", value=student[2], key=f"name_{student_id}")
