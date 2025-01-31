@@ -759,26 +759,37 @@ def extract_face_features(image_bytes):
 def flatten_face(image):
     return image.ravel()  # Ensures correct feature vector format
 
+
 def calculate_cosine_similarity(stored_face, captured_face):
     stored_face_resized = resize_face(stored_face)
     captured_face_resized = resize_face(captured_face)
 
     # Flatten both images
-    stored_face_flat = flatten_face(stored_face_resized).reshape(1, -1)
-    captured_face_flat = flatten_face(captured_face_resized).reshape(1, -1)
+    stored_face_flat = flatten_face(stored_face_resized).astype(np.float32)
+    captured_face_flat = flatten_face(captured_face_resized).astype(np.float32)
 
-    # Normalize to prevent scale issues
-    stored_face_flat = normalize(stored_face_flat)
-    captured_face_flat = normalize(captured_face_flat)
+    # Reshape to 2D before normalization
+    stored_face_flat = stored_face_flat.reshape(1, -1)
+    captured_face_flat = captured_face_flat.reshape(1, -1)
 
-    # Ensure both are 1D vectors before passing to cosine()
-    stored_face_flat = stored_face_flat.flatten()
-    captured_face_flat = captured_face_flat.flatten()
+    # Normalize both feature vectors
+    stored_face_flat = normalize(stored_face_flat, axis=1)
+    captured_face_flat = normalize(captured_face_flat, axis=1)
 
-    # Calculate cosine similarity
+    # Flatten again to 1D
+    stored_face_flat = stored_face_flat.ravel()
+    captured_face_flat = captured_face_flat.ravel()
+
+    # Ensure vectors are of the same size before computing similarity
+    if stored_face_flat.shape[0] != captured_face_flat.shape[0]:
+        print("Feature vector sizes do not match!")
+        return None
+
+    # Compute cosine similarity
     similarity_score = 1 - cosine(stored_face_flat, captured_face_flat)
 
     return similarity_score
+
 
 # Database setup to store device IDs
 def create_connection():
