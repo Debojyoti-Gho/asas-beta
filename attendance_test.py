@@ -32,6 +32,7 @@ import mediapipe as mp
 from scipy.spatial.distance import cosine
 from deepface import DeepFace
 import tempfile
+import os
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
@@ -1318,7 +1319,6 @@ elif menu == "Student's Registration":
 # Student Login Page Logic
 elif menu == "Student's Login":
     st.header("Student Login")
-    st.success(f"Your unique device ID is: {device_id_from_cookies}")
     # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
     st.warning("Please proceed with the fingerprint authentication first to continue with login!")
@@ -1359,7 +1359,7 @@ elif menu == "Student's Login":
                     location = get_precise_location()
                     st.write(f"Your current location is: {location}")
 
-                    if location and "The Dalles" in location:
+                    if location and "Kolkata" in location:
                         time.sleep(2)
                         st.success("User ID and password verification successful!")
 
@@ -1370,20 +1370,21 @@ elif menu == "Student's Login":
                             img.save(img_bytes, format="JPEG")
                             captured_face_blob = img_bytes.getvalue()
 
-                            # Use DeepFace to verify the captured face
                             # Save the captured face image to a temporary file for DeepFace to work with
-                            with open("captured_face.jpg", "wb") as f:
+                            captured_face_path = "captured_face.jpg"
+                            with open(captured_face_path, "wb") as f:
                                 f.write(captured_face_blob)
 
                             # DeepFace verification
                             try:
                                 # Fetch stored face image from the database (already in binary)
                                 stored_face_image = user[10]  # Example: Stored in the database as a blob
-                                with open("stored_face.jpg", "wb") as f:
+                                stored_face_path = "stored_face.jpg"
+                                with open(stored_face_path, "wb") as f:
                                     f.write(stored_face_image)
 
                                 # Use DeepFace to compare the two images
-                                result = DeepFace.verify("captured_face.jpg", "stored_face.jpg")
+                                result = DeepFace.verify(captured_face_path, stored_face_path)
                                 
                                 if result["verified"]:
                                     st.success("Face recognized successfully!")
@@ -1504,7 +1505,7 @@ elif menu == "Student's Login":
                                     else:
                                         st.error("No verifying devices found. Maybe you are not in your institution.")
                                 else:
-                                    st.error(f"Face recognition failed. Please try again.")
+                                    st.error("Face recognition failed. Please try again.")
                             except Exception as e:
                                 st.error(f"Error during face recognition: {e}")
                         else:
