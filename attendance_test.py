@@ -1117,66 +1117,72 @@ if menu == "Home":
     for item in faq:
         st.subheader(item["question"])
         st.write(item["answer"])
-
+        
 # Main registration logic
 elif menu == "Student's Registration":
     st.header("Student Registration")
 
-    # Initialize session state variables for OTP and verification
     if "email_otp" not in st.session_state:
         st.session_state.email_otp = None
     if "email_verified" not in st.session_state:
         st.session_state.email_verified = False
 
-    # Registration Form
     with st.form("registration_form"):
-        # Input fields for student details
         st.subheader("Student Details")
         name = st.text_input("Name")
         roll = st.text_input("Roll Number")
         section = st.text_input("Section")
-        email = st.text_input("Email")  # Use this email for OTP verification
+        email = st.text_input("Email")
         enrollment_no = st.text_input("Enrollment Number")
-        year = st.text_input("YEAR (only enter the number like 1, 2, 3, 4....)")
-        semester = st.text_input("SEMESTER (only enter the number like 1, 2, 3, 4....)")
+        year = st.text_input("Year")
+        semester = st.text_input("Semester")
         user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
 
-        # Capture face photo
         st.subheader("Capture Your Face")
         face_image = st.camera_input("Capture your face")
 
         if face_image:
-            # Display the captured face image
             st.image(face_image, caption="Captured Face", use_container_width=True)
 
-            # Convert the image to binary for database storage
             img = Image.open(face_image)
             img_bytes = io.BytesIO()
             img.save(img_bytes, format="JPEG")
-            face_blob = img_bytes.getvalue()  # Convert to binary data
+            face_blob = img_bytes.getvalue()
 
-            st.success("Face captured successfully!")
+            extracted_face = extract_face_features(face_blob)
 
-            st.warning("Please complete the registration by capturing your fingerprint.")
-            st.warning("You have to complete fingerprint registration within 30 secs.")
-            st.info("After completion, please wait for the next steps!")
-            # Render WebAuthn registration UI using JavaScript
-            st.components.v1.html(webauthn_register_script())
-            
-            # Mock the WebAuthn registration after 5 seconds
-            time.sleep(30)  # Simulate waiting for the WebAuthn registration process
-            st.write("Please scroll down.")
-            
+            if extracted_face is None:
+                st.error("No face detected. Please try capturing again.")
+            else:
+                cursor.execute("SELECT student_face FROM students")
+                stored_faces = cursor.fetchall()
+
+                face_already_registered = False
+                for stored_face_blob in stored_faces:
+                    stored_face = extract_face_features(stored_face_blob[0])
+                    if stored_face is not None:
+                        similarity = calculate_cosine_similarity(stored_face, extracted_face)
+                        if similarity is not None and similarity >= 0.85:  # Similarity threshold
+                            face_already_registered = True
+                            break
+
+                if face_already_registered:
+                    st.error("This face has already been registered. Duplicate registration is not allowed.")
+                else:
+                    st.success("Face verified as unique. Proceed with registration.")
+
+                    st.warning("Complete fingerprint registration within 30 seconds.")
+                    st.components.v1.html(webauthn_register_script())
+                    time.sleep(30)
+
         st.subheader("Email Verification")
         if not st.session_state.email_verified:
-            # Send OTP Button
             if st.form_submit_button("Send OTP"):
                 if email:
                     otp = str(np.random.randint(100000, 999999))
                     st.session_state.email_otp = otp
 
-                    # SMTP Configuration
                     smtp_server = 'smtp-relay.brevo.com'
                     smtp_port = 587
                     smtp_user = '823c6b001@smtp-brevo.com'
@@ -1184,109 +1190,69 @@ elif menu == "Student's Registration":
                     from_email = 'debojyotighoshmain@gmail.com'
 
                     try:
-                        # Send OTP via email
                         message = MIMEMultipart()
                         message["From"] = from_email
                         message["To"] = email
                         message["Subject"] = "Your OTP for Student Registration"
-
-                        body = f"Your OTP for registration is: {otp}\n\nPlease enter this OTP to verify your email."
-                        message.attach(MIMEText(body, "plain"))
+                        message.attach(MIMEText(f"Your OTP is: {otp}", "plain"))
 
                         with smtplib.SMTP(smtp_server, smtp_port) as server:
                             server.starttls()
                             server.login(smtp_user, smtp_password)
                             server.sendmail(from_email, email, message.as_string())
 
-                        st.success(f"OTP sent to {email}. Please check your email.")
+                        st.success(f"OTP sent to {email}.")
                     except Exception as e:
                         st.error(f"Failed to send OTP: {e}")
                 else:
                     st.error("Please enter a valid email address.")
 
-        # OTP Verification
         if st.session_state.email_otp and not st.session_state.email_verified:
-            otp_input = st.text_input("Enter the OTP sent to your email")
+            otp_input = st.text_input("Enter OTP")
             if st.form_submit_button("Verify OTP"):
                 if otp_input == st.session_state.email_otp:
                     st.session_state.email_verified = True
-                    st.success("Email verified successfully! You can proceed with registration.")
+                    st.success("Email verified successfully!")
                 else:
-                    st.error("Invalid OTP. Please try again.")
+                    st.error("Invalid OTP.")
 
-        # Registration Button
-        if st.session_state.email_verified:
+        if st.session_state.email_verified and not face_already_registered:
             st.subheader("Complete Registration")
             if st.form_submit_button("Register"):
-                if face_image:  # Ensure face image is captured
-                    # Fetch the device ID (UUID based)
-                    device_id = device_id_from_cookies
-                    st.success(f"Your unique device ID is: {device_id_from_cookies}")
-
-                    if not device_id:
-                        st.error("Could not fetch device ID, registration cannot proceed.")
+                device_id = device_id_from_cookies
+                if not device_id:
+                    st.error("Could not fetch device ID.")
+                else:
+                    cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
+                    if cursor.fetchone():
+                        st.error("This device is already registered.")
                     else:
-                        # Check if the device ID is already registered
-                        cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
+                        cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
                         if cursor.fetchone():
-                            st.error("This device has already been used for registration. Only one registration is allowed per device. Please refresh and start again!")
+                            st.error("This email is already registered.")
                         else:
-                            # Check for duplicate entries in the database for email, roll, user ID, and enrollment number
-                            cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
+                            cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
                             if cursor.fetchone():
-                                st.error("This email is already registered. Please refresh and start again!")
+                                st.error("This roll number is already registered.")
                             else:
-                                cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
+                                cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
                                 if cursor.fetchone():
-                                    st.error("This roll number is already registered. Please refresh and start again!")
+                                    st.error("This user ID is already registered.")
                                 else:
-                                    cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
+                                    cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (enrollment_no,))
                                     if cursor.fetchone():
-                                        st.error("This user ID is already registered. Please refresh and start again!")
+                                        st.error("This enrollment number is already registered.")
                                     else:
-                                        cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (enrollment_no,))
-                                        if cursor.fetchone():
-                                            st.error("This enrollment number is already registered. Please refresh and start again!")
-                                        else:
-                                            # Fetch all stored faces for comparison
-                                            cursor.execute("SELECT student_face FROM students")
-                                            stored_faces = cursor.fetchall()
+                                        cursor.execute("""
+                                            INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
+                                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                        """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
+                                        conn.commit()
+                                        st.success("Registration successful!")
+                                        st.info("This device is now the only verified device for logins.")
 
-                                            duplicate_face_found = False
-                                            for stored_face in stored_faces:
-                                                # Convert the stored face bytes back to an image
-                                                stored_face_image = np.frombuffer(stored_face[0], dtype=np.uint8)
-                                            
-                                                # Ensure the face image is resized to (224, 224) for consistency
-                                                if stored_face_image.size != 224 * 224 * 3:
-                                                    stored_face_image = cv2.resize(stored_face_image, (224, 224))
-                                                
-                                                # Resize captured face image for comparison
-                                                captured_face_image = np.array(img)
-                                                captured_face_resized = cv2.resize(captured_face_image, (224, 224))
-
-                                                # Perform face comparison
-                                                similarity = calculate_cosine_similarity(stored_face_image, captured_face_resized)
-
-                                                if similarity and similarity > 2.0:  # If similarity is greater than a threshold, consider it a match
-                                                    duplicate_face_found = True
-                                                    break
-
-                                            if duplicate_face_found:
-                                                st.error("This face is already registered. Please try a different face.")
-                                            else:
-                                                # Insert into database
-                                                cursor.execute("""
-                                                INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
-                                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                                """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
-                                                conn.commit()
-                                                st.success("Registration successful!")
-                                                st.warning("From now on this device will be considered the only registered and verified device for future logins.")
-                                                st.info("Please proceed to the Student Login page.")
                                             
                                                 
-
 # Student Login Page Logic
 elif menu == "Student's Login":
     st.header("Student Login")
