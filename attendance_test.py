@@ -1251,16 +1251,23 @@ elif menu == "Student's Registration":
                                             # Fetch all stored faces for comparison
                                             cursor.execute("SELECT student_face FROM students")
                                             stored_faces = cursor.fetchall()
-
+                                            
                                             duplicate_face_found = False
                                             for stored_face in stored_faces:
-                                                stored_face_image = np.frombuffer(stored_face[0], dtype=np.uint8).reshape(224, 224, 3)
+                                                # Convert the stored face bytes back to an image
+                                                stored_face_image = np.frombuffer(stored_face[0], dtype=np.uint8)
+                                            
+                                                # Ensure the face image is resized to (224, 224) for consistency
+                                                if stored_face_image.size != 224 * 224 * 3:
+                                                    stored_face_image = cv2.resize(stored_face_image, (224, 224))
+                                            
+                                                # Perform face comparison
                                                 similarity = calculate_cosine_similarity(stored_face_image, captured_face)
-
+                                            
                                                 if similarity and similarity > 0.85:  # If similarity is greater than a threshold, consider it a match
                                                     duplicate_face_found = True
                                                     break
-
+                                            
                                             if duplicate_face_found:
                                                 st.error("This face is already registered. Please try a different face.")
                                             else:
@@ -1273,6 +1280,7 @@ elif menu == "Student's Registration":
                                                 st.success("Registration successful!")
                                                 st.warning("From now on this device will be considered the only registered and verified device for future logins")
                                                 st.info("Please proceed to the Student Login page.")
+                                            
 
                                                 
 
