@@ -780,31 +780,45 @@ def calculate_cosine_similarity(stored_face, captured_face):
 
 def is_face_registered(face_blob):
     new_face_path = "/tmp/new_face.jpg"
-    
+
+    # Save the new captured face image
     with open(new_face_path, "wb") as f:
         f.write(face_blob)
 
+    # Retrieve all stored faces from the database
     cursor.execute("SELECT student_face FROM students")
     stored_faces = cursor.fetchall()
 
+    # Define a suitable similarity threshold
+    THRESHOLD = 0.6  # Adjust based on testing (0.5-0.7 is reasonable)
+
     for stored_face in stored_faces:
         stored_face_path = "/tmp/stored_face.jpg"
-        
+
+        # Save stored face as a temporary image
         with open(stored_face_path, "wb") as f:
-            f.write(stored_face[0])  # Assuming student_face is stored as BLOB
+            f.write(stored_face[0])  # Assuming student_face is a BLOB
 
         try:
+            # Compare the captured face with the stored face
             result = DeepFace.verify(
                 new_face_path, stored_face_path,
-                model_name="Facenet",  # Try "ArcFace" or "Facenet512" for better accuracy
-                distance_metric="cosine"  # "euclidean" or "euclidean_l2" are alternatives
+                model_name="Facenet",  # Try "ArcFace" or "Facenet512" if needed
+                distance_metric="cosine"
             )
-            if result["verified"]:
-                return True
+
+            similarity_score = result["distance"]  # Get similarity score
+
+            print(f"Face match result: {result}")
+            print(f"Similarity score: {similarity_score}")
+
+            if result["verified"] and similarity_score < THRESHOLD:
+                return True  # Face already registered
+
         except Exception as e:
             print(f"DeepFace error: {e}")
 
-    return False
+    return False  # No match found
     
 # Database setup to store device IDs
 def create_connection():
