@@ -1385,9 +1385,12 @@ elif menu == "Student's Login":
                                 with open(stored_face_path, "wb") as f:
                                     f.write(stored_face_image)
 
-                                # Use DeepFace to compare the two images
+                                # Ensure DeepFace model is properly loaded
+                                from deepface import DeepFace
+
+                                # Perform face verification using DeepFace
                                 result = DeepFace.verify(captured_face_path, stored_face_path)
-                                
+
                                 if result["verified"]:
                                     st.success("Face recognized successfully!")
                                     # Proceed with the rest of the login process (location, Bluetooth, etc.)
