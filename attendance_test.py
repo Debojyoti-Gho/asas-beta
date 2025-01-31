@@ -1391,7 +1391,7 @@ elif menu == "Student's Login":
                             # Get similarity score from the result
                             similarity_score = result["distance"]  # Lower values indicate higher similarity
 
-                            threshold = 0.4  # Adjust this threshold as necessary
+                            threshold = 1.0  # Adjust this threshold as necessary
                             if similarity_score < threshold:
                                 st.success("Face recognized successfully!")
                                 # Proceed with the rest of the login process (location, Bluetooth, etc.)
