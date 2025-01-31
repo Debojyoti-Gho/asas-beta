@@ -1268,7 +1268,7 @@ elif menu == "Student's Registration":
                                                 # Perform face comparison
                                                 similarity = calculate_cosine_similarity(stored_face_image, captured_face_resized)
 
-                                                if similarity and similarity > 0.85:  # If similarity is greater than a threshold, consider it a match
+                                                if similarity and similarity > 2.0:  # If similarity is greater than a threshold, consider it a match
                                                     duplicate_face_found = True
                                                     break
 
