@@ -1320,6 +1320,7 @@ elif menu == "Student's Registration":
 # Student Login Page Logic
 elif menu == "Student's Login":
     st.header("Student Login")
+    st.success(f"Your unique device ID is: {device_id_from_cookies}")
     # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
     st.warning("Please proceed with the fingerprint authentication first to continue with login!")
@@ -1360,7 +1361,7 @@ elif menu == "Student's Login":
                     location = get_precise_location()
                     st.write(f"Your current location is: {location}")
 
-                    if location and "Kolkata" in location:
+                    if location and "the dalles" in location:
                         time.sleep(2)
                         st.success("User ID and password verification successful!")
 
