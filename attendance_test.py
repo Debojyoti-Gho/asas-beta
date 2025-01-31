@@ -790,7 +790,7 @@ def is_face_registered(face_blob):
     stored_faces = cursor.fetchall()
 
     # Define a suitable similarity threshold
-    THRESHOLD = 0.6  # Adjust based on testing (0.5-0.7 is reasonable)
+    THRESHOLD = 0.5  # Adjust based on testing (0.5-0.7 is reasonable)
 
     for stored_face in stored_faces:
         stored_face_path = "/tmp/stored_face.jpg"
@@ -809,14 +809,14 @@ def is_face_registered(face_blob):
 
             similarity_score = result["distance"]  # Get similarity score
 
-            print(f"Face match result: {result}")
-            print(f"Similarity score: {similarity_score}")
+            st.info(f"Face match result: {result}")
+            st.info(f"Similarity score: {similarity_score}")
 
             if result["verified"] and similarity_score < THRESHOLD:
                 return True  # Face already registered
 
         except Exception as e:
-            print(f"DeepFace error: {e}")
+            st.info(f"DeepFace error: {e}")
 
     return False  # No match found
     
