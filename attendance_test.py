@@ -1271,7 +1271,7 @@ elif menu == "Student's Login":
 
     # Integrate fingerprint authentication script
     auth_successful = st.components.v1.html(webauthn_script())  # Replace with actual WebAuthn logic
-    time.sleep(6)
+    time.sleep(10)
 
     if not auth_successful:
         st.error("Fingerprint authentication failed. Please try again.")
