@@ -759,25 +759,25 @@ def extract_face_features(image_bytes):
 def flatten_face(image):
     return image.ravel()  # Ensures correct feature vector format
 
-# Compute cosine similarity between two face images
 def calculate_cosine_similarity(stored_face, captured_face):
-    if stored_face is None or captured_face is None:
-        print("Face extraction failed.")
-        return None
-
     stored_face_resized = resize_face(stored_face)
     captured_face_resized = resize_face(captured_face)
 
+    # Flatten both images
     stored_face_flat = flatten_face(stored_face_resized).reshape(1, -1)
     captured_face_flat = flatten_face(captured_face_resized).reshape(1, -1)
 
-    # Normalize feature vectors
+    # Normalize to prevent scale issues
     stored_face_flat = normalize(stored_face_flat)
     captured_face_flat = normalize(captured_face_flat)
 
-    # Compute cosine similarity
+    # Ensure both are 1D vectors before passing to cosine()
+    stored_face_flat = stored_face_flat.flatten()
+    captured_face_flat = captured_face_flat.flatten()
+
+    # Calculate cosine similarity
     similarity_score = 1 - cosine(stored_face_flat, captured_face_flat)
-    
+
     return similarity_score
 
 # Database setup to store device IDs
