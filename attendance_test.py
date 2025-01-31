@@ -1318,6 +1318,7 @@ elif menu == "Student's Registration":
 # Student Login Page Logic
 elif menu == "Student's Login":
     st.header("Student Login")
+    st.success(f"Your unique device ID is: {device_id_from_cookies}")
     # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
     st.warning("Please proceed with the fingerprint authentication first to continue with login!")
