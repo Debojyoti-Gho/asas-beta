@@ -1163,7 +1163,7 @@ elif menu == "Student's Registration":
                     stored_face = extract_face_features(stored_face_blob[0])
                     if stored_face is not None:
                         similarity = calculate_cosine_similarity(stored_face, extracted_face)
-                        if similarity is not None and similarity >= 2.0:  # Similarity threshold
+                        if similarity is not None and similarity >= 1.3:  # Similarity threshold
                             face_already_registered = True
                             break
 
@@ -1320,7 +1320,7 @@ elif menu == "Student's Login":
 
                                 # Compare faces using cosine similarity (more flexible than exact match)
                                 similarity_score = calculate_cosine_similarity(stored_face, captured_face)
-                                threshold = 2.0  # Adjust this threshold as necessary
+                                threshold = 1.3  # Adjust this threshold as necessary
                                 if similarity_score is not None and similarity_score < threshold:
                                     st.success("Face recognized successfully!")
                                     # Proceed with the rest of the login process (location, Bluetooth, etc.)
