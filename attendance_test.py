@@ -1367,32 +1367,26 @@ elif menu == "Student's Login":
                         st.success("User ID and password verification successful!")
 
                         if face_image:
-                            # Convert the captured face image to binary
+                            # Convert captured face to bytes and save temporarily
                             img = Image.open(face_image)
-                            img_bytes = io.BytesIO()
-                            img.save(img_bytes, format="JPEG")
-                            captured_face_blob = img_bytes.getvalue()
-                        
-                            # Specify the DeepFace model
-                            model_name = "VGG-Face"  # Or other models like "Facenet", "OpenFace", etc.
-                        
-                            # Save captured face to a temporary file
+                            img = img.resize((224, 224))  # Resize to match model input shape
                             captured_face_path = "captured_face.jpg"
-                            with open(captured_face_path, "wb") as f:
-                                f.write(captured_face_blob)
+                            img.save(captured_face_path)
                         
-                            # Fetch stored face image from database
-                            stored_face_image = user[10]  # Assuming index 10 holds the face BLOB
+                            # Fetch stored face from database and save temporarily
+                            stored_face_image = user[10]  # Assuming index 10 holds the face blob
                             stored_face_path = "stored_face.jpg"
                             with open(stored_face_path, "wb") as f:
                                 f.write(stored_face_image)
                         
-                            # Perform face verification with specified model
+                            # Perform face verification with DeepFace
                             try:
                                 result = DeepFace.verify(
                                     img1_path=captured_face_path,
                                     img2_path=stored_face_path,
-                                    model_name=model_name  # Specify model here
+                                    model_name="VGG-Face",  # Specify model here
+                                    enforce_detection=False,  # Avoid failure if face not detected
+                                    detector_backend="opencv"  # Explicitly set detector
                                 )
                         
                                 if result["verified"]:
