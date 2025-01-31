@@ -1386,7 +1386,7 @@ elif menu == "Student's Login":
                                 f.write(stored_face_image)
 
                             # Use DeepFace to compare the faces
-                            result = DeepFace.verify(captured_face_path, stored_face_path)
+                            result = DeepFace.verify(captured_face_path, stored_face_path, model_name="Facenet")
 
                             # Get similarity score from the result
                             similarity_score = result["distance"]  # Lower values indicate higher similarity
