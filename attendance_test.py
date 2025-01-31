@@ -23,16 +23,14 @@ from PIL import Image
 import io
 import streamlit.components.v1 as components
 import json
+import cv2
+import mediapipe as mp
+from scipy.spatial.distance import cosine
 
 st.set_page_config( 
     page_title="ASAS-Beta",  
     page_icon="🎓"   
 ) 
-
-manifest_code = """
-<link rel="manifest" href="/manifest.json">
-"""
-components.html(manifest_code, height=0)
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
