@@ -1163,9 +1163,8 @@ elif menu == "Student's Registration":
                     stored_face = extract_face_features(stored_face_blob[0])
                     if stored_face is not None:
                         similarity = calculate_cosine_similarity(stored_face, extracted_face)
-                        st.write(f"Similarity Score: {similarity:.4f}")
-                        if similarity is not None and similarity >= 0.5: # Similarity threshold
-                            st.write(f"Similarity Score: {similarity:.4f}")  # Display similarity score with 4 decimal places
+                        if similarity is not None and similarity >= 0.1: # Similarity threshold
+                            st.info(f"Similarity Score: {similarity:.4f}")  # Display similarity score with 4 decimal places
                             face_already_registered = True
                             break
 
