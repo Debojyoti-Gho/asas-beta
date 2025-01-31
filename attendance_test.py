@@ -1138,8 +1138,8 @@ elif menu == "Student's Registration":
         section = st.text_input("Section")
         email = st.text_input("Email")  # Use this email for OTP verification
         enrollment_no = st.text_input("Enrollment Number")
-        year = st.text_input("Year(only enter the number like 1, 2, 3, 4....)")
-        semester = st.text_input("Semester(only enter the number like 1, 2, 3, 4....)")
+        year = st.text_input("YEAR (only enter the number like 1, 2, 3, 4....)")
+        semester = st.text_input("SEMESTER (only enter the number like 1, 2, 3, 4....)")
         user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
 
