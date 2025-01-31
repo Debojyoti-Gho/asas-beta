@@ -30,7 +30,8 @@ import json
 import cv2
 import mediapipe as mp
 from scipy.spatial.distance import cosine
-import deepface
+from deepface import DeepFace
+
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
