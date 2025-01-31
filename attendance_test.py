@@ -758,9 +758,10 @@ def extract_face_features(image_bytes):
         else:
             return None  # No face detected
 
-# Convert face image to 1D feature vector
 def flatten_face(image):
-    return image.flatten().astype(np.float32)  # Ensure float32 for consistency
+    flattened = image.flatten().astype(np.float32)  # Ensure it's float32 for consistency
+    print(f"Flattened face shape: {flattened.shape}, type: {type(flattened)}")
+    return flattened
 
 def calculate_cosine_similarity(stored_face, captured_face):
     if stored_face is None or captured_face is None:
@@ -776,8 +777,8 @@ def calculate_cosine_similarity(stored_face, captured_face):
     captured_face_flat = flatten_face(captured_face_resized)
 
     # Debugging: Check vector shapes
-    print(f"Stored face vector shape: {stored_face_flat.shape}")
-    print(f"Captured face vector shape: {captured_face_flat.shape}")
+    print(f"Stored face vector shape: {stored_face_flat.shape}, type: {type(stored_face_flat)}")
+    print(f"Captured face vector shape: {captured_face_flat.shape}, type: {type(captured_face_flat)}")
 
     # Ensure vectors have the same size
     if stored_face_flat.shape != captured_face_flat.shape:
@@ -789,8 +790,8 @@ def calculate_cosine_similarity(stored_face, captured_face):
     captured_face_flat = normalize(captured_face_flat.reshape(1, -1)).ravel()
 
     # Debugging: Check final reshaped vectors
-    print(f"Final Stored vector shape: {stored_face_flat.shape}")
-    print(f"Final Captured vector shape: {captured_face_flat.shape}")
+    print(f"Final Stored vector shape: {stored_face_flat.shape}, type: {type(stored_face_flat)}")
+    print(f"Final Captured vector shape: {captured_face_flat.shape}, type: {type(captured_face_flat)}")
 
     # Compute cosine similarity
     similarity_score = 1 - cosine(stored_face_flat, captured_face_flat)
