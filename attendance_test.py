@@ -810,7 +810,7 @@ def detect_spoof(image_path):
     st.text(f"Edge count: {edge_count}")
 
     # Adjusted thresholds based on further refinement
-    sharpness_threshold = 150  # Increased threshold for sharpness to avoid false positives
+    sharpness_threshold = 290  # Increased threshold for sharpness to avoid false positives
     edge_threshold = 4000  # Increased edge count threshold for real images
 
     # Simplified decision-making based on two features: sharpness and edge count
