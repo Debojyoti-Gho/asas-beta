@@ -789,7 +789,7 @@ def calculate_cosine_similarity(stored_face, captured_face):
     return 1 - cosine(stored_face_flat, captured_face_flat)
     
     
-# Load deepfake detection model (Pretrained CNN model)
+# Define the deepfake detection CNN model
 class DeepfakeDetector(nn.Module):
     def __init__(self):
         super(DeepfakeDetector, self).__init__()
@@ -879,6 +879,7 @@ def is_face_registered(face_blob):
             st.info(f"DeepFace error: {e}")
 
     return False
+
     
 # Database setup to store device IDs
 def create_connection():
