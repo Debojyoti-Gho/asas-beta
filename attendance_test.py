@@ -790,41 +790,57 @@ def calculate_cosine_similarity(stored_face, captured_face):
     
     
 
-
 def detect_spoof(image_path):
+    # Read image
     image = cv2.imread(image_path)
     if image is None:
-        return False  # Invalid image file
+        st.error("Failed to load image.")
+        return False
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # 1. Sharpness check using Laplacian
+    variance = cv2.Laplacian(gray, cv2.CV_64F).var()
 
-    # Apply GaussianBlur to reduce noise
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    # 2. Noise analysis using standard deviation
+    std_dev = np.std(gray)
 
-    # Calculate Laplacian variance for sharpness detection
-    variance = cv2.Laplacian(blurred, cv2.CV_64F).var()
+    # 3. Edge detection using Canny (to check for print photo artifacts)
+    edges = cv2.Canny(gray, 100, 200)
+    edge_count = np.sum(edges > 0)
 
-    # Additional check: Contrast (Difference between brightest and darkest pixels)
-    min_val, max_val, _, _ = cv2.minMaxLoc(gray)
-    contrast = max_val - min_val
+    # 4. Check for grid-like pattern using Fourier Transform (screen detection)
+    f = np.fft.fft2(gray)
+    fshift = np.fft.fftshift(f)
+    magnitude_spectrum = np.abs(fshift)
+    grid_count = np.sum(magnitude_spectrum > 1000)  # Threshold for detecting patterns
 
-    # Define thresholds for sharpness and contrast (these can be further tuned)
-    sharpness_threshold = 30  # Lower threshold for sharpness
-    contrast_threshold = 20   # Lower contrast threshold
+    # Displaying the values in Streamlit for debugging
+    st.text(f"Variance (sharpness): {variance}")
+    st.text(f"Standard Deviation (noise): {std_dev}")
+    st.text(f"Edge count: {edge_count}")
+    st.text(f"Grid count: {grid_count}")
 
-    # If sharpness or contrast is too low, it's likely a spoofed image
-    if variance < sharpness_threshold or contrast < contrast_threshold:
-        return False  # Likely a spoofed image
+    # Define thresholds based on experiments
+    sharpness_threshold = 100  # sharp image has high variance
+    noise_threshold = 30  # Higher noise indicates a fake image
+    edge_threshold = 10000  # More edges may indicate a printed photo
+    grid_threshold = 50000  # High grid count indicates a screen
 
-    # Additional check using face detection
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    # Logic to detect whether it's a printed photo, screen, or real photo
+    if variance < sharpness_threshold and edge_count > edge_threshold:
+        st.warning("This looks like a printed photo.")
+        return False  # Likely a printed photo
+    elif grid_count > grid_threshold:
+        st.warning("This looks like a screen capture.")
+        return False  # Likely a screen
+    elif std_dev < noise_threshold:
+        st.warning("This looks like a printed photo or screen.")
+        return False  # Likely a printed photo or screen
 
-    # If no faces detected, mark as a spoof
-    if len(faces) == 0:
-        return False  # No face detected, likely a spoof
-
-    return True  # Real photo
+    # If it passed all checks, we consider it a real photo
+    st.success("This seems like a real captured photo.")
+    return True
 
 
 # Function to verify if the captured face is registered using DeepFace
