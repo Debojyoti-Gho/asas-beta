@@ -790,6 +790,7 @@ def calculate_cosine_similarity(stored_face, captured_face):
     
     
 
+
 def detect_spoof(image_path):
     image = cv2.imread(image_path)
     if image is None:
@@ -807,21 +808,24 @@ def detect_spoof(image_path):
     min_val, max_val, _, _ = cv2.minMaxLoc(gray)
     contrast = max_val - min_val
 
-    # Define thresholds for sharpness and contrast (can be fine-tuned)
-    sharpness_threshold = 50
-    contrast_threshold = 40
+    # Define thresholds for sharpness and contrast (these can be further tuned)
+    sharpness_threshold = 30  # Lower threshold for sharpness
+    contrast_threshold = 20   # Lower contrast threshold
 
+    # If sharpness or contrast is too low, it's likely a spoofed image
     if variance < sharpness_threshold or contrast < contrast_threshold:
         return False  # Likely a spoofed image
 
     # Additional check using face detection
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
+    # If no faces detected, mark as a spoof
     if len(faces) == 0:
         return False  # No face detected, likely a spoof
 
     return True  # Real photo
+
 
 # Function to verify if the captured face is registered using DeepFace
 def is_face_registered(face_blob):
