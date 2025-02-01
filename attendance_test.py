@@ -790,15 +790,37 @@ def calculate_cosine_similarity(stored_face, captured_face):
     
     
 
-# Function to check if the image is a printed photo or screen using sharpness
 def detect_spoof(image_path):
     image = cv2.imread(image_path)
+    if image is None:
+        return False  # Invalid image file
+
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    variance = cv2.Laplacian(gray, cv2.CV_64F).var()
-    
-    # If variance is low, it's likely a printed photo or screen
-    if variance < 50:
-        return False  # Scam detected
+
+    # Apply GaussianBlur to reduce noise
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    # Calculate Laplacian variance for sharpness detection
+    variance = cv2.Laplacian(blurred, cv2.CV_64F).var()
+
+    # Additional check: Contrast (Difference between brightest and darkest pixels)
+    min_val, max_val, _, _ = cv2.minMaxLoc(gray)
+    contrast = max_val - min_val
+
+    # Define thresholds for sharpness and contrast (can be fine-tuned)
+    sharpness_threshold = 50
+    contrast_threshold = 40
+
+    if variance < sharpness_threshold or contrast < contrast_threshold:
+        return False  # Likely a spoofed image
+
+    # Additional check using face detection
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+
+    if len(faces) == 0:
+        return False  # No face detected, likely a spoof
+
     return True  # Real photo
 
 # Function to verify if the captured face is registered using DeepFace
