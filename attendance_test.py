@@ -798,48 +798,31 @@ def detect_spoof(image_path):
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
-    # 1. Sharpness check using Laplacian
+    # 1. Sharpness check using Laplacian (variance of image sharpness)
     variance = cv2.Laplacian(gray, cv2.CV_64F).var()
 
-    # 2. Noise analysis using standard deviation
-    std_dev = np.std(gray)
-
-    # 3. Edge detection using Canny (to check for print photo artifacts)
+    # 2. Edge detection using Canny edge detector
     edges = cv2.Canny(gray, 100, 200)
-    edge_count = np.sum(edges > 0)
+    edge_count = np.sum(edges > 0)  # Counting non-zero pixels (edges)
 
-    # 4. Check for grid-like pattern using Fourier Transform (screen detection)
-    f = np.fft.fft2(gray)
-    fshift = np.fft.fftshift(f)
-    magnitude_spectrum = np.abs(fshift)
-    grid_count = np.sum(magnitude_spectrum > 1000)  # Threshold for detecting patterns
-
-    # Displaying the values in Streamlit for debugging
+    # Display the values in Streamlit for debugging
     st.text(f"Variance (sharpness): {variance}")
-    st.text(f"Standard Deviation (noise): {std_dev}")
     st.text(f"Edge count: {edge_count}")
-    st.text(f"Grid count: {grid_count}")
 
-    # Adjusted thresholds based on experimentation
-    sharpness_threshold = 200  # Real image sharpness tends to be higher
-    noise_threshold = 60  # Higher noise could indicate spoofing
-    edge_threshold = 5000  # Real images often have more edges
-    grid_threshold = 50000  # Real images have high grid count
+    # Adjusted thresholds based on further refinement
+    sharpness_threshold = 150  # Increased threshold for sharpness to avoid false positives
+    edge_threshold = 4000  # Increased edge count threshold for real images
 
-    # More refined decision-making
-    if variance < sharpness_threshold and edge_count < edge_threshold:
-        st.warning("This looks like a printed photo.")
-        return False  # Likely a printed photo
-    elif grid_count > grid_threshold:
-        st.warning("This looks like a screen capture.")
-        return False  # Likely a screen
-    elif std_dev < noise_threshold:
-        st.warning("This looks like a printed photo or screen.")
-        return False  # Likely a printed photo or screen
-
-    # If it passed all checks, we consider it a real photo
-    st.success("This seems like a real captured photo.")
-    return True
+    # Simplified decision-making based on two features: sharpness and edge count
+    if variance < sharpness_threshold:
+        st.warning("This looks like a printed photo or screen capture.")
+        return False  # Likely a printed photo or screen capture
+    elif edge_count < edge_threshold:
+        st.warning("This looks like a printed photo or screen capture.")
+        return False  # Likely a printed photo or screen capture
+    else:
+        st.success("This seems like a real captured photo.")
+        return True  # Likely a real photo
 
 
 # Function to verify if the captured face is registered using DeepFace
