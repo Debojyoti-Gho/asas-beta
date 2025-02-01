@@ -788,7 +788,6 @@ def calculate_cosine_similarity(stored_face, captured_face):
     # Calculate cosine similarity
     return 1 - cosine(stored_face_flat, captured_face_flat)
     
-    
 
 def detect_spoof(image_path):
     # Read image
@@ -821,14 +820,14 @@ def detect_spoof(image_path):
     st.text(f"Edge count: {edge_count}")
     st.text(f"Grid count: {grid_count}")
 
-    # Define thresholds based on experiments
-    sharpness_threshold = 100  # sharp image has high variance
-    noise_threshold = 30  # Higher noise indicates a fake image
-    edge_threshold = 10000  # More edges may indicate a printed photo
-    grid_threshold = 53000  # High grid count indicates a screen
+    # Adjusted thresholds based on experimentation
+    sharpness_threshold = 200  # Real image sharpness tends to be higher
+    noise_threshold = 60  # Higher noise could indicate spoofing
+    edge_threshold = 5000  # Real images often have more edges
+    grid_threshold = 50000  # Real images have high grid count
 
-    # Logic to detect whether it's a printed photo, screen, or real photo
-    if variance < sharpness_threshold and edge_count > edge_threshold:
+    # More refined decision-making
+    if variance < sharpness_threshold and edge_count < edge_threshold:
         st.warning("This looks like a printed photo.")
         return False  # Likely a printed photo
     elif grid_count > grid_threshold:
