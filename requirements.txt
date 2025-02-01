@@ -14,3 +14,5 @@ deepface
 pycryptodome
 pywebio
 tf-keras
+torch
+torchvision
