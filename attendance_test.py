@@ -825,7 +825,7 @@ def detect_spoof(image_path):
     sharpness_threshold = 100  # sharp image has high variance
     noise_threshold = 30  # Higher noise indicates a fake image
     edge_threshold = 10000  # More edges may indicate a printed photo
-    grid_threshold = 60000  # High grid count indicates a screen
+    grid_threshold = 53000  # High grid count indicates a screen
 
     # Logic to detect whether it's a printed photo, screen, or real photo
     if variance < sharpness_threshold and edge_count > edge_threshold:
