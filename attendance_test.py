@@ -33,6 +33,9 @@ from scipy.spatial.distance import cosine
 from deepface import DeepFace
 import tempfile
 import os
+import torch
+import torch.nn as nn
+import torchvision.transforms as transforms
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
@@ -785,47 +788,97 @@ def calculate_cosine_similarity(stored_face, captured_face):
     # Calculate cosine similarity
     return 1 - cosine(stored_face_flat, captured_face_flat)
     
+    
+# Load deepfake detection model (Pretrained CNN model)
+class DeepfakeDetector(nn.Module):
+    def __init__(self):
+        super(DeepfakeDetector, self).__init__()
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
+        self.relu = nn.ReLU()
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
+        self.fc1 = nn.Linear(32 * 32 * 32, 1)  # Adjust based on image size
+
+    def forward(self, x):
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
+        x = x.view(x.size(0), -1)
+        x = torch.sigmoid(self.fc1(x))
+        return x
+
+# Load the pre-trained deepfake detection model
+deepfake_model = DeepfakeDetector()
+deepfake_model.load_state_dict(torch.load("deepfake_model.pth", map_location=torch.device('cpu')))
+deepfake_model.eval()
+
+def detect_spoof(image_path):
+    """Detect if the image is from a printed photo or screen using edge variance."""
+    image = cv2.imread(image_path)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    variance = cv2.Laplacian(gray, cv2.CV_64F).var()
+
+    if variance < 50:  # Low variance indicates flat surfaces (printed photos or screens)
+        return False
+    return True
+
+def is_deepfake(image_path):
+    """Detect deepfake images using CNN-based deepfake detection."""
+    transform = transforms.Compose([
+        transforms.Resize((64, 64)),  
+        transforms.ToTensor(),
+    ])
+
+    image = Image.open(image_path).convert("RGB")
+    image = transform(image).unsqueeze(0)  # Add batch dimension
+
+    with torch.no_grad():
+        output = deepfake_model(image)
+        if output.item() > 0.5:  # If probability > 0.5, it's a deepfake
+            return True
+    return False
+
 def is_face_registered(face_blob):
     new_face_path = "/tmp/new_face.jpg"
 
-    # Save the new captured face image
     with open(new_face_path, "wb") as f:
         f.write(face_blob)
+
+    # **1. Anti-spoofing check (Printed Photo/Screen Detection)**
+    if not detect_spoof(new_face_path):  
+        st.error("Possible scam detected! This appears to be a printed photo or screen image.")
+        return True  
+
+    # **2. Deepfake check**
+    if is_deepfake(new_face_path):
+        st.error("Deepfake detected! Registration blocked.")
+        return True  
 
     # Retrieve all stored faces from the database
     cursor.execute("SELECT student_face FROM students")
     stored_faces = cursor.fetchall()
 
-    # Define a suitable similarity threshold
-    THRESHOLD = 0.76 # Adjust based on testing (0.5-0.7 is reasonable)
+    THRESHOLD = 0.7
 
     for stored_face in stored_faces:
         stored_face_path = "/tmp/stored_face.jpg"
 
-        # Save stored face as a temporary image
         with open(stored_face_path, "wb") as f:
-            f.write(stored_face[0])  # Assuming student_face is a BLOB
+            f.write(stored_face[0])
 
         try:
-            # Compare the captured face with the stored face
-            result = DeepFace.verify(
-                new_face_path, stored_face_path,
-                model_name="Facenet",  # Try "ArcFace" or "Facenet512" if needed
-                distance_metric="cosine"
-            )
-
-            similarity_score = result["distance"]  # Get similarity score
+            result = DeepFace.verify(new_face_path, stored_face_path, model_name="Facenet", distance_metric="cosine")
+            similarity_score = result["distance"]
 
             st.info(f"Face match result: {result}")
             st.info(f"Similarity score: {similarity_score}")
 
             if result["verified"] and similarity_score < THRESHOLD:
-                return True  # Face already registered
+                return True  
 
         except Exception as e:
             st.info(f"DeepFace error: {e}")
 
-    return False  # No match found
+    return False
     
 # Database setup to store device IDs
 def create_connection():
@@ -1409,13 +1462,13 @@ elif menu == "Student's Login":
                                 # Replace the original BLE signal detection logic
                                 ble_signal = get_ble_signal_from_api()
                                 time.sleep(3)
-                                st.success("You are in your classroom. Have a nice study time! We will mark your attendance shortly.")
 
                                 if ble_signal:
                                     if isinstance(ble_signal, dict) and "status" in ble_signal:
                                         # Handle API status response (e.g., Bluetooth is off)
                                         st.warning(ble_signal["status"])
                                     else:
+                                        st.success("You are in your classroom. Have a nice study time! We will mark your attendance shortly.")
                                         st.info("Verification devices found. Listing all available devices...")
 
                                         # Display all available Bluetooth devices
