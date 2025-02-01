@@ -1385,29 +1385,34 @@ elif menu == "Student's Login":
                             img_bytes = io.BytesIO()
                             img.save(img_bytes, format="JPEG")
                             captured_face_blob = img_bytes.getvalue()
-
+                        
                             # Save the captured image temporarily for DeepFace comparison
                             captured_face_path = "captured_face.jpg"
                             with open(captured_face_path, "wb") as f:
                                 f.write(captured_face_blob)
-
-                            # Now compare the captured face with the stored face during registration
-                            stored_face_image = user[10]  # Example: Stored in the database as a blob
-
-                            # Save the stored face image temporarily for DeepFace comparison
-                            stored_face_path = "stored_face.jpg"
-                            with open(stored_face_path, "wb") as f:
-                                f.write(stored_face_image)
-
-                            # Use DeepFace to compare the faces
-                            result = DeepFace.verify(captured_face_path, stored_face_path, model_name="Facenet", enforce_detection=False)
-
-                            # Get similarity score from the result
-                            similarity_score = result["distance"]  # Lower values indicate higher similarity
-
-                            threshold = 0.4  # Adjust this threshold as necessary
-                            if similarity_score < threshold:
-                                st.success("Face recognized successfully!")
+                        
+                            # Step 1: Anti-Spoofing (Detect if it's a printed photo or screen)
+                            if not detect_spoof(captured_face_path):
+                                st.warning("Possible scam detected! This appears to be a printed photo or screen image.")
+                            else:
+                                # Step 2: Face Verification (Check if the face is already registered)
+                                stored_face_image = user[10]  # Example: Stored in the database as a blob
+                        
+                                # Save the stored face image temporarily for DeepFace comparison
+                                stored_face_path = "stored_face.jpg"
+                                with open(stored_face_path, "wb") as f:
+                                    f.write(stored_face_image)
+                        
+                                # Use DeepFace to compare the faces
+                                result = DeepFace.verify(captured_face_path, stored_face_path, model_name="Facenet", enforce_detection=False)
+                        
+                                # Get similarity score from the result
+                                similarity_score = result["distance"]  # Lower values indicate higher similarity
+                        
+                                threshold = 0.4  # Adjust this threshold as necessary
+                                if similarity_score < threshold:
+                                    st.success("Face recognized successfully!")
+                                    
                                 # Proceed with the rest of the login process (location, Bluetooth, etc.)
                                 st.success("You have passed the location check, and your location has been verified.")
                                 time.sleep(2)
