@@ -834,8 +834,7 @@ def is_face_registered(face_blob):
 
     # Step 1: Anti-Spoofing (Detect if it's a printed photo or screen)
     if not detect_spoof(new_face_path):
-        st.warning("Possible scam detected! This appears to be a printed photo or screen image.")
-        return False
+        st.error("Possible scam detected! This appears to be a printed photo or screen image.")
         st.stop()
 
     # Step 2: Face Verification (Check if the face is already registered)
