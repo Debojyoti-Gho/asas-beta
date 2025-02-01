@@ -789,71 +789,31 @@ def calculate_cosine_similarity(stored_face, captured_face):
     return 1 - cosine(stored_face_flat, captured_face_flat)
     
     
-# Define the deepfake detection CNN model
-class DeepfakeDetector(nn.Module):
-    def __init__(self):
-        super(DeepfakeDetector, self).__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
-        self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
-        self.fc1 = nn.Linear(32 * 32 * 32, 1)  # Adjust based on image size
 
-    def forward(self, x):
-        x = self.pool(self.relu(self.conv1(x)))
-        x = self.pool(self.relu(self.conv2(x)))
-        x = x.view(x.size(0), -1)
-        x = torch.sigmoid(self.fc1(x))
-        return x
-
-# Load the pre-trained deepfake detection model
-deepfake_model = DeepfakeDetector()
-deepfake_model.load_state_dict(torch.load("deepfake_model.pth", map_location=torch.device('cpu')))
-deepfake_model.eval()
-
+# Function to check if the image is a printed photo or screen using sharpness
 def detect_spoof(image_path):
-    """Detect if the image is from a printed photo or screen using edge variance."""
     image = cv2.imread(image_path)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     variance = cv2.Laplacian(gray, cv2.CV_64F).var()
+    
+    # If variance is low, it's likely a printed photo or screen
+    if variance < 50:
+        return False  # Scam detected
+    return True  # Real photo
 
-    if variance < 50:  # Low variance indicates flat surfaces (printed photos or screens)
-        return False
-    return True
-
-def is_deepfake(image_path):
-    """Detect deepfake images using CNN-based deepfake detection."""
-    transform = transforms.Compose([
-        transforms.Resize((64, 64)),  
-        transforms.ToTensor(),
-    ])
-
-    image = Image.open(image_path).convert("RGB")
-    image = transform(image).unsqueeze(0)  # Add batch dimension
-
-    with torch.no_grad():
-        output = deepfake_model(image)
-        if output.item() > 0.5:  # If probability > 0.5, it's a deepfake
-            return True
-    return False
-
+# Function to verify if the captured face is registered using DeepFace
 def is_face_registered(face_blob):
     new_face_path = "/tmp/new_face.jpg"
 
     with open(new_face_path, "wb") as f:
         f.write(face_blob)
 
-    # **1. Anti-spoofing check (Printed Photo/Screen Detection)**
-    if not detect_spoof(new_face_path):  
-        st.error("Possible scam detected! This appears to be a printed photo or screen image.")
-        return True  
+    # Step 1: Anti-Spoofing (Detect if it's a printed photo or screen)
+    if not detect_spoof(new_face_path):
+        st.warning("Possible scam detected! This appears to be a printed photo or screen image.")
+        return False
 
-    # **2. Deepfake check**
-    if is_deepfake(new_face_path):
-        st.error("Deepfake detected! Registration blocked.")
-        return True  
-
-    # Retrieve all stored faces from the database
+    # Step 2: Face Verification (Check if the face is already registered)
     cursor.execute("SELECT student_face FROM students")
     stored_faces = cursor.fetchall()
 
@@ -861,24 +821,24 @@ def is_face_registered(face_blob):
 
     for stored_face in stored_faces:
         stored_face_path = "/tmp/stored_face.jpg"
-
         with open(stored_face_path, "wb") as f:
             f.write(stored_face[0])
 
         try:
+            # Verify if the captured face matches a registered face
             result = DeepFace.verify(new_face_path, stored_face_path, model_name="Facenet", distance_metric="cosine")
             similarity_score = result["distance"]
 
-            st.info(f"Face match result: {result}")
-            st.info(f"Similarity score: {similarity_score}")
+            st.write(f"Face match result: {result}")
+            st.write(f"Similarity score: {similarity_score}")
 
             if result["verified"] and similarity_score < THRESHOLD:
-                return True  
+                return True  # Face is already registered
 
         except Exception as e:
-            st.info(f"DeepFace error: {e}")
+            st.error(f"Error during face verification: {e}")
 
-    return False
+    return False  # No match found
 
     
 # Database setup to store device IDs
