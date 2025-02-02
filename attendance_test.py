@@ -2890,19 +2890,18 @@ elif menu == "Teacher's Login":
             submit_login = st.form_submit_button("Login")
         
             if submit_login:
-                # Check if the admin exists in the database
-                cursor.execute("SELECT * FROM admin_profile WHERE admin_id = ?", (admin_id,))
+                # Check if the admin exists in the database (admin table)
+                cursor.execute("SELECT * FROM admin WHERE admin_id = ?", (admin_id,))
                 admin = cursor.fetchone()
         
                 if admin:
+                    admin_db_password = admin[1]  # Assuming the 2nd column is the password
+                    active_status = admin[2]  # Assuming the 3rd column is the active status
+        
                     if admin_id == "admin":
                         # Skip face verification for the admin user and directly check password
-                        if admin_password == admin[2]:  # Assuming the 3rd column is the password
-                            # Check if admin account is active
-                            cursor.execute("SELECT active FROM admin_profile WHERE admin_id = ?", (admin_id,))
-                            active_status = cursor.fetchone()
-        
-                            if active_status and active_status[0] == 0:  # Account is deactivated
+                        if admin_password == admin_db_password:
+                            if active_status == 0:  # Account is deactivated
                                 st.error("Your account has been deactivated. Please contact the system administrator.")
                             else:
                                 # Admin login successful
@@ -2922,28 +2921,48 @@ elif menu == "Teacher's Login":
                                 st.error("Spoof detection failed. Please ensure you're not using a printed photo or screen capture.")
                             else:
                                 # Verify face using DeepFace if spoof detection passes
-                                stored_face_blob = admin[6]  # Assuming the 7th column (index 6) is the face_encoding
-                                captured_face_blob = captured_face.getvalue()  # Get captured face image as a BLOB
+                                cursor.execute("SELECT face_image FROM admin_profile WHERE admin_id = ?", (admin_id,))
+                                stored_face_blob = cursor.fetchone()
         
-                                if verify_face(captured_face_blob, stored_face_blob):
-                                    # Check password
-                                    if admin_password == admin[2]:  # Assuming the 3rd column is the password
-                                        # Check if admin account is active
-                                        cursor.execute("SELECT active FROM admin_profile WHERE admin_id = ?", (admin_id,))
-                                        active_status = cursor.fetchone()
+                                if stored_face_blob:
+                                    stored_face_blob = stored_face_blob[0]  # Extract the BLOB value
+                                    captured_face_blob = captured_face.getvalue()  # Get captured face image as a BLOB
         
-                                        if active_status and active_status[0] == 0:  # Account is deactivated
-                                            st.error("Your account has been deactivated. Please contact the system administrator.")
+                                    # Convert BLOB to image files temporarily for DeepFace verification
+                                    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as captured_face_file:
+                                        captured_face_file.write(captured_face_blob)
+                                        captured_face_path = captured_face_file.name
+        
+                                    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as stored_face_file:
+                                        stored_face_file.write(stored_face_blob)
+                                        stored_face_path = stored_face_file.name
+        
+                                    # Use DeepFace to verify the face similarity
+                                    result = DeepFace.verify(captured_face_path, stored_face_path, model_name="Facenet", distance_metric="cosine")
+                                    
+                                    st.write(f"Face match result: {result}")
+                                    similarity_score = result["distance"]
+                                    st.write(f"Similarity score: {similarity_score}")
+        
+                                    # Threshold for similarity score (lower means more similar)
+                                    THRESHOLD = 0.7
+                                    if result["verified"] and similarity_score < THRESHOLD:
+                                        # Check password from the admin table
+                                        if admin_password == admin_db_password:
+                                            if active_status == 0:  # Account is deactivated
+                                                st.error("Your account has been deactivated. Please contact the system administrator.")
+                                            else:
+                                                # Admin login successful
+                                                st.session_state.logged_in = True
+                                                st.session_state.admin_id = admin_id
+                                                st.success("Login successful!")
+                                                st.rerun()  # Refresh the page to show the admin dashboard
                                         else:
-                                            # Admin login successful
-                                            st.session_state.logged_in = True
-                                            st.session_state.admin_id = admin_id
-                                            st.success("Login successful!")
-                                            st.rerun()  # Refresh the page to show the admin dashboard
+                                            st.error("Invalid admin ID or password.")
                                     else:
-                                        st.error("Invalid admin ID or password.")
+                                        st.error("Face verification failed. Please try again.")
                                 else:
-                                    st.error("Face verification failed. Please try again.")
+                                    st.error("Face image not found in the database.")
                 else:
                     st.error("Admin ID not found in the database.")
         
@@ -3004,6 +3023,7 @@ elif menu == "Teacher's Login":
                         st.session_state.otp_verified = True  # Mark OTP as verified
                     else:
                         st.error("Invalid OTP. Please try again.")
+
 
                 
 # Section for Admin Management
