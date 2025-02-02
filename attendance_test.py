@@ -2869,122 +2869,122 @@ elif menu == "Teacher's Login":
 
     # Admin Login with Face Verification
     else:
-    # Admin Login Form
-    st.header("Admin Login")
+        # Admin Login Form
+        st.header("Admin Login")
+        
+        with st.form("login_form"):
+            admin_id = st.text_input("Admin ID", key="login_admin_id")
+            admin_password = st.text_input("Admin Password", type="password", key="login_admin_password")
     
-    with st.form("login_form"):
-        admin_id = st.text_input("Admin ID", key="login_admin_id")
-        admin_password = st.text_input("Admin Password", type="password", key="login_admin_password")
-
-        # Capture face using the webcam
-        captured_face = st.camera_input("Capture your face for verification")
-
-        # Session State Initialization
-        if "otp" not in st.session_state:
-            st.session_state.otp = None
-        if "otp_verified" not in st.session_state:
-            st.session_state.otp_verified = False
-        if "reset_admin_id" not in st.session_state:
-            st.session_state.reset_admin_id = None
-
-        # Forgot Password Form
-        with st.form("Forgot Password Form"):
-            st.subheader("Forgot Password?")
-            reset_admin_id = st.text_input("Enter your Admin ID to reset password", key="reset_admin_id_input")
-            submit_forgot_password = st.form_submit_button("Generate OTP")
-
-            if submit_forgot_password:
-                cursor.execute("SELECT email FROM admin_profile WHERE admin_id = ?", (reset_admin_id,))
-                admin_email = cursor.fetchone()
-
-                if admin_email:
-                    admin_email = admin_email[0]
-                    otp = str(np.random.randint(100000, 999999))  # Generate 6-digit OTP
-                    st.session_state.otp = otp  # Store OTP in session state
-                    st.session_state.reset_admin_id = reset_admin_id  # Save the admin ID for verification
-
-                    # SMTP Configuration
-                    smtp_server = 'smtp-relay.brevo.com'
-                    smtp_port = 587
-                    smtp_user = '823c6b001@smtp-brevo.com'
-                    smtp_password = '6tOJHT2F4x8ZGmMw'
-                    from_email = 'debojyotighoshmain@gmail.com'
-
-                    # Send OTP to email
-                    try:
-                        message = MIMEMultipart()
-                        message["From"] = from_email
-                        message["To"] = admin_email
-                        message["Subject"] = "Your OTP for Admin Login"
-
-                        body = f"Your OTP for Admin login is: {otp}\n\nPlease use this OTP to complete your login."
-                        message.attach(MIMEText(body, "plain"))
-
-                        with smtplib.SMTP(smtp_server, smtp_port) as server:
-                            server.starttls()
-                            server.login(smtp_user, smtp_password)
-                            server.sendmail(from_email, admin_email, message.as_string())
-
-                        st.success(f"OTP sent to {admin_email}. Please check your email.")
-                    except Exception as e:
-                        st.error(f"Error sending OTP: {e}")
-                else:
-                    st.error("Admin ID not found in the database.")
-
-        # OTP Verification
-        if st.session_state.otp:
-            with st.form("OTP Verification Form"):
-                st.subheader("OTP Verification")
-                otp_input = st.text_input("Enter the OTP sent to your email", key="otp_input")
-                submit_otp = st.form_submit_button("Verify OTP")
-
-                if submit_otp:
-                    if otp_input == st.session_state.otp:
-                        st.success("OTP verified successfully!")
-                        st.session_state.otp_verified = True  # Mark OTP as verified
+            # Capture face using the webcam
+            captured_face = st.camera_input("Capture your face for verification")
+    
+            # Session State Initialization
+            if "otp" not in st.session_state:
+                st.session_state.otp = None
+            if "otp_verified" not in st.session_state:
+                st.session_state.otp_verified = False
+            if "reset_admin_id" not in st.session_state:
+                st.session_state.reset_admin_id = None
+    
+            # Forgot Password Form
+            with st.form("Forgot Password Form"):
+                st.subheader("Forgot Password?")
+                reset_admin_id = st.text_input("Enter your Admin ID to reset password", key="reset_admin_id_input")
+                submit_forgot_password = st.form_submit_button("Generate OTP")
+    
+                if submit_forgot_password:
+                    cursor.execute("SELECT email FROM admin_profile WHERE admin_id = ?", (reset_admin_id,))
+                    admin_email = cursor.fetchone()
+    
+                    if admin_email:
+                        admin_email = admin_email[0]
+                        otp = str(np.random.randint(100000, 999999))  # Generate 6-digit OTP
+                        st.session_state.otp = otp  # Store OTP in session state
+                        st.session_state.reset_admin_id = reset_admin_id  # Save the admin ID for verification
+    
+                        # SMTP Configuration
+                        smtp_server = 'smtp-relay.brevo.com'
+                        smtp_port = 587
+                        smtp_user = '823c6b001@smtp-brevo.com'
+                        smtp_password = '6tOJHT2F4x8ZGmMw'
+                        from_email = 'debojyotighoshmain@gmail.com'
+    
+                        # Send OTP to email
+                        try:
+                            message = MIMEMultipart()
+                            message["From"] = from_email
+                            message["To"] = admin_email
+                            message["Subject"] = "Your OTP for Admin Login"
+    
+                            body = f"Your OTP for Admin login is: {otp}\n\nPlease use this OTP to complete your login."
+                            message.attach(MIMEText(body, "plain"))
+    
+                            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                                server.starttls()
+                                server.login(smtp_user, smtp_password)
+                                server.sendmail(from_email, admin_email, message.as_string())
+    
+                            st.success(f"OTP sent to {admin_email}. Please check your email.")
+                        except Exception as e:
+                            st.error(f"Error sending OTP: {e}")
                     else:
-                        st.error("Invalid OTP. Please try again.")
-
-        # Admin Face Verification & Regular Admin Login
-        if st.form_submit_button("Login"):
-            cursor.execute("SELECT * FROM admin WHERE admin_id = ? AND password = ?", (admin_id, admin_password))
-            admin = cursor.fetchone()
-
-            if admin:
-                # Check if admin account is active
-                cursor.execute("SELECT active FROM admin WHERE admin_id = ?", (admin_id,))
-                active_status = cursor.fetchone()
-
-                if active_status and active_status[0] == 0:  # Account is deactivated
-                    st.error("Your account has been deactivated. Please contact the system administrator.")
-                else:
-                    # Fetch stored face BLOB from the admin_profile table
-                    cursor.execute("SELECT face_encoding FROM admin_profile WHERE admin_id = ?", (admin_id,))
-                    stored_face_blob = cursor.fetchone()[0]
-
-                    # Verify face after checking if face was captured
-                    if captured_face:
-                        # Perform spoofing detection
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
-                            temp_file.write(captured_face.getvalue())
-                            temp_image_path = temp_file.name
-
-                        if not detect_spoof(temp_image_path):
-                            st.error("Spoofing detected! Please use a real image.")
-                            st.stop()
-
-                        # Verify face using DeepFace
-                        if verify_face(captured_face.getvalue(), stored_face_blob):
-                            st.session_state.logged_in = True
-                            st.session_state.admin_id = admin_id
-                            st.success("Login successful!")
-                            st.rerun()  # Refresh the page to show the admin dashboard
+                        st.error("Admin ID not found in the database.")
+    
+            # OTP Verification
+            if st.session_state.otp:
+                with st.form("OTP Verification Form"):
+                    st.subheader("OTP Verification")
+                    otp_input = st.text_input("Enter the OTP sent to your email", key="otp_input")
+                    submit_otp = st.form_submit_button("Verify OTP")
+    
+                    if submit_otp:
+                        if otp_input == st.session_state.otp:
+                            st.success("OTP verified successfully!")
+                            st.session_state.otp_verified = True  # Mark OTP as verified
                         else:
-                            st.error("Face verification failed. Please try again.")
+                            st.error("Invalid OTP. Please try again.")
+    
+            # Admin Face Verification & Regular Admin Login
+            if st.form_submit_button("Login"):
+                cursor.execute("SELECT * FROM admin WHERE admin_id = ? AND password = ?", (admin_id, admin_password))
+                admin = cursor.fetchone()
+    
+                if admin:
+                    # Check if admin account is active
+                    cursor.execute("SELECT active FROM admin WHERE admin_id = ?", (admin_id,))
+                    active_status = cursor.fetchone()
+    
+                    if active_status and active_status[0] == 0:  # Account is deactivated
+                        st.error("Your account has been deactivated. Please contact the system administrator.")
                     else:
-                        st.error("No face captured. Please try again.")
-            else:
-                st.error("Invalid admin ID or password.")
+                        # Fetch stored face BLOB from the admin_profile table
+                        cursor.execute("SELECT face_encoding FROM admin_profile WHERE admin_id = ?", (admin_id,))
+                        stored_face_blob = cursor.fetchone()[0]
+    
+                        # Verify face after checking if face was captured
+                        if captured_face:
+                            # Perform spoofing detection
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
+                                temp_file.write(captured_face.getvalue())
+                                temp_image_path = temp_file.name
+    
+                            if not detect_spoof(temp_image_path):
+                                st.error("Spoofing detected! Please use a real image.")
+                                st.stop()
+    
+                            # Verify face using DeepFace
+                            if verify_face(captured_face.getvalue(), stored_face_blob):
+                                st.session_state.logged_in = True
+                                st.session_state.admin_id = admin_id
+                                st.success("Login successful!")
+                                st.rerun()  # Refresh the page to show the admin dashboard
+                            else:
+                                st.error("Face verification failed. Please try again.")
+                        else:
+                            st.error("No face captured. Please try again.")
+                else:
+                    st.error("Invalid admin ID or password.")
                 
 # Section for Admin Management
 elif menu == "Admin Management":
