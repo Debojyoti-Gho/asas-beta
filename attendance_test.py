@@ -864,7 +864,37 @@ def is_face_registered(face_blob):
 
     return False  # No match found
 
-    
+
+# Function to verify the captured face with the stored face (BLOB)
+def verify_face(captured_face_blob, stored_face_blob):
+    try:
+        # Convert BLOB to image (temporary file to use with DeepFace)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as captured_face_file:
+            captured_face_file.write(captured_face_blob)
+            captured_face_path = captured_face_file.name
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as stored_face_file:
+            stored_face_file.write(stored_face_blob)
+            stored_face_path = stored_face_file.name
+
+        # Use DeepFace to verify the face similarity
+        result = DeepFace.verify(captured_face_path, stored_face_path, model_name="Facenet", distance_metric="cosine")
+        
+        st.write(f"Face match result: {result}")
+        similarity_score = result["distance"]
+        st.write(f"Similarity score: {similarity_score}")
+
+        # Threshold for similarity score (lower means more similar)
+        THRESHOLD = 0.7
+        if result["verified"] and similarity_score < THRESHOLD:
+            return True
+        else:
+            return False
+    except Exception as e:
+        st.error(f"Error during face verification: {e}")
+        return False
+
+
 # Database setup to store device IDs
 def create_connection():
     conn = sqlite3.connect("device_ids.db")
@@ -1693,116 +1723,123 @@ elif menu == "Teacher's Login":
 
                     st.write("---")
                     st.subheader("Update Profile")
-                    new_name = st.text_input("New Name", profile[1])
-                    new_department = st.text_input("New Department", profile[2])
-                    new_designation = st.text_input("New Designation", profile[3])
-                    new_email = st.text_input("New Email", profile[4])
-                    new_phone = st.text_input("New Phone", profile[5])
+                    
+                    with st.form(key="update_profile_form"):
+                        new_name = st.text_input("New Name", profile[1])
+                        new_department = st.text_input("New Department", profile[2])
+                        new_designation = st.text_input("New Designation", profile[3])
+                        new_email = st.text_input("New Email", profile[4])
+                        new_phone = st.text_input("New Phone", profile[5])
+                        
+                        st.error("Please note: For safety, admin ID and password need to be changed together and once changed, the profile setup has to be done again!")
+                        
+                        # Option to update Admin ID and Password
+                        new_admin_id = st.text_input("New Admin ID", st.session_state.admin_id)
+                        new_password = st.text_input("New Password", type="password")
+                        
+                        st.warning("Capture your face to update authentication.")
+                        captured_face = st.camera_input("Capture Face Image (Optional)")
             
-                    st.error("Please note: For safety, admin ID and password need to be changed together and once changed, the profile setup has to be done again!")
+                        submit_button = st.form_submit_button("Save Changes")
             
-                    # Option to update Admin ID and Password
-                    new_admin_id = st.text_input("New Admin ID", st.session_state.admin_id)
-                    new_password = st.text_input("New Password", type="password")
+                        if submit_button:
+                            cursor.execute("SELECT * FROM admin WHERE admin_id = ?", (new_admin_id,))
+                            existing_admin = cursor.fetchone()
             
-                    st.warning("Capture your face to update authentication.")
-                    captured_face = st.camera_input("Capture Face Image (Optional)")
+                            if existing_admin and new_admin_id != st.session_state.admin_id:
+                                st.error("Admin ID already exists. Please choose a different one.")
+                            else:
+                                new_face_blob = None
+                                if captured_face:
+                                    new_face_blob = captured_face.getvalue()  # Store raw image as BLOB
             
-                    if st.button("Save Changes"):
-                        cursor.execute("SELECT * FROM admin WHERE admin_id = ?", (new_admin_id,))
-                        existing_admin = cursor.fetchone()
+                                    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
+                                        temp_file.write(new_face_blob)
+                                        temp_image_path = temp_file.name
             
-                        if existing_admin and new_admin_id != st.session_state.admin_id:
-                            st.error("Admin ID already exists. Please choose a different one.")
-                        else:
-                            new_face_blob = None
-                            if captured_face:
-                                new_face_blob = captured_face.getvalue()  # Store raw image as BLOB
+                                    if not detect_spoof(temp_image_path):
+                                        st.error("Possible spoofing detected! Use a real captured image.")
+                                        st.stop()
+                                    st.success("Face successfully verified!")
             
-                                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
-                                    temp_file.write(new_face_blob)
-                                    temp_image_path = temp_file.name
+                                update_query = """ 
+                                    UPDATE admin_profile 
+                                    SET name = ?, department = ?, designation = ?, email = ?, phone = ?
+                                """
+                                params = [new_name, new_department, new_designation, new_email, new_phone]
             
-                                if not detect_spoof(temp_image_path):
-                                    st.error("Possible spoofing detected! Use a real captured image.")
-                                    st.stop()
-                                st.success("Face successfully verified!")
+                                if new_face_blob:
+                                    update_query += ", face_encoding = ?"
+                                    params.append(new_face_blob)
             
-                            update_query = """ 
-                                UPDATE admin_profile 
-                                SET name = ?, department = ?, designation = ?, email = ?, phone = ?
-                            """
-                            params = [new_name, new_department, new_designation, new_email, new_phone]
+                                update_query += " WHERE admin_id = ?"
+                                params.append(st.session_state.admin_id)
             
-                            if new_face_blob:
-                                update_query += ", face_encoding = ?"
-                                params.append(new_face_blob)
+                                cursor.execute(update_query, tuple(params))
             
-                            update_query += " WHERE admin_id = ?"
-                            params.append(st.session_state.admin_id)
+                                if new_admin_id != st.session_state.admin_id:
+                                    cursor.execute(""" 
+                                        UPDATE admin 
+                                        SET admin_id = ?, password = ? 
+                                        WHERE admin_id = ? 
+                                    """, (new_admin_id, new_password, st.session_state.admin_id))
+                                    st.session_state.admin_id = new_admin_id 
             
-                            cursor.execute(update_query, tuple(params))
-            
-                            if new_admin_id != st.session_state.admin_id:
-                                cursor.execute(""" 
-                                    UPDATE admin 
-                                    SET admin_id = ?, password = ? 
-                                    WHERE admin_id = ? 
-                                """, (new_admin_id, new_password, st.session_state.admin_id))
-                                st.session_state.admin_id = new_admin_id 
-            
-                            conn.commit()
-                            st.success("Profile and login credentials updated successfully!")
+                                conn.commit()
+                                st.success("Profile and login credentials updated successfully!")
             
                 else:
                     st.error("Admin profile not found. Please complete your profile setup.")
                     st.write("---")
                     st.subheader("Complete Profile Setup")
             
-                    new_name = st.text_input("Name")
-                    new_department = st.text_input("Department")
-                    new_designation = st.text_input("Designation")
-                    new_email = st.text_input("Email")
-                    new_phone = st.text_input("Phone")
-                    new_admin_id = st.text_input("Admin ID")
-                    new_password = st.text_input("Password", type="password")
+                    with st.form(key="create_profile_form"):
+                        new_name = st.text_input("Name")
+                        new_department = st.text_input("Department")
+                        new_designation = st.text_input("Designation")
+                        new_email = st.text_input("Email")
+                        new_phone = st.text_input("Phone")
+                        new_admin_id = st.text_input("Admin ID")
+                        new_password = st.text_input("Password", type="password")
             
-                    st.warning("Capture your face to complete profile setup.")
-                    captured_face = st.camera_input("Capture Face Image (Required)")
+                        st.warning("Capture your face to complete profile setup.")
+                        captured_face = st.camera_input("Capture Face Image (Required)")
             
-                    if st.button("Save Profile"):
-                        if new_name and new_department and new_designation and new_email and new_phone and new_admin_id and new_password and captured_face:
-                            cursor.execute("SELECT * FROM admin WHERE admin_id = ?", (new_admin_id,))
-                            existing_admin = cursor.fetchone()
+                        submit_button = st.form_submit_button("Save Profile")
             
-                            if existing_admin:
-                                st.error("Admin ID already exists. Please choose a different one.")
+                        if submit_button:
+                            if new_name and new_department and new_designation and new_email and new_phone and new_admin_id and new_password and captured_face:
+                                cursor.execute("SELECT * FROM admin WHERE admin_id = ?", (new_admin_id,))
+                                existing_admin = cursor.fetchone()
+            
+                                if existing_admin:
+                                    st.error("Admin ID already exists. Please choose a different one.")
+                                else:
+                                    face_blob = captured_face.getvalue()  # Store raw image as BLOB
+            
+                                    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
+                                        temp_file.write(face_blob)
+                                        temp_image_path = temp_file.name
+            
+                                    if not detect_spoof(temp_image_path):
+                                        st.error("Possible spoofing detected! Use a real captured image.")
+                                        st.stop()
+                                    st.success("Face successfully verified!")
+            
+                                    cursor.execute(""" 
+                                        INSERT INTO admin_profile (admin_id, name, department, designation, email, phone, face_encoding) 
+                                        VALUES (?, ?, ?, ?, ?, ?, ?) 
+                                    """, (new_admin_id, new_name, new_department, new_designation, new_email, new_phone, face_blob))
+            
+                                    cursor.execute(""" 
+                                        INSERT INTO admin (admin_id, password) 
+                                        VALUES (?, ?) 
+                                    """, (new_admin_id, new_password))
+            
+                                    conn.commit()
+                                    st.success("Profile and login credentials created successfully!")
                             else:
-                                face_blob = captured_face.getvalue()  # Store raw image as BLOB
-            
-                                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
-                                    temp_file.write(face_blob)
-                                    temp_image_path = temp_file.name
-            
-                                if not detect_spoof(temp_image_path):
-                                    st.error("Possible spoofing detected! Use a real captured image.")
-                                    st.stop()
-                                st.success("Face successfully verified!")
-            
-                                cursor.execute(""" 
-                                    INSERT INTO admin_profile (admin_id, name, department, designation, email, phone, face_encoding) 
-                                    VALUES (?, ?, ?, ?, ?, ?, ?) 
-                                """, (new_admin_id, new_name, new_department, new_designation, new_email, new_phone, face_blob))
-            
-                                cursor.execute(""" 
-                                    INSERT INTO admin (admin_id, password) 
-                                    VALUES (?, ?) 
-                                """, (new_admin_id, new_password))
-            
-                                conn.commit()
-                                st.success("Profile and login credentials created successfully!")
-                        else:
-                            st.error("Please fill all fields and capture a face image.")
+                                st.error("Please fill all fields and capture a face image.")
             
             else:
                 st.error("Session expired. Please log in again.")
@@ -2811,11 +2848,17 @@ elif menu == "Teacher's Login":
             st.session_state.profile_data = None  # Clear profile data
             st.rerun()  # Refresh the page after logout
 
+    # Admin Login with Face Verification
     else:
-        # Admin Login Form
-        st.header("Admin Login")
+    # Admin Login Form
+    st.header("Admin Login")
+    
+    with st.form("login_form"):
         admin_id = st.text_input("Admin ID", key="login_admin_id")
         admin_password = st.text_input("Admin Password", type="password", key="login_admin_password")
+
+        # Capture face using the webcam
+        captured_face = st.camera_input("Capture your face for verification")
 
         # Session State Initialization
         if "otp" not in st.session_state:
@@ -2883,8 +2926,8 @@ elif menu == "Teacher's Login":
                     else:
                         st.error("Invalid OTP. Please try again.")
 
-        # Regular Admin Login (this part will be triggered only if OTP is not required)
-        if st.button("Login"):
+        # Admin Face Verification & Regular Admin Login
+        if st.form_submit_button("Login"):
             cursor.execute("SELECT * FROM admin WHERE admin_id = ? AND password = ?", (admin_id, admin_password))
             admin = cursor.fetchone()
 
@@ -2896,15 +2939,33 @@ elif menu == "Teacher's Login":
                 if active_status and active_status[0] == 0:  # Account is deactivated
                     st.error("Your account has been deactivated. Please contact the system administrator.")
                 else:
-                    # Admin login successful
-                    st.session_state.logged_in = True
-                    st.session_state.admin_id = admin_id
-                    st.success("Login successful!")
-                    st.rerun()  # Refresh the page to show the admin dashboard
+                    # Fetch stored face BLOB from the admin_profile table
+                    cursor.execute("SELECT face_encoding FROM admin_profile WHERE admin_id = ?", (admin_id,))
+                    stored_face_blob = cursor.fetchone()[0]
+
+                    # Verify face after checking if face was captured
+                    if captured_face:
+                        # Perform spoofing detection
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
+                            temp_file.write(captured_face.getvalue())
+                            temp_image_path = temp_file.name
+
+                        if not detect_spoof(temp_image_path):
+                            st.error("Spoofing detected! Please use a real image.")
+                            st.stop()
+
+                        # Verify face using DeepFace
+                        if verify_face(captured_face.getvalue(), stored_face_blob):
+                            st.session_state.logged_in = True
+                            st.session_state.admin_id = admin_id
+                            st.success("Login successful!")
+                            st.rerun()  # Refresh the page to show the admin dashboard
+                        else:
+                            st.error("Face verification failed. Please try again.")
+                    else:
+                        st.error("No face captured. Please try again.")
             else:
                 st.error("Invalid admin ID or password.")
-
-
                 
 # Section for Admin Management
 elif menu == "Admin Management":
