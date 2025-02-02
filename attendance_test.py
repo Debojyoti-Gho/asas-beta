@@ -2916,7 +2916,13 @@ elif menu == "Teacher's Login":
                         if captured_face is None:
                             st.error("Please capture your face for verification.")
                         else:
-                            spoof_check = detect_spoof(captured_face)
+                            # Convert the captured face to an image before passing to detect_spoof
+                            image_data = captured_face.getvalue()  # Get captured face image as bytes
+                            nparr = np.frombuffer(image_data, np.uint8)  # Convert bytes to NumPy array
+                            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)  # Decode image to OpenCV format
+                            
+                            # Check for spoof using detect_spoof
+                            spoof_check = detect_spoof(image)
                             if not spoof_check:
                                 st.error("Spoof detection failed. Please ensure you're not using a printed photo or screen capture.")
                             else:
@@ -2926,7 +2932,7 @@ elif menu == "Teacher's Login":
         
                                 if stored_face_blob:
                                     stored_face_blob = stored_face_blob[0]  # Extract the BLOB value
-                                    captured_face_blob = captured_face.getvalue()  # Get captured face image as a BLOB
+                                    captured_face_blob = captured_face.getvalue()  # Get captured face image as BLOB
         
                                     # Convert BLOB to image files temporarily for DeepFace verification
                                     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as captured_face_file:
@@ -2965,7 +2971,7 @@ elif menu == "Teacher's Login":
                                     st.error("Face image not found in the database.")
                 else:
                     st.error("Admin ID not found in the database.")
-        
+            
         # Forgot Password Form (Separate Form)
         st.header("Forgot Password?")
         with st.form("Forgot Password Form"):
