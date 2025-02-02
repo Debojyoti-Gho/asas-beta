@@ -2938,7 +2938,7 @@ elif menu == "Teacher's Login":
                                 f.write(captured_face_blob)
         
                             # Verify face using DeepFace if spoof detection passes
-                            cursor.execute("SELECT face_image FROM admin_profile WHERE admin_id = ?", (admin_id,))
+                            cursor.execute("SELECT face_encoding FROM admin_profile WHERE admin_id = ?", (admin_id,))
                             stored_face_blob = cursor.fetchone()
         
                             if stored_face_blob:
