@@ -2874,7 +2874,7 @@ elif menu == "Teacher's Login":
         with st.form("Login Form"):
             admin_id = st.text_input("Admin ID", key="login_admin_id")
             admin_password = st.text_input("Admin Password", type="password", key="login_admin_password")
-            
+        
             # Face Capture using Streamlit's camera_input
             captured_face = st.camera_input("Capture your face for verification")
         
@@ -2916,59 +2916,64 @@ elif menu == "Teacher's Login":
                         if captured_face is None:
                             st.error("Please capture your face for verification.")
                         else:
-                            # Convert the captured face to an image before passing to detect_spoof
-                            image_data = captured_face.getvalue()  # Get captured face image as bytes
-                            nparr = np.frombuffer(image_data, np.uint8)  # Convert bytes to NumPy array
-                            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)  # Decode image to OpenCV format
-                            
-                            # Check for spoof using detect_spoof
-                            spoof_check = detect_spoof(image)
-                            if not spoof_check:
-                                st.error("Spoof detection failed. Please ensure you're not using a printed photo or screen capture.")
-                            else:
-                                # Verify face using DeepFace if spoof detection passes
-                                cursor.execute("SELECT face_image FROM admin_profile WHERE admin_id = ?", (admin_id,))
-                                stored_face_blob = cursor.fetchone()
+                            # Convert the captured face image to binary as done in your example
+                            img = Image.open(captured_face)
+                            img_bytes = io.BytesIO()
+                            img.save(img_bytes, format="JPEG")
+                            captured_face_blob = img_bytes.getvalue()
         
-                                if stored_face_blob:
-                                    stored_face_blob = stored_face_blob[0]  # Extract the BLOB value
-                                    captured_face_blob = captured_face.getvalue()  # Get captured face image as BLOB
+                            # Save the captured image temporarily for anti-spoofing check
+                            captured_face_path = "captured_face.jpg"
+                            with open(captured_face_path, "wb") as f:
+                                f.write(captured_face_blob)
         
-                                    # Convert BLOB to image files temporarily for DeepFace verification
-                                    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as captured_face_file:
-                                        captured_face_file.write(captured_face_blob)
-                                        captured_face_path = captured_face_file.name
+                            # Anti-spoofing check
+                            if not detect_spoof(captured_face_path):
+                                st.error("Spoofed image detected. Please use a real face photo.")
+                                st.stop()  # Stop execution
         
-                                    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as stored_face_file:
-                                        stored_face_file.write(stored_face_blob)
-                                        stored_face_path = stored_face_file.name
+                            # Save the captured image temporarily for DeepFace comparison
+                            captured_face_path = "captured_face.jpg"
+                            with open(captured_face_path, "wb") as f:
+                                f.write(captured_face_blob)
         
-                                    # Use DeepFace to verify the face similarity
-                                    result = DeepFace.verify(captured_face_path, stored_face_path, model_name="Facenet", distance_metric="cosine")
-                                    
-                                    st.write(f"Face match result: {result}")
-                                    similarity_score = result["distance"]
-                                    st.write(f"Similarity score: {similarity_score}")
+                            # Verify face using DeepFace if spoof detection passes
+                            cursor.execute("SELECT face_image FROM admin_profile WHERE admin_id = ?", (admin_id,))
+                            stored_face_blob = cursor.fetchone()
         
-                                    # Threshold for similarity score (lower means more similar)
-                                    THRESHOLD = 0.7
-                                    if result["verified"] and similarity_score < THRESHOLD:
-                                        # Check password from the admin table
-                                        if admin_password == admin_db_password:
-                                            if active_status == 0:  # Account is deactivated
-                                                st.error("Your account has been deactivated. Please contact the system administrator.")
-                                            else:
-                                                # Admin login successful
-                                                st.session_state.logged_in = True
-                                                st.session_state.admin_id = admin_id
-                                                st.success("Login successful!")
-                                                st.rerun()  # Refresh the page to show the admin dashboard
+                            if stored_face_blob:
+                                stored_face_blob = stored_face_blob[0]  # Extract the BLOB value
+                                # Save the stored face temporarily for DeepFace comparison
+                                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as stored_face_file:
+                                    stored_face_file.write(stored_face_blob)
+                                    stored_face_path = stored_face_file.name
+        
+                                # Use DeepFace to verify the face similarity
+                                result = DeepFace.verify(captured_face_path, stored_face_path, model_name="Facenet", distance_metric="cosine")
+                                
+                                st.write(f"Face match result: {result}")
+                                similarity_score = result["distance"]
+                                st.write(f"Similarity score: {similarity_score}")
+        
+                                # Threshold for similarity score (lower means more similar)
+                                THRESHOLD = 0.7
+                                if result["verified"] and similarity_score < THRESHOLD:
+                                    # Check password from the admin table
+                                    if admin_password == admin_db_password:
+                                        if active_status == 0:  # Account is deactivated
+                                            st.error("Your account has been deactivated. Please contact the system administrator.")
                                         else:
-                                            st.error("Invalid admin ID or password.")
+                                            # Admin login successful
+                                            st.session_state.logged_in = True
+                                            st.session_state.admin_id = admin_id
+                                            st.success("Login successful!")
+                                            st.rerun()  # Refresh the page to show the admin dashboard
                                     else:
-                                        st.error("Face verification failed. Please try again.")
+                                        st.error("Invalid admin ID or password.")
                                 else:
-                                    st.error("Face image not found in the database.")
+                                    st.error("Face verification failed. Please try again.")
+                            else:
+                                st.error("Face image not found in the database.")
                 else:
                     st.error("Admin ID not found in the database.")
             
