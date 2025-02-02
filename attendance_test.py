@@ -1841,8 +1841,8 @@ elif menu == "Teacher's Login":
                             else:
                                 st.error("Please fill all fields and capture a face image.")
             
-            else:
-                st.error("Session expired. Please log in again.")
+        else:
+            st.error("Session expired. Please log in again.")
                 
         st.markdown("---")
         # Advanced Search Section for Registered Students
