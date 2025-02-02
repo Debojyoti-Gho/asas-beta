@@ -2889,40 +2889,61 @@ elif menu == "Teacher's Login":
             # Admin Login Button
             submit_login = st.form_submit_button("Login")
         
-            if submit_login and captured_face is not None:
+            if submit_login:
                 # Check if the admin exists in the database
                 cursor.execute("SELECT * FROM admin_profile WHERE admin_id = ?", (admin_id,))
                 admin = cursor.fetchone()
         
                 if admin:
-                    # First, check if the captured face is real (anti-spoofing check)
-                    spoof_check = detect_spoof(captured_face)
-                    if not spoof_check:
-                        st.error("Spoof detection failed. Please ensure you're not using a printed photo or screen capture.")
-                    else:
-                        # Verify face using DeepFace if spoof detection passes
-                        stored_face_blob = admin[6]  # Assuming the 7th column (index 6) is the face_encoding
-                        captured_face_blob = captured_face.getvalue()  # Get captured face image as a BLOB
+                    if admin_id == "admin":
+                        # Skip face verification for the admin user and directly check password
+                        if admin_password == admin[2]:  # Assuming the 3rd column is the password
+                            # Check if admin account is active
+                            cursor.execute("SELECT active FROM admin_profile WHERE admin_id = ?", (admin_id,))
+                            active_status = cursor.fetchone()
         
-                        if verify_face(captured_face_blob, stored_face_blob):
-                            # Check password
-                            if admin_password == admin[2]:  # Assuming the 3rd column is the password
-                                # Check if admin account is active
-                                cursor.execute("SELECT active FROM admin_profile WHERE admin_id = ?", (admin_id,))
-                                active_status = cursor.fetchone()
-        
-                                if active_status and active_status[0] == 0:  # Account is deactivated
-                                    st.error("Your account has been deactivated. Please contact the system administrator.")
-                                else:
-                                    # Admin login successful
-                                    st.session_state.logged_in = True
-                                    st.session_state.admin_id = admin_id
-                                    st.success("Login successful!")
-                                    st.rerun()  # Refresh the page to show the admin dashboard
+                            if active_status and active_status[0] == 0:  # Account is deactivated
+                                st.error("Your account has been deactivated. Please contact the system administrator.")
                             else:
-                                st.error("Invalid admin ID or password.")
+                                # Admin login successful
+                                st.session_state.logged_in = True
+                                st.session_state.admin_id = admin_id
+                                st.success("Login successful!")
+                                st.rerun()  # Refresh the page to show the admin dashboard
                         else:
-                            st.error("Face verification failed. Please try again.")
+                            st.error("Invalid admin ID or password.")
+                    else:
+                        # Perform face verification and spoof check for other admin IDs
+                        if captured_face is None:
+                            st.error("Please capture your face for verification.")
+                        else:
+                            spoof_check = detect_spoof(captured_face)
+                            if not spoof_check:
+                                st.error("Spoof detection failed. Please ensure you're not using a printed photo or screen capture.")
+                            else:
+                                # Verify face using DeepFace if spoof detection passes
+                                stored_face_blob = admin[6]  # Assuming the 7th column (index 6) is the face_encoding
+                                captured_face_blob = captured_face.getvalue()  # Get captured face image as a BLOB
+        
+                                if verify_face(captured_face_blob, stored_face_blob):
+                                    # Check password
+                                    if admin_password == admin[2]:  # Assuming the 3rd column is the password
+                                        # Check if admin account is active
+                                        cursor.execute("SELECT active FROM admin_profile WHERE admin_id = ?", (admin_id,))
+                                        active_status = cursor.fetchone()
+        
+                                        if active_status and active_status[0] == 0:  # Account is deactivated
+                                            st.error("Your account has been deactivated. Please contact the system administrator.")
+                                        else:
+                                            # Admin login successful
+                                            st.session_state.logged_in = True
+                                            st.session_state.admin_id = admin_id
+                                            st.success("Login successful!")
+                                            st.rerun()  # Refresh the page to show the admin dashboard
+                                    else:
+                                        st.error("Invalid admin ID or password.")
+                                else:
+                                    st.error("Face verification failed. Please try again.")
                 else:
                     st.error("Admin ID not found in the database.")
         
@@ -2983,6 +3004,7 @@ elif menu == "Teacher's Login":
                         st.session_state.otp_verified = True  # Mark OTP as verified
                     else:
                         st.error("Invalid OTP. Please try again.")
+
                 
 # Section for Admin Management
 elif menu == "Admin Management":
