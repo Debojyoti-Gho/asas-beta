@@ -1519,6 +1519,7 @@ elif menu == "Student's Login":
                                             st.session_state.bluetooth_selected = True  # Mark Bluetooth as selected
                                         else:
                                             st.error("Required verifying device not found. Login failed.")
+                                            st.stop()
 
                                     # Define constant for period times
                                     PERIOD_TIMES = {
