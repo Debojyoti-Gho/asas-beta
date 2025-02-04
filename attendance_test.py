@@ -793,7 +793,7 @@ def calculate_cosine_similarity(stored_face, captured_face):
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Current script directory
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 MIDAS_MODEL_PATH = os.path.join(MODEL_DIR, "midas_small.onnx")
-MIDAS_MODEL_URL = https://github.com/opencv/opencv_zoo/raw/main/models/midas_small/midas_small.onnx"
+MIDAS_MODEL_URL = "https://github.com/opencv/opencv_zoo/raw/main/models/midas_small/midas_small.onnx"
 
 def download_midas_model():
     """Downloads the MiDaS model if it is missing using requests."""
