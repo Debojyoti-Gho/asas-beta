@@ -36,6 +36,7 @@ import os
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
+import timms
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
@@ -794,10 +795,6 @@ MIDAS_MODEL_PATH = "midas_model.pt"
 
 def download_midas_model():
     """Downloads the MiDaS model if not available."""
-
-    # Ensure timm is installed (Required for MiDaS)
-    os.system("pip install timm")
-    
     if not os.path.exists(MIDAS_MODEL_PATH):
         st.warning("Downloading MiDaS model...")
         model = torch.hub.load("intel-isl/MiDaS", "DPT_Small")  # Load pre-trained MiDaS model
