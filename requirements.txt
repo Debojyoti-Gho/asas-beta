@@ -16,4 +16,4 @@ pywebio
 tf-keras
 torch
 torchvision
-onnxruntime
+timm
