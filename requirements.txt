@@ -16,3 +16,5 @@ pywebio
 tf-keras
 torch
 torchvision
+onnxruntime
+urllib3
