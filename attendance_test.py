@@ -789,38 +789,52 @@ def calculate_cosine_similarity(stored_face, captured_face):
     return 1 - cosine(stored_face_flat, captured_face_flat)
     
 
-# Auto-detect model path
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Current script directory
-MODEL_DIR = os.path.join(BASE_DIR, "models")
-MIDAS_MODEL_PATH = os.path.join(MODEL_DIR, "midas_small.onnx")
-MIDAS_MODEL_URL = "https://github.com/opencv/opencv_zoo/raw/main/models/midas_small/midas_small.onnx"
+# Ensure model is saved in the root directory
+MIDAS_MODEL_PATH = "midas_model.pt"
 
 def download_midas_model():
-    """Downloads the MiDaS model if it is missing using requests."""
+    """Downloads the MiDaS model if not available."""
     if not os.path.exists(MIDAS_MODEL_PATH):
-        st.warning(f"MiDaS model not found at {MIDAS_MODEL_PATH}. Downloading now...")
-        os.makedirs(MODEL_DIR, exist_ok=True)  # Ensure directory exists
-        
-        try:
-            response = requests.get(MIDAS_MODEL_URL, stream=True)
-            response.raise_for_status()  # Raise error if download fails
-            
-            with open(MIDAS_MODEL_PATH, "wb") as file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    file.write(chunk)
-                    
-            st.success(f"MiDaS model downloaded successfully to {MIDAS_MODEL_PATH}!")
-        except requests.exceptions.RequestException as e:
-            st.error(f"Failed to download MiDaS model: {e}")
-            return False
-    return True
+        st.warning("Downloading MiDaS model...")
+        model = torch.hub.load("intel-isl/MiDaS", "DPT_Small")  # Load pre-trained MiDaS model
+        torch.save(model.state_dict(), MIDAS_MODEL_PATH)  # Save model in root directory
+        st.success("MiDaS model downloaded and saved.")
+
+def load_midas_model():
+    """Loads MiDaS model from the root directory."""
+    model = torch.hub.load("intel-isl/MiDaS", "DPT_Small")  # Load structure
+    model.load_state_dict(torch.load(MIDAS_MODEL_PATH, map_location=torch.device("cpu")))  # Load weights
+    model.eval()  # Set to evaluation mode
+    return model
+
+def estimate_depth(image, model):
+    """Performs depth estimation on an image using MiDaS."""
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((256, 256)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5], std=[0.5])
+    ])
+
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB
+    image = transform(image).unsqueeze(0)  # Add batch dimension
+
+    with torch.no_grad():
+        depth_map = model(image)
+
+    depth_map = depth_map.squeeze().numpy()  # Remove batch dimension
+    depth_variance = np.var(depth_map)  # Compute depth variance
+
+    return depth_variance
 
 def detect_spoof(image_path):
     """Detects spoofing using sharpness, edge count, and depth estimation."""
-
+    
     # Ensure the MiDaS model is available
-    if not download_midas_model():
-        return False
+    if not os.path.exists(MIDAS_MODEL_PATH):
+        download_midas_model()
+    
+    model = load_midas_model()
 
     # Read image
     image = cv2.imread(image_path)
@@ -837,18 +851,8 @@ def detect_spoof(image_path):
     edges = cv2.Canny(gray, 100, 200)
     edge_count = np.sum(edges > 0)  # Counting non-zero pixels (edges)
 
-    # 3. Depth estimation using MiDaS model
-    try:
-        model = cv2.dnn.readNetFromONNX(MIDAS_MODEL_PATH)  # Load MiDaS model
-    except cv2.error as e:
-        st.error(f"Error loading MiDaS model: {e}")
-        return False
-
-    blob = cv2.dnn.blobFromImage(image, 1/255.0, (256, 256), swapRB=True, crop=False)
-    model.setInput(blob)
-    depth_map = model.forward()
-    depth_map = cv2.resize(depth_map[0, :, :], (image.shape[1], image.shape[0]))  # Resize depth map
-    depth_variance = np.var(depth_map)  # Variance of depth values
+    # 3. Depth estimation
+    depth_variance = estimate_depth(image, model)
 
     # Display values in Streamlit
     st.text(f"Variance (sharpness): {variance}")
@@ -873,6 +877,7 @@ def detect_spoof(image_path):
     else:
         st.success("This seems like a real captured photo.")
         return True
+
 
 # Function to verify if the captured face is registered using DeepFace
 def is_face_registered(face_blob):
