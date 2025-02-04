@@ -789,23 +789,38 @@ def calculate_cosine_similarity(stored_face, captured_face):
     return 1 - cosine(stored_face_flat, captured_face_flat)
     
 
-# MiDaS model URL and path
-MIDAS_MODEL_PATH = "models/midas_small.onnx"
+# Auto-detect model path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Current script directory
+MODEL_DIR = os.path.join(BASE_DIR, "models")
+MIDAS_MODEL_PATH = os.path.join(MODEL_DIR, "midas_small.onnx")
 MIDAS_MODEL_URL = "https://github.com/opencv/opencv_zoo/raw/main/models/midas_small/midas_small.onnx"
 
 def download_midas_model():
-    """Downloads the MiDaS model if it is missing."""
+    """Downloads the MiDaS model if it is missing using requests."""
     if not os.path.exists(MIDAS_MODEL_PATH):
-        st.warning("MiDaS model not found. Downloading now...")
-        os.makedirs("models", exist_ok=True)
-        os.system(f"wget {MIDAS_MODEL_URL} -O {MIDAS_MODEL_PATH}")
-        st.success("MiDaS model downloaded successfully!")
+        st.warning(f"MiDaS model not found at {MIDAS_MODEL_PATH}. Downloading now...")
+        os.makedirs(MODEL_DIR, exist_ok=True)  # Ensure directory exists
+        
+        try:
+            response = requests.get(MIDAS_MODEL_URL, stream=True)
+            response.raise_for_status()  # Raise error if download fails
+            
+            with open(MIDAS_MODEL_PATH, "wb") as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    file.write(chunk)
+                    
+            st.success(f"MiDaS model downloaded successfully to {MIDAS_MODEL_PATH}!")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Failed to download MiDaS model: {e}")
+            return False
+    return True
 
 def detect_spoof(image_path):
     """Detects spoofing using sharpness, edge count, and depth estimation."""
-    
+
     # Ensure the MiDaS model is available
-    download_midas_model()
+    if not download_midas_model():
+        return False
 
     # Read image
     image = cv2.imread(image_path)
@@ -823,7 +838,12 @@ def detect_spoof(image_path):
     edge_count = np.sum(edges > 0)  # Counting non-zero pixels (edges)
 
     # 3. Depth estimation using MiDaS model
-    model = cv2.dnn.readNet(MIDAS_MODEL_PATH)  # Load MiDaS model
+    try:
+        model = cv2.dnn.readNetFromONNX(MIDAS_MODEL_PATH)  # Load MiDaS model
+    except cv2.error as e:
+        st.error(f"Error loading MiDaS model: {e}")
+        return False
+
     blob = cv2.dnn.blobFromImage(image, 1/255.0, (256, 256), swapRB=True, crop=False)
     model.setInput(blob)
     depth_map = model.forward()
@@ -853,7 +873,6 @@ def detect_spoof(image_path):
     else:
         st.success("This seems like a real captured photo.")
         return True
-
 
 # Function to verify if the captured face is registered using DeepFace
 def is_face_registered(face_blob):
