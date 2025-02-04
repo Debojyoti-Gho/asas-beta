@@ -36,7 +36,6 @@ import os
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
-import onnxruntime as ort
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
@@ -790,7 +789,24 @@ def calculate_cosine_similarity(stored_face, captured_face):
     return 1 - cosine(stored_face_flat, captured_face_flat)
     
 
+# MiDaS model URL and path
+MIDAS_MODEL_PATH = "models/midas_small.onnx"
+MIDAS_MODEL_URL = "https://github.com/opencv/opencv_zoo/raw/main/models/midas_small/midas_small.onnx"
+
+def download_midas_model():
+    """Downloads the MiDaS model if it is missing."""
+    if not os.path.exists(MIDAS_MODEL_PATH):
+        st.warning("MiDaS model not found. Downloading now...")
+        os.makedirs("models", exist_ok=True)
+        os.system(f"wget {MIDAS_MODEL_URL} -O {MIDAS_MODEL_PATH}")
+        st.success("MiDaS model downloaded successfully!")
+
 def detect_spoof(image_path):
+    """Detects spoofing using sharpness, edge count, and depth estimation."""
+    
+    # Ensure the MiDaS model is available
+    download_midas_model()
+
     # Read image
     image = cv2.imread(image_path)
     if image is None:
@@ -798,7 +814,7 @@ def detect_spoof(image_path):
         return False
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
+
     # 1. Sharpness check using Laplacian (variance of image sharpness)
     variance = cv2.Laplacian(gray, cv2.CV_64F).var()
 
@@ -806,24 +822,37 @@ def detect_spoof(image_path):
     edges = cv2.Canny(gray, 100, 200)
     edge_count = np.sum(edges > 0)  # Counting non-zero pixels (edges)
 
-    # Display the values in Streamlit for debugging
+    # 3. Depth estimation using MiDaS model
+    model = cv2.dnn.readNet(MIDAS_MODEL_PATH)  # Load MiDaS model
+    blob = cv2.dnn.blobFromImage(image, 1/255.0, (256, 256), swapRB=True, crop=False)
+    model.setInput(blob)
+    depth_map = model.forward()
+    depth_map = cv2.resize(depth_map[0, :, :], (image.shape[1], image.shape[0]))  # Resize depth map
+    depth_variance = np.var(depth_map)  # Variance of depth values
+
+    # Display values in Streamlit
     st.text(f"Variance (sharpness): {variance}")
     st.text(f"Edge count: {edge_count}")
+    st.text(f"Depth variance: {depth_variance}")
 
-    # Adjusted thresholds based on further refinement
-    sharpness_threshold = 130  # Increased threshold for sharpness to avoid false positives
-    edge_threshold = 4000  # Increased edge count threshold for real images
+    # Thresholds for spoof detection
+    sharpness_threshold = 130
+    edge_threshold = 4000
+    depth_threshold = 500  # Higher variance means real 3D depth
 
-    # Simplified decision-making based on two features: sharpness and edge count
+    # Decision-making based on all three factors
     if variance < sharpness_threshold:
-        st.warning("This looks like a printed photo or screen capture.")
-        return False  # Likely a printed photo or screen capture
+        st.warning("This looks like a printed photo or screen capture (low sharpness).")
+        return False
     elif edge_count < edge_threshold:
-        st.warning("This looks like a printed photo or screen capture.")
-        return False  # Likely a printed photo or screen capture
+        st.warning("This looks like a printed photo or screen capture (low edge count).")
+        return False
+    elif depth_variance < depth_threshold:
+        st.warning("Depth analysis suggests a flat image (possible spoof attempt).")
+        return False
     else:
         st.success("This seems like a real captured photo.")
-        return True  # Likely a real photo
+        return True
 
 
 # Function to verify if the captured face is registered using DeepFace
