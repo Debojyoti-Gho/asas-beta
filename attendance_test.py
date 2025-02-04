@@ -790,22 +790,22 @@ def calculate_cosine_similarity(stored_face, captured_face):
     return 1 - cosine(stored_face_flat, captured_face_flat)
     
 
-# Ensure model is saved in the root directory
+# MiDaS model path (saved in the root directory)
 MIDAS_MODEL_PATH = "midas_model.pt"
 
 def download_midas_model():
-    """Downloads the MiDaS model if not available."""
+    """Downloads the MiDaS model if it is missing."""
     if not os.path.exists(MIDAS_MODEL_PATH):
-        st.warning("Downloading MiDaS model...")
-        model = torch.hub.load("intel-isl/MiDaS", "DPT_Small")  # Load pre-trained MiDaS model
-        torch.save(model.state_dict(), MIDAS_MODEL_PATH)  # Save model in root directory
-        st.success("MiDaS model downloaded and saved.")
+        print("Downloading MiDaS model...")
+        model = torch.hub.load("intel-isl/MiDaS", "MiDaS_small", pretrained=True)
+        torch.save(model.state_dict(), MIDAS_MODEL_PATH)  # Save in root directory
+        print("MiDaS model downloaded and saved successfully!")
 
 def load_midas_model():
-    """Loads MiDaS model from the root directory."""
-    model = torch.hub.load("intel-isl/MiDaS", "DPT_Small")  # Load structure
-    model.load_state_dict(torch.load(MIDAS_MODEL_PATH, map_location=torch.device("cpu")))  # Load weights
-    model.eval()  # Set to evaluation mode
+    """Loads the MiDaS model from the saved file."""
+    model = torch.hub.load("intel-isl/MiDaS", "MiDaS_small", pretrained=False)  # Initialize model
+    model.load_state_dict(torch.load(MIDAS_MODEL_PATH, map_location=torch.device("cpu")))
+    model.eval()
     return model
 
 def estimate_depth(image, model):
