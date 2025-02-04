@@ -790,98 +790,40 @@ def calculate_cosine_similarity(stored_face, captured_face):
     return 1 - cosine(stored_face_flat, captured_face_flat)
     
 
-
-# Actual ONNX model URL for MiDaS v2.1 (small, 256x256)
-MODEL_URL = "https://github.com/isl-org/MiDaS/releases/download/v2_1/midas_v21_small_256.onnx"
-MODEL_PATH = "midas_v21_small_256.onnx"
-
-def download_model():
-    """Download the ONNX model if it's not already cached locally."""
-    if not os.path.exists(MODEL_PATH):
-        st.info("Downloading model...")
-        try:
-            response = requests.get(MODEL_URL, stream=True, verify=True)  # Ensure SSL verification
-            if response.status_code == 200:
-                with open(MODEL_PATH, "wb") as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
-                st.success("Model downloaded successfully.")
-            else:
-                st.error(f"Failed to download model: HTTP {response.status_code}")
-                return None
-        except requests.exceptions.SSLError:
-            st.error("SSL Error: Unable to verify SSL certificate for model download.")
-            return None
-    return MODEL_PATH
-
-def load_onnx_model():
-    """Load the ONNX model."""
-    model_path = download_model()
-    if model_path is None:
-        return None
-    return ort.InferenceSession(model_path)
-
-def estimate_depth(image):
-    """Run the ONNX model for depth estimation."""
-    session = load_onnx_model()
-    if session is None:
-        st.error("Failed to load ONNX model.")
-        return None
-
-    # Preprocess image (resize, normalize)
-    resized = cv2.resize(image, (256, 256))  # MiDaS expects 256x256 input
-    input_tensor = resized.astype(np.float32) / 255.0  # Normalize
-    input_tensor = np.expand_dims(np.transpose(input_tensor, (2, 0, 1)), axis=0)  # (1, C, H, W)
-
-    # Run inference
-    inputs = {session.get_inputs()[0].name: input_tensor}
-    outputs = session.run(None, inputs)
-    
-    depth_map = outputs[0]  # Assuming model returns a single depth map
-    avg_depth = np.mean(depth_map)  # Calculate average depth
-
-    return avg_depth
-
 def detect_spoof(image_path):
-    """Detect whether the given image is real or a spoof attempt."""
-    
-    # Load image
+    # Read image
     image = cv2.imread(image_path)
     if image is None:
         st.error("Failed to load image.")
         return False
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # 1. Sharpness check
+    
+    # 1. Sharpness check using Laplacian (variance of image sharpness)
     variance = cv2.Laplacian(gray, cv2.CV_64F).var()
 
-    # 2. Edge detection
+    # 2. Edge detection using Canny edge detector
     edges = cv2.Canny(gray, 100, 200)
-    edge_count = np.sum(edges > 0)
+    edge_count = np.sum(edges > 0)  # Counting non-zero pixels (edges)
 
-    # 3. Depth estimation (always measured)
-    depth = estimate_depth(image)
-    if depth is None:
-        return False  # Assume spoof if depth estimation fails
-
-    # Display debug info
+    # Display the values in Streamlit for debugging
     st.text(f"Variance (sharpness): {variance}")
     st.text(f"Edge count: {edge_count}")
-    st.text(f"Estimated Depth: {depth:.4f}")
 
-    # Thresholds (fine-tune based on testing)
-    sharpness_threshold = 130  
-    edge_threshold = 4000  
-    depth_threshold = 0.5  # Adjust based on model calibration
+    # Adjusted thresholds based on further refinement
+    sharpness_threshold = 130  # Increased threshold for sharpness to avoid false positives
+    edge_threshold = 4000  # Increased edge count threshold for real images
 
-    # Final decision
-    if variance < sharpness_threshold or edge_count < edge_threshold or depth < depth_threshold:
-        st.warning("Spoof detected: Likely printed photo or screen capture.")
-        return False  
-
-    st.success("Real face detected.")
-    return True
+    # Simplified decision-making based on two features: sharpness and edge count
+    if variance < sharpness_threshold:
+        st.warning("This looks like a printed photo or screen capture.")
+        return False  # Likely a printed photo or screen capture
+    elif edge_count < edge_threshold:
+        st.warning("This looks like a printed photo or screen capture.")
+        return False  # Likely a printed photo or screen capture
+    else:
+        st.success("This seems like a real captured photo.")
+        return True  # Likely a real photo
 
 
 # Function to verify if the captured face is registered using DeepFace
