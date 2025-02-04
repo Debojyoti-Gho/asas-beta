@@ -37,8 +37,6 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 import onnxruntime as ort
-import urllib.request
-
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
@@ -791,43 +789,63 @@ def calculate_cosine_similarity(stored_face, captured_face):
     # Calculate cosine similarity
     return 1 - cosine(stored_face_flat, captured_face_flat)
     
-# Function to download the ONNX model if not present
-def download_model():
-    model_url = "https://github.com/isl-org/MiDaS/releases/download/v3_1/midas_v21_small_256.onnx"
-    model_path = "midas.onnx"
-    
-    if not os.path.exists(model_path):
-        st.info("Downloading depth estimation model... Please wait.")
-        urllib.request.urlretrieve(model_url, model_path)
-        st.success("Model downloaded successfully!")
-    
-    return model_path
 
-# Load ONNX model
-@st.cache_resource
+
+# Actual ONNX model URL for MiDaS v2.1 (small, 256x256)
+MODEL_URL = "https://github.com/isl-org/MiDaS/releases/download/v2_1/midas_v21_small_256.onnx"
+MODEL_PATH = "midas_v21_small_256.onnx"
+
+def download_model():
+    """Download the ONNX model if it's not already cached locally."""
+    if not os.path.exists(MODEL_PATH):
+        st.info("Downloading model...")
+        try:
+            response = requests.get(MODEL_URL, stream=True, verify=True)  # Ensure SSL verification
+            if response.status_code == 200:
+                with open(MODEL_PATH, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                st.success("Model downloaded successfully.")
+            else:
+                st.error(f"Failed to download model: HTTP {response.status_code}")
+                return None
+        except requests.exceptions.SSLError:
+            st.error("SSL Error: Unable to verify SSL certificate for model download.")
+            return None
+    return MODEL_PATH
+
 def load_onnx_model():
+    """Load the ONNX model."""
     model_path = download_model()
+    if model_path is None:
+        return None
     return ort.InferenceSession(model_path)
 
-# Preprocess image for depth estimation
-def preprocess_image(image):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image = cv2.resize(image, (256, 256))
-    image = image.astype(np.float32) / 255.0
-    image = np.transpose(image, (2, 0, 1))
-    image = np.expand_dims(image, axis=0)
-    return image
+def estimate_depth(image):
+    """Run the ONNX model for depth estimation."""
+    session = load_onnx_model()
+    if session is None:
+        st.error("Failed to load ONNX model.")
+        return None
 
-# Get depth map from ONNX model
-def estimate_depth(image, model):
-    input_data = preprocess_image(image)
-    ort_inputs = {model.get_inputs()[0].name: input_data}
-    depth_map = model.run(None, ort_inputs)[0]
-    return np.squeeze(depth_map)
+    # Preprocess image (resize, normalize)
+    resized = cv2.resize(image, (256, 256))  # MiDaS expects 256x256 input
+    input_tensor = resized.astype(np.float32) / 255.0  # Normalize
+    input_tensor = np.expand_dims(np.transpose(input_tensor, (2, 0, 1)), axis=0)  # (1, C, H, W)
 
-# Spoof detection function (keeps your original structure)
+    # Run inference
+    inputs = {session.get_inputs()[0].name: input_tensor}
+    outputs = session.run(None, inputs)
+    
+    depth_map = outputs[0]  # Assuming model returns a single depth map
+    avg_depth = np.mean(depth_map)  # Calculate average depth
+
+    return avg_depth
+
 def detect_spoof(image_path):
-    # Read image
+    """Detect whether the given image is real or a spoof attempt."""
+    
+    # Load image
     image = cv2.imread(image_path)
     if image is None:
         st.error("Failed to load image.")
@@ -835,41 +853,35 @@ def detect_spoof(image_path):
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # 1. Sharpness check using Laplacian
+    # 1. Sharpness check
     variance = cv2.Laplacian(gray, cv2.CV_64F).var()
 
-    # 2. Edge detection using Canny
+    # 2. Edge detection
     edges = cv2.Canny(gray, 100, 200)
     edge_count = np.sum(edges > 0)
 
-    # 3. Depth estimation using ONNX model
-    onnx_model = load_onnx_model()
-    depth_map = estimate_depth(image, onnx_model)
-    depth_variance = np.var(depth_map)
+    # 3. Depth estimation (always measured)
+    depth = estimate_depth(image)
+    if depth is None:
+        return False  # Assume spoof if depth estimation fails
 
-    # Display values in Streamlit
+    # Display debug info
     st.text(f"Variance (sharpness): {variance}")
     st.text(f"Edge count: {edge_count}")
-    st.text(f"Depth variance: {depth_variance}")
+    st.text(f"Estimated Depth: {depth:.4f}")
 
-    # Define thresholds
-    sharpness_threshold = 130
-    edge_threshold = 4000
-    depth_threshold = 0.5  # Adjust based on testing
+    # Thresholds (fine-tune based on testing)
+    sharpness_threshold = 130  
+    edge_threshold = 4000  
+    depth_threshold = 0.5  # Adjust based on model calibration
 
-    # Decision-making
-    if variance < sharpness_threshold:
-        st.warning("This looks like a printed photo or screen capture.")
-        return False
-    elif edge_count < edge_threshold:
-        st.warning("This looks like a printed photo or screen capture.")
-        return False
-    elif depth_variance < depth_threshold:
-        st.warning("Depth perception suggests a flat surface (possible spoof).")
-        return False
-    else:
-        st.success("This seems like a real captured photo.")
-        return True
+    # Final decision
+    if variance < sharpness_threshold or edge_count < edge_threshold or depth < depth_threshold:
+        st.warning("Spoof detected: Likely printed photo or screen capture.")
+        return False  
+
+    st.success("Real face detected.")
+    return True
 
 
 # Function to verify if the captured face is registered using DeepFace
