@@ -36,6 +36,9 @@ import os
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
+import onnxruntime as ort
+import urllib.request
+
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
@@ -788,7 +791,41 @@ def calculate_cosine_similarity(stored_face, captured_face):
     # Calculate cosine similarity
     return 1 - cosine(stored_face_flat, captured_face_flat)
     
+# Function to download the ONNX model if not present
+def download_model():
+    model_url = "https://github.com/isl-org/MiDaS/releases/download/v3_1/midas_v21_small_256.onnx"
+    model_path = "midas.onnx"
+    
+    if not os.path.exists(model_path):
+        st.info("Downloading depth estimation model... Please wait.")
+        urllib.request.urlretrieve(model_url, model_path)
+        st.success("Model downloaded successfully!")
+    
+    return model_path
 
+# Load ONNX model
+@st.cache_resource
+def load_onnx_model():
+    model_path = download_model()
+    return ort.InferenceSession(model_path)
+
+# Preprocess image for depth estimation
+def preprocess_image(image):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = cv2.resize(image, (256, 256))
+    image = image.astype(np.float32) / 255.0
+    image = np.transpose(image, (2, 0, 1))
+    image = np.expand_dims(image, axis=0)
+    return image
+
+# Get depth map from ONNX model
+def estimate_depth(image, model):
+    input_data = preprocess_image(image)
+    ort_inputs = {model.get_inputs()[0].name: input_data}
+    depth_map = model.run(None, ort_inputs)[0]
+    return np.squeeze(depth_map)
+
+# Spoof detection function (keeps your original structure)
 def detect_spoof(image_path):
     # Read image
     image = cv2.imread(image_path)
@@ -797,32 +834,42 @@ def detect_spoof(image_path):
         return False
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # 1. Sharpness check using Laplacian (variance of image sharpness)
+
+    # 1. Sharpness check using Laplacian
     variance = cv2.Laplacian(gray, cv2.CV_64F).var()
 
-    # 2. Edge detection using Canny edge detector
+    # 2. Edge detection using Canny
     edges = cv2.Canny(gray, 100, 200)
-    edge_count = np.sum(edges > 0)  # Counting non-zero pixels (edges)
+    edge_count = np.sum(edges > 0)
 
-    # Display the values in Streamlit for debugging
+    # 3. Depth estimation using ONNX model
+    onnx_model = load_onnx_model()
+    depth_map = estimate_depth(image, onnx_model)
+    depth_variance = np.var(depth_map)
+
+    # Display values in Streamlit
     st.text(f"Variance (sharpness): {variance}")
     st.text(f"Edge count: {edge_count}")
+    st.text(f"Depth variance: {depth_variance}")
 
-    # Adjusted thresholds based on further refinement
-    sharpness_threshold = 130  # Increased threshold for sharpness to avoid false positives
-    edge_threshold = 4000  # Increased edge count threshold for real images
+    # Define thresholds
+    sharpness_threshold = 130
+    edge_threshold = 4000
+    depth_threshold = 0.5  # Adjust based on testing
 
-    # Simplified decision-making based on two features: sharpness and edge count
+    # Decision-making
     if variance < sharpness_threshold:
         st.warning("This looks like a printed photo or screen capture.")
-        return False  # Likely a printed photo or screen capture
+        return False
     elif edge_count < edge_threshold:
         st.warning("This looks like a printed photo or screen capture.")
-        return False  # Likely a printed photo or screen capture
+        return False
+    elif depth_variance < depth_threshold:
+        st.warning("Depth perception suggests a flat surface (possible spoof).")
+        return False
     else:
         st.success("This seems like a real captured photo.")
-        return True  # Likely a real photo
+        return True
 
 
 # Function to verify if the captured face is registered using DeepFace
