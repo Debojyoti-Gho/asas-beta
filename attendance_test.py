@@ -1255,10 +1255,9 @@ def webauthn_script():
     return script
     
 # Streamlit UI
-
 st.warning("🔔 You must subscribe to notifications to continue!")
 
-# OneSignal Web Push Script - Force Subscription
+# OneSignal Web Push Script - Open App in a New Tab & Request Notifications
 onesignal_script = """
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -1273,28 +1272,47 @@ onesignal_script = """
       }
     });
 
+    // Function to check if notifications are enabled
     async function checkSubscription() {
       const isEnabled = await OneSignal.isPushNotificationsEnabled();
       if (!isEnabled) {
-        document.body.innerHTML = "<h1 style='text-align:center;color:red;'>🔔 Please enable notifications to continue! 🔔</h1>";
-        setTimeout(() => { OneSignal.showSlidedownPrompt(); }, 2000);  // Keep showing the prompt
+        alert("🔔 Please allow notifications to continue!");
+        OneSignal.showSlidedownPrompt();
+      } else {
+        document.getElementById("continue_button").style.display = "block";
       }
     }
 
-    // Force prompt when page loads
+    // Force notification prompt when page loads
     setTimeout(() => { OneSignal.showSlidedownPrompt(); }, 1000);
 
     // Recheck subscription status every 5 seconds
     setInterval(checkSubscription, 5000);
   });
+
+  // Function to open the app in a new tab (to avoid iframe issue)
+  function openAppInNewTab() {
+    window.open(window.location.href, '_blank');
+  }
 </script>
+
+<!-- Button to open in a new tab -->
+<button onclick="openAppInNewTab()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
+  Open in New Tab to Enable Notifications
+</button>
+
+<!-- Hidden continue button (appears after subscription) -->
+<button id="continue_button" style="padding: 10px; font-size: 16px; background-color: green; color: white; border: none; cursor: pointer; display: none;">
+  Continue
+</button>
 """
+
+# Inject JavaScript into Streamlit
+components.html(onesignal_script, height=200, width=600)
 
 menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
 if menu == "Home":
-    # Inject JavaScript into Streamlit
-    components.html(onesignal_script, height=0, width=0)
     st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
     st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
     st.subheader("developed by Debojyoti Ghosh")
