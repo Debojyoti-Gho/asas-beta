@@ -1255,13 +1255,35 @@ def webauthn_script():
     return script
     
 # Streamlit UI
-st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
-st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
-st.subheader("developed by Debojyoti Ghosh")
+st.subheader("Students must subscribe to notifications!")
+
+# OneSignal Web Push Script
+onesignal_script = """
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
+      notifyButton: {
+        enable: true
+      }
+    });
+  });
+</script>
+"""
+
+# Inject JavaScript into Streamlit app
+components.html(onesignal_script, height=0, width=0)
+
+st.success("Push Notifications Enabled! Students must allow notifications when prompted.")
 
 menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
 if menu == "Home":
+    st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
+    st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
+    st.subheader("developed by Debojyoti Ghosh")
     st.write("Welcome to the Student Management System!")
     st.subheader("Frequently Asked Questions (FAQs)")
 
