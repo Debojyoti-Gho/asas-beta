@@ -1255,6 +1255,7 @@ def webauthn_script():
     return script
     
 # Streamlit UI
+
 st.warning("🔔 You must subscribe to notifications to continue!")
 
 # OneSignal Web Push Script - Force Subscription
@@ -1267,35 +1268,33 @@ onesignal_script = """
       appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
       promptOptions: {
         slidedown: {
-          enabled: true,
-          autoPrompt: true,  // Show prompt immediately
-          force: true  // Users CANNOT dismiss without subscribing
+          enabled: true
         }
       }
     });
 
-    // Function to manually trigger the prompt (if user somehow dismisses it)
-    window.forceNotificationPrompt = function() {
-      OneSignal.showSlidedownPrompt();
-    };
-
-    // Check subscription status and prevent access if not subscribed
-    OneSignal.isPushNotificationsEnabled(async function(isEnabled) {
+    async function checkSubscription() {
+      const isEnabled = await OneSignal.isPushNotificationsEnabled();
       if (!isEnabled) {
         document.body.innerHTML = "<h1 style='text-align:center;color:red;'>🔔 Please enable notifications to continue! 🔔</h1>";
-        setTimeout(() => { window.forceNotificationPrompt(); }, 3000);  // Keep forcing the prompt
+        setTimeout(() => { OneSignal.showSlidedownPrompt(); }, 2000);  // Keep showing the prompt
       }
-    });
+    }
+
+    // Force prompt when page loads
+    setTimeout(() => { OneSignal.showSlidedownPrompt(); }, 1000);
+
+    // Recheck subscription status every 5 seconds
+    setInterval(checkSubscription, 5000);
   });
 </script>
 """
 
-# Inject JavaScript into Streamlit
-components.html(onesignal_script, height=0, width=0)
-
 menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
 if menu == "Home":
+    # Inject JavaScript into Streamlit
+    components.html(onesignal_script, height=0, width=0)
     st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
     st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
     st.subheader("developed by Debojyoti Ghosh")
