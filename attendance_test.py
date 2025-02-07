@@ -1255,9 +1255,9 @@ def webauthn_script():
     return script
     
 # Streamlit UI
-st.subheader("Students must subscribe to notifications!")
+st.warning("🔔 You must subscribe to notifications to continue!")
 
-# OneSignal Web Push Script
+# OneSignal Web Push Script - Force Subscription
 onesignal_script = """
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -1265,18 +1265,33 @@ onesignal_script = """
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
-      notifyButton: {
-        enable: true
+      promptOptions: {
+        slidedown: {
+          enabled: true,
+          autoPrompt: true,  // Show prompt immediately
+          force: true  // Users CANNOT dismiss without subscribing
+        }
+      }
+    });
+
+    // Function to manually trigger the prompt (if user somehow dismisses it)
+    window.forceNotificationPrompt = function() {
+      OneSignal.showSlidedownPrompt();
+    };
+
+    // Check subscription status and prevent access if not subscribed
+    OneSignal.isPushNotificationsEnabled(async function(isEnabled) {
+      if (!isEnabled) {
+        document.body.innerHTML = "<h1 style='text-align:center;color:red;'>🔔 Please enable notifications to continue! 🔔</h1>";
+        setTimeout(() => { window.forceNotificationPrompt(); }, 3000);  // Keep forcing the prompt
       }
     });
   });
 </script>
 """
 
-# Inject JavaScript into Streamlit app
+# Inject JavaScript into Streamlit
 components.html(onesignal_script, height=0, width=0)
-
-st.success("Push Notifications Enabled! Students must allow notifications when prompted.")
 
 menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
