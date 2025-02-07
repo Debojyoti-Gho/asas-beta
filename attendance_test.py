@@ -1257,7 +1257,7 @@ def webauthn_script():
 # Streamlit UI
 st.warning("🔔 You must subscribe to notifications to continue!")
 
-# OneSignal Web Push Script - Open App in a New Tab & Request Notifications
+# OneSignal Web Push Script (Opens App in a New Tab & Forces Subscription)
 onesignal_script = """
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -1272,40 +1272,39 @@ onesignal_script = """
       }
     });
 
-    // Function to check if notifications are enabled
     async function checkSubscription() {
       const isEnabled = await OneSignal.isPushNotificationsEnabled();
       if (!isEnabled) {
-        alert("🔔 Please allow notifications to continue!");
-        OneSignal.showSlidedownPrompt();
+        document.getElementById("continue_button").style.display = "none";  // Hide continue button
+        setTimeout(() => { OneSignal.showSlidedownPrompt(); }, 2000);  // Keep showing the prompt
       } else {
-        document.getElementById("continue_button").style.display = "block";
+        document.getElementById("continue_button").style.display = "block";  // Show continue button
       }
     }
 
-    // Force notification prompt when page loads
     setTimeout(() => { OneSignal.showSlidedownPrompt(); }, 1000);
-
-    // Recheck subscription status every 5 seconds
     setInterval(checkSubscription, 5000);
   });
 
-  // Function to open the app in a new tab (to avoid iframe issue)
   function openAppInNewTab() {
-    window.open(window.location.href, '_blank');
+    window.open("https://asas-beta-by-debojyotighosh.streamlit.app/", '_blank');
   }
 </script>
 
-<!-- Button to open in a new tab -->
+<!-- Button to Open App in New Tab -->
 <button onclick="openAppInNewTab()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
   Open in New Tab to Enable Notifications
 </button>
 
-<!-- Hidden continue button (appears after subscription) -->
+<!-- Continue Button (Only Appears After Subscription) -->
 <button id="continue_button" style="padding: 10px; font-size: 16px; background-color: green; color: white; border: none; cursor: pointer; display: none;">
   Continue
 </button>
 """
+
+# Inject JavaScript into Streamlit
+components.html(onesignal_script, height=200, width=600)
+
 
 # Inject JavaScript into Streamlit
 components.html(onesignal_script, height=200, width=600)
