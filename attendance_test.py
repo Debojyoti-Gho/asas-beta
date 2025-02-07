@@ -1255,9 +1255,10 @@ def webauthn_script():
     return script
     
 # Streamlit UI
+
 st.warning("🔔 You must subscribe to notifications to continue!")
 
-# OneSignal Web Push Script (Opens App in a New Tab & Forces Subscription)
+# OneSignal Push Notification Script
 onesignal_script = """
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -1265,46 +1266,46 @@ onesignal_script = """
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
+      allowLocalhostAsSecureOrigin: true,
       promptOptions: {
         slidedown: {
-          enabled: true
+          enabled: false  // Disable auto-prompt
         }
       }
     });
 
-    async function checkSubscription() {
-      const isEnabled = await OneSignal.isPushNotificationsEnabled();
-      if (!isEnabled) {
-        document.getElementById("continue_button").style.display = "none";  // Hide continue button
-        setTimeout(() => { OneSignal.showSlidedownPrompt(); }, 2000);  // Keep showing the prompt
+    // Function to manually show the notification prompt
+    window.showNotificationPrompt = async function() {
+      const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+      if (!isSubscribed) {
+        OneSignal.showSlidedownPrompt();
       } else {
-        document.getElementById("continue_button").style.display = "block";  // Show continue button
+        alert("✅ You are already subscribed to notifications!");
       }
-    }
+    };
 
-    setTimeout(() => { OneSignal.showSlidedownPrompt(); }, 1000);
-    setInterval(checkSubscription, 5000);
+    // Check subscription status every 5 seconds
+    setInterval(async function() {
+      const isEnabled = await OneSignal.isPushNotificationsEnabled();
+      if (isEnabled) {
+        document.getElementById("continue_button").style.display = "block";  // Show continue button
+      } else {
+        document.getElementById("continue_button").style.display = "none";  // Hide continue button
+      }
+    }, 5000);
   });
-
-  function openAppInNewTab() {
-    window.open("https://asas-beta-by-debojyotighosh.streamlit.app/", '_blank');
-  }
 </script>
 
-<!-- Button to Open App in New Tab -->
-<button onclick="openAppInNewTab()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
-  Open in New Tab to Enable Notifications
+<!-- Button to Manually Trigger Subscription Prompt -->
+<button onclick="showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
+  Subscribe to Notifications
 </button>
 
-<!-- Continue Button (Only Appears After Subscription) -->
+<!-- Continue Button (Appears Only After Subscription) -->
 <button id="continue_button" style="padding: 10px; font-size: 16px; background-color: green; color: white; border: none; cursor: pointer; display: none;">
   Continue
 </button>
 """
-
-# Inject JavaScript into Streamlit
-components.html(onesignal_script, height=200, width=600)
-
 
 # Inject JavaScript into Streamlit
 components.html(onesignal_script, height=200, width=600)
