@@ -1224,6 +1224,39 @@ def webauthn_register_script():
 # Placeholder for WebAuthn integration script
 def webauthn_script():
     script = """
+    <script>
+        async function authenticate() {
+            const publicKey = {
+                challenge: Uint8Array.from("YourServerChallenge", c => c.charCodeAt(0)), // Replace with a secure challenge
+                timeout: 60000,
+                userVerification: "required"
+            };
+
+            try {
+                const credential = await navigator.credentials.get({ publicKey });
+                document.getElementById("webauthn-result").innerHTML = 'Authentication successful! Please wait for the next steps.';
+                document.getElementById("webauthn-status").value = "success";
+
+                // Notify Streamlit about success
+                window.parent.postMessage({ status: "success" }, "*");
+            } catch (error) {
+                document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error;
+                document.getElementById("webauthn-status").value = "failed";
+
+                // Notify Streamlit about failure
+                window.parent.postMessage({ status: "failed" }, "*");
+            }
+        }
+    </script>
+    <button onclick="authenticate()">Authenticate with Fingerprint</button>
+    <p id="webauthn-result"></p>
+    <input type="hidden" id="webauthn-status" name="webauthn-status" value="pending">
+    """
+    return script
+
+
+def notifications();
+    script = """
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -1258,8 +1291,8 @@ def webauthn_script():
     </button>
     """
     return script
-    
-    
+        
+        
 
 # Streamlit UI
 menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
