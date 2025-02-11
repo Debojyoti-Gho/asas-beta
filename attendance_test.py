@@ -1224,49 +1224,23 @@ def webauthn_register_script():
 # Placeholder for WebAuthn integration script
 def webauthn_script():
     script = """
-    <script>
-        async function authenticate() {
-            const publicKey = {
-                challenge: Uint8Array.from("YourServerChallenge", c => c.charCodeAt(0)), // Replace with a secure challenge
-                timeout: 60000,
-                userVerification: "required"
-            };
-
-            try {
-                const credential = await navigator.credentials.get({ publicKey });
-                document.getElementById("webauthn-result").innerHTML = 'Authentication successful! Please wait for the next steps.';
-                document.getElementById("webauthn-status").value = "success";
-
-                // Notify Streamlit about success
-                window.parent.postMessage({ status: "success" }, "*");
-            } catch (error) {
-                document.getElementById("webauthn-result").innerHTML = "Authentication failed: " + error;
-                document.getElementById("webauthn-status").value = "failed";
-
-                // Notify Streamlit about failure
-                window.parent.postMessage({ status: "failed" }, "*");
-            }
-        }
-    </script>
-    <button onclick="authenticate()">Authenticate with Fingerprint</button>
-    <p id="webauthn-result"></p>
-    <input type="hidden" id="webauthn-status" name="webauthn-status" value="pending">
-    """
-    return script
-    
-
-# OneSignal Push Notification Script
-def notifications():
-    script = """
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
           appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
+          safari_web_id: "YOUR_SAFARI_WEB_ID",
+          serviceWorkerPath: "/OneSignalSDKWorker.js",
+          allowLocalhostAsSecureOrigin: true,
+          promptOptions: {
+            slidedown: {
+              enabled: true
+            }
+          }
         });
-      });
-
+    
+        // Define showNotificationPrompt globally
         window.showNotificationPrompt = async function() {
           const isSubscribed = await OneSignal.isPushNotificationsEnabled();
           if (!isSubscribed) {
@@ -1275,19 +1249,12 @@ def notifications():
             alert("✅ You are already subscribed to notifications!");
           }
         };
-
-        setInterval(async function() {
-          const isEnabled = await OneSignal.isPushNotificationsEnabled();
-          document.getElementById("continue_button").style.display = isEnabled ? "block" : "none";
-        }, 5000);
       });
     </script>
-
-    <button onclick="showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white;">
+    
+    <!-- Button to trigger notification prompt -->
+    <button onclick="window.showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white;">
       Subscribe to Notifications
-    </button>
-    <button id="continue_button" style="padding: 10px; font-size: 16px; background-color: green; color: white; display: none;">
-      Continue
     </button>
     """
     return script
