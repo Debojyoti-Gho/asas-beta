@@ -1254,12 +1254,10 @@ def webauthn_script():
     """
     return script
     
-# Streamlit UI
-
-st.warning("🔔 You must subscribe to notifications to continue!")
 
 # OneSignal Push Notification Script
-onesignal_script = """
+def notifications():
+script = """
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -1306,13 +1304,15 @@ onesignal_script = """
   Continue
 </button>
 """
+return script 
 
-# Inject JavaScript into Streamlit
-components.html(onesignal_script, height=200, width=600)
-
+# Streamlit UI
 menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
 if menu == "Home":
+    st.warning("🔔 You must subscribe to notifications for future updates!")
+    # Inject JavaScript into Streamlit
+    st.components.v1.html(notifications())
     st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
     st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
     st.subheader("developed by Debojyoti Ghosh")
