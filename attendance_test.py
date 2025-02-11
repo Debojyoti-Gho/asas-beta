@@ -1264,15 +1264,8 @@ def notifications():
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
           appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
-          safari_web_id: "YOUR_SAFARI_WEB_ID", // If using Safari
-          serviceWorkerPath: "/OneSignalSDKWorker.js",
-          allowLocalhostAsSecureOrigin: true,
-          promptOptions: {
-            slidedown: {
-              enabled: false
-            }
-          }
         });
+      });
 
         window.showNotificationPrompt = async function() {
           const isSubscribed = await OneSignal.isPushNotificationsEnabled();
