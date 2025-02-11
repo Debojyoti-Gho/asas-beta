@@ -1258,7 +1258,21 @@ def webauthn_script():
 # OneSignal Push Notification Script
 def notifications():
     script = """
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    </head>
+    <body>
+
+    <button onclick="showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
+      Subscribe to Notifications
+    </button>
+
+    <button id="continue_button" style="padding: 10px; font-size: 16px; background-color: green; color: white; border: none; cursor: pointer; display: none;">
+      Continue
+    </button>
+
     <script>
       document.addEventListener("DOMContentLoaded", function() {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -1268,7 +1282,7 @@ def notifications():
             allowLocalhostAsSecureOrigin: true,
             promptOptions: {
               slidedown: {
-                enabled: false
+                enabled: false  // Disable auto-prompt
               }
             }
           });
@@ -1295,24 +1309,19 @@ def notifications():
       });
     </script>
 
-    <button onclick="showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
-      Subscribe to Notifications
-    </button>
-
-    <button id="continue_button" style="padding: 10px; font-size: 16px; background-color: green; color: white; border: none; cursor: pointer; display: none;">
-      Continue
-    </button>
+    </body>
+    </html>
     """
     return script
-
+    
 
 # Streamlit UI
 menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
 if menu == "Home":
     st.warning("🔔 You must subscribe to notifications for future updates!")
-    # Display the script in Streamlit
-    st.markdown(notifications(), unsafe_allow_html=True)
+    # Use Streamlit's `st.components.v1.html()` to execute JavaScript properly
+    st.components.v1.html(notifications(), height=50)
     st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
     st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
     st.subheader("developed by Debojyoti Ghosh")
