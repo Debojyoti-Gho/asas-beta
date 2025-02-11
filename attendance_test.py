@@ -1265,7 +1265,7 @@ def notifications():
     </head>
     <body>
 
-    <button onclick="showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
+    <button id="subscribe_button" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
       Subscribe to Notifications
     </button>
 
@@ -1279,31 +1279,29 @@ def notifications():
         OneSignalDeferred.push(async function(OneSignal) {
           await OneSignal.init({
             appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
+            subdomainName: "asas-beta-by-debojyotighosh",  // Important for Streamlit
             allowLocalhostAsSecureOrigin: true,
             promptOptions: {
               slidedown: {
-                enabled: false  // Disable auto-prompt
+                enabled: false
               }
             }
           });
 
-          // Function to manually show the notification prompt
-          window.showNotificationPrompt = async function() {
+          async function showNotificationPrompt() {
             const isSubscribed = await OneSignal.isPushNotificationsEnabled();
             if (!isSubscribed) {
               OneSignal.showSlidedownPrompt();
             } else {
               alert("✅ You are already subscribed to notifications!");
             }
-          };
+          }
 
-          // Check subscription status every 5 seconds
+          document.getElementById("subscribe_button").addEventListener("click", showNotificationPrompt);
+
           setInterval(async function() {
             const isEnabled = await OneSignal.isPushNotificationsEnabled();
-            const button = document.getElementById("continue_button");
-            if (button) {
-              button.style.display = isEnabled ? "block" : "none";
-            }
+            document.getElementById("continue_button").style.display = isEnabled ? "block" : "none";
           }, 5000);
         });
       });
