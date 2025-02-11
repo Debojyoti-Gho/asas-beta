@@ -1255,7 +1255,7 @@ def webauthn_script():
     return script
 
 
-def notifications();
+def notifications():
     script = """
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
