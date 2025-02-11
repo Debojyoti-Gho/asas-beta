@@ -1260,59 +1260,59 @@ def notifications():
     script = """
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
-          allowLocalhostAsSecureOrigin: true,
-          promptOptions: {
-            slidedown: {
-              enabled: false  // Disable auto-prompt
+      document.addEventListener("DOMContentLoaded", function() {
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+          await OneSignal.init({
+            appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
+            allowLocalhostAsSecureOrigin: true,
+            promptOptions: {
+              slidedown: {
+                enabled: false
+              }
             }
-          }
+          });
+
+          // Function to manually show the notification prompt
+          window.showNotificationPrompt = async function() {
+            const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+            if (!isSubscribed) {
+              OneSignal.showSlidedownPrompt();
+            } else {
+              alert("✅ You are already subscribed to notifications!");
+            }
+          };
+
+          // Check subscription status every 5 seconds
+          setInterval(async function() {
+            const isEnabled = await OneSignal.isPushNotificationsEnabled();
+            const button = document.getElementById("continue_button");
+            if (button) {
+              button.style.display = isEnabled ? "block" : "none";
+            }
+          }, 5000);
         });
-    
-        // Function to manually show the notification prompt
-        window.showNotificationPrompt = async function() {
-          const isSubscribed = await OneSignal.isPushNotificationsEnabled();
-          if (!isSubscribed) {
-            OneSignal.showSlidedownPrompt();
-          } else {
-            alert("✅ You are already subscribed to notifications!");
-          }
-        };
-    
-        // Check subscription status every 5 seconds
-        setInterval(async function() {
-          const isEnabled = await OneSignal.isPushNotificationsEnabled();
-          if (isEnabled) {
-            document.getElementById("continue_button").style.display = "block";  // Show continue button
-          } else {
-            document.getElementById("continue_button").style.display = "none";  // Hide continue button
-          }
-        }, 5000);
       });
     </script>
-    
-    <!-- Button to Manually Trigger Subscription Prompt -->
+
     <button onclick="showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
       Subscribe to Notifications
     </button>
-    
-    <!-- Continue Button (Appears Only After Subscription) -->
+
     <button id="continue_button" style="padding: 10px; font-size: 16px; background-color: green; color: white; border: none; cursor: pointer; display: none;">
       Continue
     </button>
     """
-    return script 
+    return script
+
 
 # Streamlit UI
 menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
 
 if menu == "Home":
     st.warning("🔔 You must subscribe to notifications for future updates!")
-    # Inject JavaScript into Streamlit
-    st.components.v1.html(notifications())
+    # Display the script in Streamlit
+    st.markdown(notifications(), unsafe_allow_html=True)
     st.image('WhatsApp Image 2025-01-24 at 18.06.51.jpeg', width=200)
     st.title("ADVANCED STUDENT ATTENDANCE SYSTEM")
     st.subheader("developed by Debojyoti Ghosh")
