@@ -1258,59 +1258,47 @@ def webauthn_script():
 # OneSignal Push Notification Script
 def notifications():
     script = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    </head>
-    <body>
-
-    <button id="subscribe_button" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
-      Subscribe to Notifications
-    </button>
-
-    <button id="continue_button" style="padding: 10px; font-size: 16px; background-color: green; color: white; border: none; cursor: pointer; display: none;">
-      Continue
-    </button>
-
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
-      document.addEventListener("DOMContentLoaded", function() {
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(async function(OneSignal) {
-          await OneSignal.init({
-            appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
-            subdomainName: "asas-beta-by-debojyotighosh",  // Important for Streamlit
-            allowLocalhostAsSecureOrigin: true,
-            promptOptions: {
-              slidedown: {
-                enabled: false
-              }
-            }
-          });
-
-          async function showNotificationPrompt() {
-            const isSubscribed = await OneSignal.isPushNotificationsEnabled();
-            if (!isSubscribed) {
-              OneSignal.showSlidedownPrompt();
-            } else {
-              alert("✅ You are already subscribed to notifications!");
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
+          safari_web_id: "YOUR_SAFARI_WEB_ID", // If using Safari
+          serviceWorkerPath: "/OneSignalSDKWorker.js",
+          allowLocalhostAsSecureOrigin: true,
+          promptOptions: {
+            slidedown: {
+              enabled: false
             }
           }
-
-          document.getElementById("subscribe_button").addEventListener("click", showNotificationPrompt);
-
-          setInterval(async function() {
-            const isEnabled = await OneSignal.isPushNotificationsEnabled();
-            document.getElementById("continue_button").style.display = isEnabled ? "block" : "none";
-          }, 5000);
         });
+
+        window.showNotificationPrompt = async function() {
+          const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+          if (!isSubscribed) {
+            OneSignal.showSlidedownPrompt();
+          } else {
+            alert("✅ You are already subscribed to notifications!");
+          }
+        };
+
+        setInterval(async function() {
+          const isEnabled = await OneSignal.isPushNotificationsEnabled();
+          document.getElementById("continue_button").style.display = isEnabled ? "block" : "none";
+        }, 5000);
       });
     </script>
 
-    </body>
-    </html>
+    <button onclick="showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white;">
+      Subscribe to Notifications
+    </button>
+    <button id="continue_button" style="padding: 10px; font-size: 16px; background-color: green; color: white; display: none;">
+      Continue
+    </button>
     """
     return script
+    
     
 
 # Streamlit UI
