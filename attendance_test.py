@@ -37,6 +37,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 import timm
+import re
 
 # Function to display the fancy intro with the app name
 def show_intro_video():
