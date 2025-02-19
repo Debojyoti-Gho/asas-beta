@@ -724,6 +724,113 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
+
+# 📌 Load OpenCV DNN Model for Fast Face Detection
+FACE_NET = cv2.dnn.readNetFromCaffe("deploy.prototxt", "res10_300x300_ssd_iter_140000.caffemodel")
+
+# 📌 Function to Capture Image & Detect Faces
+def capture_and_detect_faces():
+    st.title("📷 One-Shot Attendance System")
+    st.subheader("Capture an image to mark attendance for multiple students.")
+
+    img_file = st.camera_input("Take a photo")
+
+    if img_file:
+        nparr = np.frombuffer(img_file.read(), np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        h, w = frame.shape[:2]
+        blob = cv2.dnn.blobFromImage(frame, scalefactor=1.0, size=(300, 300), mean=(104.0, 177.0, 123.0))
+        FACE_NET.setInput(blob)
+        detections = FACE_NET.forward()
+
+        faces = []
+        for i in range(detections.shape[2]):
+            confidence = detections[0, 0, i, 2]
+            if confidence > 0.5:  # Only consider detections above 50% confidence
+                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+                (x, y, x1, y1) = box.astype("int")
+                faces.append(frame[y:y1, x:x1])  # Crop face
+
+        return faces
+    return None
+
+# 📌 Function to Match Faces with Database
+def match_faces_with_db(detected_faces):
+    conn = sqlite3.connect("attendance.db")
+    cursor = conn.cursor()
+
+    verified_students = []
+    
+    for face in detected_faces:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
+            cv2.imwrite(temp_file.name, face)
+            face_path = temp_file.name
+
+        cursor.execute("SELECT student_id, student_face FROM students")
+        students_data = cursor.fetchall()
+
+        for student_id, stored_face_blob in students_data:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_stored:
+                temp_stored.write(stored_face_blob)
+                stored_face_path = temp_stored.name
+
+            try:
+                result = DeepFace.verify(face_path, stored_face_path, model_name="Facenet", distance_metric="cosine")
+                if result["verified"] and result["distance"] < 0.7:
+                    verified_students.append(student_id)
+                    break  # Avoid duplicate recognition
+            except Exception:
+                continue  # Ignore errors for invalid comparisons
+
+    conn.close()
+    return verified_students
+
+# 📌 Function to Record Attendance for Verified Students
+def record_attendance_for_batch(student_ids):
+    if not student_ids:
+        st.warning("⚠ No recognized faces. Attendance not marked.")
+        return
+
+    conn = sqlite3.connect("attendance.db")
+    cursor = conn.cursor()
+
+    current_day = datetime.now().strftime("%A")
+    current_period = get_current_period()
+    today_date = datetime.now().strftime('%Y-%m-%d')
+
+    if not current_period:
+        st.warning("⚠ No active class period at the moment.")
+        return
+
+    for student_id in student_ids:
+        cursor.execute("""
+            SELECT * FROM attendance WHERE student_id = ? AND date = ? AND day = ?
+        """, (student_id, today_date, current_day))
+        existing_record = cursor.fetchone()
+
+        period_column = f"period_{list(PERIOD_TIMES.keys()).index(current_period) + 1}"
+
+        if existing_record:
+            cursor.execute(f"""
+                UPDATE attendance 
+                SET {period_column} = 1 
+                WHERE student_id = ? AND date = ? AND day = ?
+            """, (student_id, today_date, current_day))
+        else:
+            attendance_data = {period: 0 for period in PERIOD_TIMES.keys()}
+            attendance_data[current_period] = 1
+
+            cursor.execute("""
+                INSERT INTO attendance (student_id, date, day, period_1, period_2, period_3, period_4, period_5, period_6, period_7)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (student_id, today_date, current_day, *attendance_data.values()))
+
+    conn.commit()
+    conn.close()
+    st.success(f"✅ Attendance successfully recorded for {len(student_ids)} students!")
+
+    
 # Resize function for consistent dimensions
 def resize_face(image, target_size=(224, 224)):
     return cv2.resize(image, target_size)
@@ -2748,10 +2855,31 @@ elif menu == "Teacher's Login":
         
         st.markdown("---")
         # Create a Streamlit interface
-        st.title("Face Recognition - Single beam Student ID Matching and Attendance Marking system")
+        st.title("📷 One-Shot Attendance System")
+        st.write("Click the button below to start face detection and mark attendance automatically.")
+        
+        if st.button("🚀 Start One-Shot Attendance"):
+            st.success("Processing... Please wait.")
+            
+            # 🔹 Capture Image & Detect Faces
+            faces_detected = capture_and_detect_faces()
+            
+            if faces_detected:
+                st.info(f"📸 Detected {len(faces_detected)} face(s). Matching with database...")
+                
+                # 🔹 Match Faces with Database
+                matched_students = match_faces_with_db(faces_detected)
+                
+                # 🔹 Record Attendance
+                record_attendance_for_batch(matched_students)
+            else:
+                st.error("❌ No faces detected. Try again with a clearer image.")
+        
+        st.markdown("---")
+        st.title("SEND OFFLINE APP NOTIFICATIONS")
 
         st.info("coming soon!!")
-
+        
         # # Button to start capture and retry mechanism
         # retry = True
         # retry_count = 0  # Counter to make button keys unique
