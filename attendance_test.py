@@ -766,72 +766,103 @@ def get_current_period():
             return period
     return None
 
-# Match detected faces with database
+# ----- Face Matching -----
 def match_faces_with_db():
+    # Ensure we have captured faces
     if "detected_faces" not in st.session_state or not st.session_state.detected_faces:
         st.error("❌ No faces available for matching. Please capture an image first.")
         return []
-
+    
     verified_students = []
+    
+    # Query using the schema: students table has user_id and student_face
+    cursor.execute("SELECT user_id, student_face FROM students")
+    students_data = cursor.fetchall()
     
     for face in st.session_state.detected_faces:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
             cv2.imwrite(temp_file.name, face)
             face_path = temp_file.name
 
-        cursor.execute("SELECT student_id, student_face FROM students")
-        students_data = cursor.fetchall()
-
-        for student_id, stored_face_blob in students_data:
+        # Try matching against each stored face
+        for user_id, stored_face_blob in students_data:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_stored:
                 temp_stored.write(stored_face_blob)
                 stored_face_path = temp_stored.name
-
             try:
                 result = DeepFace.verify(face_path, stored_face_path, model_name="Facenet", distance_metric="cosine")
                 if result["verified"] and result["distance"] < 0.7:
-                    verified_students.append(student_id)
-                    break  # Avoid duplicate recognition
+                    verified_students.append(user_id)
+                    break  # move to next captured face after a match
             except Exception:
-                continue  # Ignore errors for invalid comparisons
-
+                continue
     conn.close()
     return verified_students
 
-# Record attendance for recognized students
+# ----- Attendance Marking -----
 def record_attendance_for_batch(student_ids):
     if not student_ids:
         st.warning("⚠ No recognized faces. Attendance not marked.")
         return
 
-    current_day = datetime.now().strftime("%A")
     current_period = get_current_period()
-    today_date = datetime.now().strftime('%Y-%m-%d')
-
     if not current_period:
-        st.warning("⚠ No active class period at the moment.")
+        st.warning("No active class period at the moment.")
+        conn.close()
         return
 
-    for student_id in student_ids:
-        cursor.execute("SELECT * FROM attendance WHERE student_id = ? AND date = ? AND day = ?", (student_id, today_date, current_day))
-        existing_record = cursor.fetchone()
-
-        period_column = f"period_{list(PERIOD_TIMES.keys()).index(current_period) + 1}"
-
-        if existing_record:
-            cursor.execute(f"UPDATE attendance SET {period_column} = 1 WHERE student_id = ? AND date = ? AND day = ?", (student_id, today_date, current_day))
+    current_day = datetime.now().strftime("%A")
+    today_date = datetime.now().strftime('%Y-%m-%d')
+    st.success(f"Attendance for {current_period} is being marked automatically. Waiting for confirmation from the server!")
+    
+    try:
+        # Fetch timetable details from your timetable table
+        cursor.execute("""
+            SELECT subject, teacher FROM timetable 
+            WHERE day = ? AND period = ?
+        """, (current_day, current_period))
+        period_details = cursor.fetchone()
+        
+        if period_details:
+            subject, teacher = period_details
+            st.info(f"Subject: {subject} | Teacher: {teacher}")
+            
+            period_index = list(PERIOD_TIMES.keys()).index(current_period) + 1
+            period_column = f"period_{period_index}"
+            
+            for student_id in student_ids:
+                # Check for existing attendance record for the student
+                cursor.execute("""
+                    SELECT * FROM attendance WHERE student_id = ? AND date = ? AND day = ?
+                """, (student_id, today_date, current_day))
+                existing_record = cursor.fetchone()
+                
+                if existing_record:
+                    # Update existing record: mark the current period as attended
+                    cursor.execute(f"""
+                        UPDATE attendance 
+                        SET {period_column} = 1
+                        WHERE student_id = ? AND date = ? AND day = ?
+                    """, (student_id, today_date, current_day))
+                    conn.commit()
+                    st.success(f"Attendance updated for {current_period} for student {student_id}!")
+                else:
+                    # Prepare attendance data for all periods (0 = absent, 1 = present)
+                    attendance_data = {period: 0 for period in PERIOD_TIMES.keys()}
+                    attendance_data[current_period] = 1
+                    cursor.execute("""
+                        INSERT INTO attendance (student_id, date, day, period_1, period_2, period_3, period_4, period_5, period_6, period_7)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (student_id, today_date, current_day, *attendance_data.values()))
+                    conn.commit()
+                    st.success(f"Attendance marked for {current_period} for student {student_id}!")
         else:
-            attendance_data = {period: 0 for period in PERIOD_TIMES.keys()}
-            attendance_data[current_period] = 1
+            st.error(f"No timetable entry found for {current_period} on {current_day}.")
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+    finally:
+        conn.close()
 
-            cursor.execute("""
-                INSERT INTO attendance (student_id, date, day, period_1, period_2, period_3, period_4, period_5, period_6, period_7)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (student_id, today_date, current_day, *attendance_data.values()))
-
-    conn.commit()
-    conn.close()
-    st.success(f"✅ Attendance successfully recorded for {len(student_ids)} students!")
     
     
 # Resize function for consistent dimensions
