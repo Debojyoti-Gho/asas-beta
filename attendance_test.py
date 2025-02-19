@@ -1278,36 +1278,45 @@ def handle_authentication_status():
 
 def notifications():
     script = """
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" async></script>
     <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
+      document.addEventListener("DOMContentLoaded", function() {
+        if (!window.OneSignal) {
+          console.error("OneSignal SDK failed to load.");
+          return;
+        }
+        
+        window.OneSignal.init({
           appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
           safari_web_id: "YOUR_SAFARI_WEB_ID",
           serviceWorkerPath: "/OneSignalSDKWorker.js",
           allowLocalhostAsSecureOrigin: true,
           promptOptions: {
-            slidedown: {
-              enabled: true
-            }
+            slidedown: { enabled: true }
           }
-        });
-    
-        // Define showNotificationPrompt globally
+        }).then(() => {
+          console.log("OneSignal initialized successfully.");
+        }).catch(error => console.error("OneSignal init error:", error));
+
+        // Subscribe function
         window.showNotificationPrompt = async function() {
-          const isSubscribed = await OneSignal.isPushNotificationsEnabled();
-          if (!isSubscribed) {
-            OneSignal.showSlidedownPrompt();
-          } else {
-            alert("✅ You are already subscribed to notifications!");
+          try {
+            const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+            if (!isSubscribed) {
+              await OneSignal.showSlidedownPrompt();
+            } else {
+              alert("✅ You are already subscribed to notifications!");
+            }
+          } catch (error) {
+            console.error("Error checking subscription status:", error);
+            alert("⚠️ Error initializing notifications.");
           }
         };
       });
     </script>
     
     <!-- Button to trigger notification prompt -->
-    <button onclick="window.showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white;">
+    <button onclick="window.showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
       Subscribe to Notifications
     </button>
     """
@@ -1521,7 +1530,7 @@ elif menu == "Student's Login":
     
     # Inject WebAuthn script (from your separate function)
     auth_script = webauthn_script()
-    st.components.v1.html(auth_script, height=300)
+    st.components.v1.html(auth_script)
     
     # JavaScript message listener to capture authentication result
     st.markdown(
@@ -1540,7 +1549,7 @@ elif menu == "Student's Login":
     )
     
     # Wait for WebAuthn result
-    time.sleep(6)  # Delay to allow authentication
+    time.sleep(10)  # Delay to allow authentication
     
     # Check if authentication succeeded or needs bypassing
     auth_result = st.query_params.get("auth_result", "pending")
