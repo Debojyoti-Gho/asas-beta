@@ -1362,9 +1362,9 @@ elif menu == "Student's Registration":
 
         # Capture face photo
         st.subheader("Capture Your Face")
-        face_image = st.camera_input("Capture your face")
         st.warning("you are always recommended to set your screen brightness to maximum level while biometric verification!!")
-
+        face_image = st.camera_input("Capture your face")
+    
         if face_image:
             # Display the captured face image
             st.image(face_image, caption="Captured Face", use_container_width=True)
