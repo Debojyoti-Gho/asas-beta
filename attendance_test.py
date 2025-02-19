@@ -725,43 +725,53 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #     return False
 
 
-# 📌 Load OpenCV DNN Model for Fast Face Detection
-FACE_NET = cv2.dnn.readNetFromCaffe("deploy.prototxt", "res10_300x300_ssd_iter_140000.caffemodel")
+# 📌 Load Haar Cascade model for face detection
+FACE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
-# 📌 Function to Capture Image & Detect Faces
+# 📌 Define class periods for attendance marking
+PERIOD_TIMES = {
+    "Period 1": ("08:00", "09:00"),
+    "Period 2": ("09:15", "10:15"),
+    "Period 3": ("10:30", "11:30"),
+    "Period 4": ("11:45", "12:45"),
+    "Period 5": ("14:00", "15:00"),
+    "Period 6": ("15:15", "16:15"),
+    "Period 7": ("16:30", "17:30"),
+}
+
+# 📌 Function to detect faces using Haar Cascade
+def detect_faces_haar(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    faces = FACE_CASCADE.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+    return [image[y:y+h, x:x+w] for (x, y, w, h) in faces]
+
+# 📌 Function to capture and detect faces
 def capture_and_detect_faces():
-    st.title("📷 One-Shot Attendance System")
-    st.subheader("Capture an image to mark attendance for multiple students.")
-
-    img_file = st.camera_input("Take a photo")
+    img_file = st.camera_input("📸 Capture an Image")
 
     if img_file:
         nparr = np.frombuffer(img_file.read(), np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        detected_faces = detect_faces_haar(frame)
 
-        h, w = frame.shape[:2]
-        blob = cv2.dnn.blobFromImage(frame, scalefactor=1.0, size=(300, 300), mean=(104.0, 177.0, 123.0))
-        FACE_NET.setInput(blob)
-        detections = FACE_NET.forward()
-
-        faces = []
-        for i in range(detections.shape[2]):
-            confidence = detections[0, 0, i, 2]
-            if confidence > 0.5:  # Only consider detections above 50% confidence
-                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-                (x, y, x1, y1) = box.astype("int")
-                faces.append(frame[y:y1, x:x1])  # Crop face
-
-        return faces
+        return detected_faces if detected_faces else None
     return None
 
-# 📌 Function to Match Faces with Database
+# 📌 Function to determine the current class period
+def get_current_period():
+    now = datetime.now().strftime("%H:%M")
+    for period, (start, end) in PERIOD_TIMES.items():
+        if start <= now <= end:
+            return period
+    return None
+
+# 📌 Function to match detected faces with stored faces in database
 def match_faces_with_db(detected_faces):
     conn = sqlite3.connect("attendance.db")
     cursor = conn.cursor()
-
     verified_students = []
-    
+
     for face in detected_faces:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
             cv2.imwrite(temp_file.name, face)
@@ -786,7 +796,7 @@ def match_faces_with_db(detected_faces):
     conn.close()
     return verified_students
 
-# 📌 Function to Record Attendance for Verified Students
+# 📌 Function to record attendance for verified students
 def record_attendance_for_batch(student_ids):
     if not student_ids:
         st.warning("⚠ No recognized faces. Attendance not marked.")
@@ -2859,17 +2869,17 @@ elif menu == "Teacher's Login":
         st.write("Click the button below to start face detection and mark attendance automatically.")
         
         if st.button("🚀 Start One-Shot Attendance"):
-            st.success("Processing... Please wait.")
-            
+            st.info("⏳ Processing... Please wait.")
+        
             # 🔹 Capture Image & Detect Faces
             faces_detected = capture_and_detect_faces()
-            
+        
             if faces_detected:
-                st.info(f"📸 Detected {len(faces_detected)} face(s). Matching with database...")
-                
+                st.success(f"✅ {len(faces_detected)} face(s) detected! Matching with database...")
+        
                 # 🔹 Match Faces with Database
                 matched_students = match_faces_with_db(faces_detected)
-                
+        
                 # 🔹 Record Attendance
                 record_attendance_for_batch(matched_students)
             else:
