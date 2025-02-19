@@ -2888,8 +2888,9 @@ elif menu == "Teacher's Login":
         
         # 🔹 Process Attendance Button
         if st.session_state.detected_faces and st.button("🚀 Process Attendance"):
-            matched_students = match_faces_with_db(st.session_state.detected_faces)
+            matched_students = match_faces_with_db()
             record_attendance_for_batch(matched_students)
+            
         st.markdown("---")
         st.title("SEND OFFLINE APP NOTIFICATIONS")
 
