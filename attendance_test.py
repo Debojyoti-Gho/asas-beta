@@ -772,9 +772,6 @@ def match_faces_with_db():
         st.error("❌ No faces available for matching. Please capture an image first.")
         return []
 
-    conn = sqlite3.connect("attendance.db")
-    cursor = conn.cursor()
-
     verified_students = []
     
     for face in st.session_state.detected_faces:
@@ -806,9 +803,6 @@ def record_attendance_for_batch(student_ids):
     if not student_ids:
         st.warning("⚠ No recognized faces. Attendance not marked.")
         return
-
-    conn = sqlite3.connect("attendance.db")
-    cursor = conn.cursor()
 
     current_day = datetime.now().strftime("%A")
     current_period = get_current_period()
