@@ -1280,13 +1280,21 @@ def notifications():
     script = """
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" async></script>
     <script>
-      function initializeOneSignal() {
+      document.addEventListener("DOMContentLoaded", function() {
         if (!window.OneSignal) {
-          console.error("OneSignal SDK not loaded. Retrying...");
-          setTimeout(initializeOneSignal, 500); // Retry after 500ms
+          console.error("⚠️ OneSignal SDK failed to load.");
           return;
         }
-        
+
+        // Get the current URL origin
+        var currentOrigin = window.location.origin;
+        var allowedOrigin = "https://asas-beta-by-debojyotighosh.streamlit.app"; // Your allowed domain
+
+        if (currentOrigin !== allowedOrigin) {
+          console.error("❌ OneSignal blocked: Incorrect origin", currentOrigin);
+          return;
+        }
+
         OneSignal.init({
           appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
           safari_web_id: "YOUR_SAFARI_WEB_ID",
@@ -1294,34 +1302,31 @@ def notifications():
           allowLocalhostAsSecureOrigin: true,
           promptOptions: { slidedown: { enabled: true } }
         }).then(() => {
-          console.log("OneSignal initialized successfully.");
+          console.log("✅ OneSignal initialized successfully.");
         }).catch(error => console.error("OneSignal init error:", error));
-      }
+      });
 
-      // Define showNotificationPrompt globally
+      // Global function for triggering notifications
       window.showNotificationPrompt = async function() {
         try {
           if (!window.OneSignal) {
-            alert("⚠️ OneSignal SDK is not ready yet.");
+            alert("⚠️ OneSignal SDK is not ready.");
             return;
           }
           const isSubscribed = await OneSignal.isPushNotificationsEnabled();
           if (!isSubscribed) {
             await OneSignal.showSlidedownPrompt();
           } else {
-            alert("✅ You are already subscribed to notifications!");
+            alert("✅ You are already subscribed!");
           }
         } catch (error) {
-          console.error("Error checking subscription status:", error);
-          alert("⚠️ Error initializing notifications.");
+          console.error("⚠️ Error checking subscription:", error);
+          alert("⚠️ Notification error.");
         }
       };
-
-      // Wait for the page to load before initializing OneSignal
-      document.addEventListener("DOMContentLoaded", initializeOneSignal);
     </script>
 
-    <!-- Button to trigger notification prompt -->
+    <!-- Button -->
     <button onclick="showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
       Subscribe to Notifications
     </button>
