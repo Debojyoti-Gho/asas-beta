@@ -1247,12 +1247,33 @@ def webauthn_script():
                 window.parent.postMessage({ status: "failed" }, "*");
             }
         }
+
+        // Listen for messages from parent (Streamlit)
+        window.addEventListener("message", function(event) {
+            if (event.data && event.data.status) {
+                const status = event.data.status;
+                document.getElementById("webauthn-status").value = status;
+            }
+        });
     </script>
     <button onclick="authenticate()">Authenticate with Fingerprint</button>
     <p id="webauthn-result"></p>
     <input type="hidden" id="webauthn-status" name="webauthn-status" value="pending">
     """
     return script
+
+
+# Function to handle the authentication result
+def handle_authentication_status():
+    if st.session_state.auth_status == "success":
+        st.success("Fingerprint authentication successful!")
+        return True
+    elif st.session_state.auth_status == "failed":
+        st.error("Fingerprint authentication failed!")
+        return False
+    else:
+        st.warning("Awaiting authentication status...")
+        return False
 
 
 def notifications():
@@ -1487,21 +1508,48 @@ elif menu == "Student's Registration":
 elif menu == "Student's Login":
     st.header("Student Login")
     st.success(f"Your unique device ID is: {device_id_from_cookies}")
+    
+    # Initialize session state for authentication
+    if "auth_status" not in st.session_state:
+        st.session_state.auth_status = "pending"
+    
     # WebAuthn Integration
     st.subheader("Fingerprint Authentication")
     st.warning("Please proceed with the fingerprint authentication first to continue with login!")
     st.info("Passkeys will only be available if you have registered through desktop. In case of unavailability, this step will be bypassed. Please wait!!")
-
-    # Integrate fingerprint authentication script
-    auth_successful = st.components.v1.html(webauthn_script())  # Replace with actual WebAuthn logic
-    time.sleep(6)
-
-    if not auth_successful:
-        st.error("Fingerprint authentication failed. Please try again.")
-        st.stop()  # Stop execution until authentication is successful
-
-    st.success("Fingerprint accepted. Waiting for server confirmation!!")
-    st.info("Fingerprint passkey authentication is still under development for Android, so it can be bypassed sometimes. However, later on this will be mandatory!!")
+    
+    # Inject WebAuthn script (from your separate function)
+    auth_script = webauthn_script()
+    st.components.v1.html(auth_script, height=300)
+    
+    # JavaScript message listener to capture authentication result
+    st.markdown(
+        """
+        <script>
+            window.addEventListener("message", (event) => {
+                if (event.data.status === "success") {
+                    window.parent.postMessage({ auth_result: "success" }, "*");
+                } else if (event.data.status === "failed") {
+                    window.parent.postMessage({ auth_result: "failed" }, "*");
+                }
+            });
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    # Wait for WebAuthn result
+    time.sleep(6)  # Delay to allow authentication
+    
+    # Check if authentication succeeded or needs bypassing
+    auth_result = st.experimental_get_query_params().get("auth_result", ["pending"])[0]
+    
+    if auth_result == "success":
+        st.session_state.auth_status = "success"
+        st.success("Fingerprint accepted. Waiting for server confirmation!!")
+    else:
+        st.session_state.auth_status = "bypass"
+        st.info("Fingerprint authentication is still under development for Android, so it can be bypassed sometimes. However, later on this will be mandatory!!")
 
     # Create a login form with User ID, Password, and Face capture
     with st.form(key='login_form'):
