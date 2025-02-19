@@ -766,13 +766,18 @@ def get_current_period():
             return period
     return None
 
-# 📌 Function to match detected faces with stored faces in database
-def match_faces_with_db(detected_faces):
+# Match detected faces with database
+def match_faces_with_db():
+    if "detected_faces" not in st.session_state or not st.session_state.detected_faces:
+        st.error("❌ No faces available for matching. Please capture an image first.")
+        return []
+
     conn = sqlite3.connect("attendance.db")
     cursor = conn.cursor()
-    verified_students = []
 
-    for face in detected_faces:
+    verified_students = []
+    
+    for face in st.session_state.detected_faces:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
             cv2.imwrite(temp_file.name, face)
             face_path = temp_file.name
@@ -796,7 +801,7 @@ def match_faces_with_db(detected_faces):
     conn.close()
     return verified_students
 
-# 📌 Function to record attendance for verified students
+# Record attendance for recognized students
 def record_attendance_for_batch(student_ids):
     if not student_ids:
         st.warning("⚠ No recognized faces. Attendance not marked.")
@@ -814,19 +819,13 @@ def record_attendance_for_batch(student_ids):
         return
 
     for student_id in student_ids:
-        cursor.execute("""
-            SELECT * FROM attendance WHERE student_id = ? AND date = ? AND day = ?
-        """, (student_id, today_date, current_day))
+        cursor.execute("SELECT * FROM attendance WHERE student_id = ? AND date = ? AND day = ?", (student_id, today_date, current_day))
         existing_record = cursor.fetchone()
 
         period_column = f"period_{list(PERIOD_TIMES.keys()).index(current_period) + 1}"
 
         if existing_record:
-            cursor.execute(f"""
-                UPDATE attendance 
-                SET {period_column} = 1 
-                WHERE student_id = ? AND date = ? AND day = ?
-            """, (student_id, today_date, current_day))
+            cursor.execute(f"UPDATE attendance SET {period_column} = 1 WHERE student_id = ? AND date = ? AND day = ?", (student_id, today_date, current_day))
         else:
             attendance_data = {period: 0 for period in PERIOD_TIMES.keys()}
             attendance_data[current_period] = 1
@@ -839,7 +838,7 @@ def record_attendance_for_batch(student_ids):
     conn.commit()
     conn.close()
     st.success(f"✅ Attendance successfully recorded for {len(student_ids)} students!")
-
+    
     
 # Resize function for consistent dimensions
 def resize_face(image, target_size=(224, 224)):
