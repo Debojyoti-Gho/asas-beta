@@ -792,7 +792,17 @@ def match_faces_with_db():
                     break
             except Exception:
                 continue
+
+    # ✅ Display recognized students in Streamlit UI
+    if verified_students:
+        st.success(f"✅ Recognized {len(verified_students)} student(s):")
+        for user_id, name in verified_students:
+            st.write(f"📌 **User ID:** `{user_id}` | **Name:** {name}")
+    else:
+        st.warning("⚠ No matching students found. Try again with a clearer image.")
+
     return verified_students
+
     
 
 def record_attendance_for_batch(student_data):
