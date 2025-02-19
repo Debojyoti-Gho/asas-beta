@@ -2868,23 +2868,29 @@ elif menu == "Teacher's Login":
         st.title("📷 One-Shot Attendance System")
         st.write("Click the button below to start face detection and mark attendance automatically.")
         
-        if st.button("🚀 Start One-Shot Attendance"):
-            st.info("⏳ Processing... Please wait.")
+        # 📌 Store detected faces in session state
+        if "detected_faces" not in st.session_state:
+            st.session_state.detected_faces = None
         
-            # 🔹 Capture Image & Detect Faces
-            faces_detected = capture_and_detect_faces()
+        # 🔹 Capture Image
+        img_file = st.camera_input("Take a photo")
         
-            if faces_detected:
-                st.success(f"✅ {len(faces_detected)} face(s) detected! Matching with database...")
+        if img_file:
+            nparr = np.frombuffer(img_file.read(), np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            detected_faces = detect_faces_haar(frame)
         
-                # 🔹 Match Faces with Database
-                matched_students = match_faces_with_db(faces_detected)
-        
-                # 🔹 Record Attendance
-                record_attendance_for_batch(matched_students)
+            if detected_faces:
+                st.session_state.detected_faces = detected_faces
+                st.success(f"✅ Detected {len(detected_faces)} face(s). Click 'Process Attendance'.")
             else:
-                st.error("❌ No faces detected. Try again with a clearer image.")
+                st.session_state.detected_faces = None
+                st.warning("⚠ No faces detected. Try again.")
         
+        # 🔹 Process Attendance Button
+        if st.session_state.detected_faces and st.button("🚀 Process Attendance"):
+            matched_students = match_faces_with_db(st.session_state.detected_faces)
+            record_attendance_for_batch(matched_students)
         st.markdown("---")
         st.title("SEND OFFLINE APP NOTIFICATIONS")
 
