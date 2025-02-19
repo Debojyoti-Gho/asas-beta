@@ -1279,77 +1279,47 @@ def handle_authentication_status():
 def notifications():
     script = """
     <script>
-      (function() {
-        // Ensure this script runs in the top-level window (not in an iframe)
-        if (window.self !== window.top) {
-          console.warn("⚠️ OneSignal cannot run inside an iframe.");
+      document.addEventListener("DOMContentLoaded", function() {
+        if (!("Notification" in window)) {
+          alert("⚠️ Your browser does not support notifications.");
           return;
         }
 
-        var oneSignalScript = document.createElement("script");
-        oneSignalScript.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
-        oneSignalScript.async = true;
-        oneSignalScript.onload = function() {
-          console.log("✅ OneSignal SDK loaded successfully.");
-          initializeOneSignal();
-        };
-        oneSignalScript.onerror = function() {
-          console.error("❌ OneSignal SDK failed to load.");
-        };
-        document.head.appendChild(oneSignalScript);
-
-        function initializeOneSignal() {
-          if (!window.OneSignal) {
-            console.error("⚠️ OneSignal SDK not available.");
-            return;
+        async function requestNotificationPermission() {
+          if (Notification.permission === "granted") {
+            alert("✅ Notifications are already enabled!");
+            sendNotification();
+          } else if (Notification.permission !== "denied") {
+            const permission = await Notification.requestPermission();
+            if (permission === "granted") {
+              sendNotification();
+            } else {
+              alert("❌ Notification permission denied.");
+            }
+          } else {
+            alert("❌ You have blocked notifications. Enable them in browser settings.");
           }
-
-          // Check if running on the allowed domain
-          var allowedOrigin = "https://asas-beta-by-debojyotighosh.streamlit.app";
-          if (window.location.origin !== allowedOrigin) {
-            console.error("❌ OneSignal blocked: Incorrect origin", window.location.origin);
-            return;
-          }
-
-          OneSignal.init({
-            appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
-            safari_web_id: "YOUR_SAFARI_WEB_ID",
-            serviceWorkerPath: "/OneSignalSDKWorker.js",
-            allowLocalhostAsSecureOrigin: true,
-            promptOptions: { slidedown: { enabled: true } }
-          }).then(() => {
-            console.log("✅ OneSignal initialized.");
-          }).catch(error => console.error("OneSignal init error:", error));
         }
 
-        // Define the function globally for the button
-        window.showNotificationPrompt = async function() {
-          try {
-            if (!window.OneSignal) {
-              alert("⚠️ OneSignal SDK is not ready.");
-              return;
-            }
-            const isSubscribed = await OneSignal.isPushNotificationsEnabled();
-            if (!isSubscribed) {
-              await OneSignal.showSlidedownPrompt();
-            } else {
-              alert("✅ You are already subscribed!");
-            }
-          } catch (error) {
-            console.error("⚠️ Error checking subscription:", error);
-            alert("⚠️ Notification error.");
+        function sendNotification() {
+          if (Notification.permission === "granted") {
+            new Notification("🔔 Notification Enabled!", {
+              body: "You have successfully subscribed to notifications.",
+              icon: "https://www.google.com/favicon.ico"
+            });
           }
-        };
-      })();
+        }
+
+        window.subscribeToNotifications = requestNotificationPermission;
+      });
     </script>
 
-    <!-- Button -->
-    <button onclick="showNotificationPrompt()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
-      Subscribe to Notifications
+    <!-- Subscribe Button -->
+    <button onclick="subscribeToNotifications()" style="padding: 10px; font-size: 16px; background-color: red; color: white; border: none; cursor: pointer;">
+      Enable Notifications
     </button>
     """
     return script
-        
         
 
 # Streamlit UI
