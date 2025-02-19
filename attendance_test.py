@@ -1464,7 +1464,21 @@ def notifications():
     </button>
     """
     return script
-        
+
+
+def is_strong_password(password):
+    if len(password) < 8:
+        return "❌ Password must be at least 8 characters long."
+    if not re.search(r"[A-Z]", password):
+        return "❌ Password must contain at least one uppercase letter."
+    if not re.search(r"[a-z]", password):
+        return "❌ Password must contain at least one lowercase letter."
+    if not re.search(r"\d", password):
+        return "❌ Password must contain at least one number."
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return "❌ Password must contain at least one special character."
+    return "✅ Strong password!"
+    
 
 # Streamlit UI
 menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
@@ -1524,13 +1538,15 @@ elif menu == "Student's Registration":
         st.subheader("Student Details")
         name = st.text_input("Name")
         roll = st.text_input("Roll Number")
-        section = st.text_input("Section")
+        section = st.selectbox("Select Section", ["A", "B", "C", "D"])
         email = st.text_input("Email")  # Use this email for OTP verification
         enrollment_no = st.text_input("Enrollment Number")
-        year = st.text_input("Year")
-        semester = st.text_input("Semester")
+        year = st.selectbox("Select Year", [1, 2, 3, 4])
+        semester = st.selectbox("Select Semester", [1, 2, 3, 4, 5, 6, 7, 8])
         user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
+        if password:
+        st.info(is_strong_password(password))
 
         # Capture face photo
         st.subheader("Capture Your Face")
