@@ -1546,6 +1546,15 @@ elif menu == "Student's Registration":
         semester = st.selectbox("Select Semester", [1, 2, 3, 4, 5, 6, 7, 8])
         user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
+        st.markdown("""
+        **Password must meet the following criteria:**  
+        - ✅ At least **8 characters** long  
+        - ✅ Contains **one uppercase letter** (A-Z)  
+        - ✅ Contains **one lowercase letter** (a-z)  
+        - ✅ Contains **one number** (0-9)  
+        - ✅ Contains **one special character** (@, #, $, etc.)
+        """, unsafe_allow_html=True)
+
         if password:
             st.info(is_strong_password(password))
 
