@@ -1363,6 +1363,7 @@ elif menu == "Student's Registration":
         # Capture face photo
         st.subheader("Capture Your Face")
         face_image = st.camera_input("Capture your face")
+        st.warning("you are always recommended to set your screen brightness to maximum level while biometric verification!!")
 
         if face_image:
             # Display the captured face image
@@ -1507,6 +1508,7 @@ elif menu == "Student's Login":
         user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
         face_image = st.camera_input("Capture your face")
+        st.warning("you are always recommended to set your screen brightness to maximum level while biometric verification!!")
         submit_button = st.form_submit_button("Login")
 
     # Proceed after the login button is clicked
