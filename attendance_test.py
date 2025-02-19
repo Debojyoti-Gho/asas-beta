@@ -1547,7 +1547,7 @@ elif menu == "Student's Registration":
         user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
         if password:
-        st.info(is_strong_password(password))
+            st.info(is_strong_password(password))
 
         # Capture face photo
         st.subheader("Capture Your Face")
