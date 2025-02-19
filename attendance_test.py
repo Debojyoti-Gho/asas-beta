@@ -1278,52 +1278,69 @@ def handle_authentication_status():
 
 def notifications():
     script = """
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" async></script>
     <script>
-      document.addEventListener("DOMContentLoaded", function() {
-        if (!window.OneSignal) {
-          console.error("⚠️ OneSignal SDK failed to load.");
+      (function() {
+        // Ensure this script runs in the top-level window (not in an iframe)
+        if (window.self !== window.top) {
+          console.warn("⚠️ OneSignal cannot run inside an iframe.");
           return;
         }
 
-        // Get the current URL origin
-        var currentOrigin = window.location.origin;
-        var allowedOrigin = "https://asas-beta-by-debojyotighosh.streamlit.app"; // Your allowed domain
+        var oneSignalScript = document.createElement("script");
+        oneSignalScript.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+        oneSignalScript.async = true;
+        oneSignalScript.onload = function() {
+          console.log("✅ OneSignal SDK loaded successfully.");
+          initializeOneSignal();
+        };
+        oneSignalScript.onerror = function() {
+          console.error("❌ OneSignal SDK failed to load.");
+        };
+        document.head.appendChild(oneSignalScript);
 
-        if (currentOrigin !== allowedOrigin) {
-          console.error("❌ OneSignal blocked: Incorrect origin", currentOrigin);
-          return;
-        }
-
-        OneSignal.init({
-          appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
-          safari_web_id: "YOUR_SAFARI_WEB_ID",
-          serviceWorkerPath: "/OneSignalSDKWorker.js",
-          allowLocalhostAsSecureOrigin: true,
-          promptOptions: { slidedown: { enabled: true } }
-        }).then(() => {
-          console.log("✅ OneSignal initialized successfully.");
-        }).catch(error => console.error("OneSignal init error:", error));
-      });
-
-      // Global function for triggering notifications
-      window.showNotificationPrompt = async function() {
-        try {
+        function initializeOneSignal() {
           if (!window.OneSignal) {
-            alert("⚠️ OneSignal SDK is not ready.");
+            console.error("⚠️ OneSignal SDK not available.");
             return;
           }
-          const isSubscribed = await OneSignal.isPushNotificationsEnabled();
-          if (!isSubscribed) {
-            await OneSignal.showSlidedownPrompt();
-          } else {
-            alert("✅ You are already subscribed!");
+
+          // Check if running on the allowed domain
+          var allowedOrigin = "https://asas-beta-by-debojyotighosh.streamlit.app";
+          if (window.location.origin !== allowedOrigin) {
+            console.error("❌ OneSignal blocked: Incorrect origin", window.location.origin);
+            return;
           }
-        } catch (error) {
-          console.error("⚠️ Error checking subscription:", error);
-          alert("⚠️ Notification error.");
+
+          OneSignal.init({
+            appId: "6a4e3b69-b3ca-41db-b70c-28176cb6ab4b",
+            safari_web_id: "YOUR_SAFARI_WEB_ID",
+            serviceWorkerPath: "/OneSignalSDKWorker.js",
+            allowLocalhostAsSecureOrigin: true,
+            promptOptions: { slidedown: { enabled: true } }
+          }).then(() => {
+            console.log("✅ OneSignal initialized.");
+          }).catch(error => console.error("OneSignal init error:", error));
         }
-      };
+
+        // Define the function globally for the button
+        window.showNotificationPrompt = async function() {
+          try {
+            if (!window.OneSignal) {
+              alert("⚠️ OneSignal SDK is not ready.");
+              return;
+            }
+            const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+            if (!isSubscribed) {
+              await OneSignal.showSlidedownPrompt();
+            } else {
+              alert("✅ You are already subscribed!");
+            }
+          } catch (error) {
+            console.error("⚠️ Error checking subscription:", error);
+            alert("⚠️ Notification error.");
+          }
+        };
+      })();
     </script>
 
     <!-- Button -->
