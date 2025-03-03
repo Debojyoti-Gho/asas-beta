@@ -1465,6 +1465,56 @@ def notifications():
     </button>
     """
     return script
+    
+
+# Function to send custom notifications (for teachers)
+def send_custom_notification():
+    script = """
+    <script>
+      function sendCustomNotification() {
+        if (!("Notification" in window)) {
+          alert("⚠️ Your browser does not support notifications.");
+          return;
+        }
+
+        let message = document.getElementById("notificationMessage").value;
+        if (message.trim() === "") {
+          alert("⚠️ Please enter a message before sending.");
+          return;
+        }
+
+        if (Notification.permission === "granted") {
+          new Notification("📢 Message from Teacher", {
+            body: message,
+            icon: "https://www.google.com/favicon.ico"
+          });
+        } else if (Notification.permission !== "denied") {
+          Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+              new Notification("📢 Message from Teacher", {
+                body: message,
+                icon: "https://www.google.com/favicon.ico"
+              });
+            } else {
+              alert("❌ Notification permission denied.");
+            }
+          });
+        } else {
+          alert("❌ You have blocked notifications. Enable them in browser settings.");
+        }
+      }
+    </script>
+
+    <input type="text" id="notificationMessage" placeholder="Enter your message..." 
+      style="padding: 10px; font-size: 16px; width: 80%; margin-bottom: 10px;">
+
+    <button onclick="sendCustomNotification()" 
+      style="padding: 10px; font-size: 16px; background-color: blue; color: white; border: none; cursor: pointer;">
+      Send Notification
+    </button>
+    """
+    return script
+
 
 
 def is_strong_password(password):
@@ -2953,8 +3003,10 @@ elif menu == "Teacher's Login":
         st.markdown("---")
         st.title("SEND OFFLINE APP NOTIFICATIONS")
 
-        st.info("coming soon!!")
-        
+        # Section for teachers to send notifications
+        st.subheader("✉️ Send Custom Notifications (For Teachers)")
+        st.components.v1.html(send_custom_notification(), height=150)
+
         # # Button to start capture and retry mechanism
         # retry = True
         # retry_count = 0  # Counter to make button keys unique
