@@ -3134,7 +3134,7 @@ elif menu == "Teacher's Login":
             st.markdown('<div class="main-container">', unsafe_allow_html=True)
             
             # Header Title
-            st.markdown("<h1>Notification Center</h1>", unsafe_allow_html=True)
+            st.markdown("<h1>Notification Center (for Mobile & Desktop) </h1>", unsafe_allow_html=True)
             st.markdown("<hr>", unsafe_allow_html=True)
             
             # Section: Add New Notification
@@ -3149,7 +3149,7 @@ elif menu == "Teacher's Login":
                 if new_notif.strip():
                     add_notification(new_notif.strip())
                     st.success("Notification added successfully!")
-                    st.experimental_rerun()  # Refresh the page to show new notification
+                    st.rerun()  # Refresh the page to show new notification
                 else:
                     st.error("Please enter a notification message.")
             
@@ -3163,7 +3163,7 @@ elif menu == "Teacher's Login":
                 if st.button("Clear All Notifications", key="clear_all_notifications"):
                     clear_all_notifications()
                     st.success("All notifications cleared!")
-                    st.experimental_rerun()
+                    st.rerun()
                 
                 # Display each notification with a modern card look and a removal button
                 for notif in notifications:
@@ -3180,9 +3180,9 @@ elif menu == "Teacher's Login":
                         if st.button("Remove", key=f"remove_{notif['id']}"):
                             remove_notification(notif["id"])
                             st.success("Notification removed!")
-                            st.experimental_rerun()
+                            st.rerun()
             else:
-                st.info("No notifications yet!")
+                st.info("No notifications yet. No notifications yet. Add your first notification above!")
             
             st.markdown("</div>", unsafe_allow_html=True)
         # # Button to start capture and retry mechanism
@@ -3878,7 +3878,7 @@ elif menu == "Notification Center" :
         if st.button("Clear All Notifications", key="clear_all_notifications"):
             clear_all_notifications()
             st.success("All notifications cleared!")
-            st.experimental_rerun()
+            st.rerun()
         
         # Display each notification with a modern card look and a removal button
         for notif in notifications:
@@ -3895,8 +3895,8 @@ elif menu == "Notification Center" :
                 if st.button("Remove", key=f"remove_{notif['id']}"):
                     remove_notification(notif["id"])
                     st.success("Notification removed!")
-                    st.experimental_rerun()
+                    st.rerun()
     else:
-        st.info("No notifications yet. Add your first notification above!")
+        st.info("No notifications yet!")
     
     st.markdown("</div>", unsafe_allow_html=True)
