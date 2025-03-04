@@ -3131,8 +3131,6 @@ elif menu == "Teacher's Login":
         
         # Main container with modern card styling
         with st.container():
-            st.markdown('<div class="main-container">', unsafe_allow_html=True)
-            
             # Header Title
             st.markdown("<h1>Notification Center (for Mobile & Desktop) </h1>", unsafe_allow_html=True)
             st.markdown("<hr>", unsafe_allow_html=True)
