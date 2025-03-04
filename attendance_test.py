@@ -1516,53 +1516,55 @@ def send_custom_notification():
     return script
 
 
-# Cache the cookie manager instance so that it is created only once
-@st.cache(allow_output_mutation=True, suppress_st_warning=True)
-def get_cookie_manager():
-    return EncryptedCookieManager(
-        prefix="notif_center_",
-        password="noti4321"  # Replace with a secure key in production
-    )
+# Initialize the database and create the notifications table if it doesn't exist.
+def init_db():
+    conn = sqlite3.connect('notifications.db', check_same_thread=False)
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-cookies = get_cookie_manager()
+init_db()
 
-# Wait until cookies are ready before proceeding
-if not cookies.ready():
-    st.stop()
-
-
-    
-# Function to retrieve notifications from cookies
+# Function to retrieve notifications from the database
 def get_notifications():
-    if "notifications" in cookies:
-        try:
-            notifications = json.loads(cookies["notifications"])
-            if isinstance(notifications, list):
-                return notifications
-        except json.JSONDecodeError:
-            return []
-    return []
+    conn = sqlite3.connect('notifications.db', check_same_thread=False)
+    c = conn.cursor()
+    c.execute('SELECT id, message FROM notifications ORDER BY id')
+    rows = c.fetchall()
+    conn.close()
+    # Return a list of dicts for easier handling
+    return [{"id": row[0], "message": row[1]} for row in rows]
 
-# Function to add a new notification to the cookies
+# Function to add a new notification to the database
 def add_notification(message):
-    notifications = get_notifications()
-    notifications.append(message)
-    cookies["notifications"] = json.dumps(notifications)
-    cookies.save()
+    conn = sqlite3.connect('notifications.db', check_same_thread=False)
+    c = conn.cursor()
+    c.execute('INSERT INTO notifications (message) VALUES (?)', (message,))
+    conn.commit()
+    conn.close()
 
-
-# Function to remove a notification by index
-def remove_notification(index):
-    notifications = get_notifications()
-    if 0 <= index < len(notifications):
-        del notifications[index]
-        cookies["notifications"] = json.dumps(notifications)
-        cookies.save()
+# Function to remove a notification by its id
+def remove_notification(notification_id):
+    conn = sqlite3.connect('notifications.db', check_same_thread=False)
+    c = conn.cursor()
+    c.execute('DELETE FROM notifications WHERE id = ?', (notification_id,))
+    conn.commit()
+    conn.close()
 
 # Function to clear all notifications
 def clear_all_notifications():
-    cookies["notifications"] = json.dumps([])
-    cookies.save()
+    conn = sqlite3.connect('notifications.db', check_same_thread=False)
+    c = conn.cursor()
+    c.execute('DELETE FROM notifications')
+    conn.commit()
+    conn.close()
+
 
 
 def is_strong_password(password):
