@@ -1516,21 +1516,20 @@ def send_custom_notification():
     return script
 
 
-# Create a singleton instance of the cookie manager with a unique key.
-@st.experimental_singleton
-def get_cookie_manager():
-    return EncryptedCookieManager(
+# Initialize or get the cookie manager instance from session state
+if "cookies" not in st.session_state:
+    st.session_state["cookies"] = EncryptedCookieManager(
         prefix="notif_center_",
-        password="your_secret_key_here",  # Replace with a strong secret key.
-        key="unique_cookie_manager_key"   # Unique key to prevent duplicate errors.
+        password="noti4321",  # Replace with a secure key in production
+        key="unique_cookie_manager_key"  # Unique key to prevent duplicate element issues
     )
 
-cookies = get_cookie_manager()
+cookies = st.session_state["cookies"]
 
 # Wait until cookies are ready
 if not cookies.ready():
     st.stop()
-
+    
 # Function to retrieve notifications from cookies
 def get_notifications():
     if "notifications" in cookies:
