@@ -1520,8 +1520,7 @@ def send_custom_notification():
 if "cookies" not in st.session_state:
     st.session_state["cookies"] = EncryptedCookieManager(
         prefix="notif_center_",
-        password="noti4321",  # Replace with a secure key in production
-        key="unique_cookie_manager_key"  # Unique key to prevent duplicate element issues
+        password="noti4321"  # Replace with a secure key in production
     )
 
 cookies = st.session_state["cookies"]
@@ -1529,6 +1528,7 @@ cookies = st.session_state["cookies"]
 # Wait until cookies are ready
 if not cookies.ready():
     st.stop()
+
     
 # Function to retrieve notifications from cookies
 def get_notifications():
