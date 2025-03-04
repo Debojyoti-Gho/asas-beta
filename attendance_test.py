@@ -1516,11 +1516,16 @@ def send_custom_notification():
     return script
 
 
-# Initialize the cookie manager
-cookies = EncryptedCookieManager(
-    prefix="notif_center_",
-    password="noti4321"  # Change this to a secure key in production
-)
+# Create a singleton instance of the cookie manager with a unique key.
+@st.experimental_singleton
+def get_cookie_manager():
+    return EncryptedCookieManager(
+        prefix="notif_center_",
+        password="your_secret_key_here",  # Replace with a strong secret key.
+        key="unique_cookie_manager_key"   # Unique key to prevent duplicate errors.
+    )
+
+cookies = get_cookie_manager()
 
 # Wait until cookies are ready
 if not cookies.ready():
@@ -1545,6 +1550,19 @@ def add_notification(message):
     cookies.save()
 
 
+# Function to remove a notification by index
+def remove_notification(index):
+    notifications = get_notifications()
+    if 0 <= index < len(notifications):
+        del notifications[index]
+        cookies["notifications"] = json.dumps(notifications)
+        cookies.save()
+
+# Function to clear all notifications
+def clear_all_notifications():
+    cookies["notifications"] = json.dumps([])
+    cookies.save()
+
 
 def is_strong_password(password):
     if len(password) < 8:
@@ -1566,7 +1584,7 @@ def is_strong_password(password):
     
 
 # Streamlit UI
-menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration"])
+menu = st.sidebar.selectbox("Navigation Menu", ["Home", "Student's Registration", "Student's Login", "Teacher's Login", "Admin Management", "Lab Examination System", "Teacher's Registration", "Notification Center"])
 
 if menu == "Home":
     st.warning("🔔 You must subscribe to notifications for future updates!")
@@ -3050,14 +3068,28 @@ elif menu == "Teacher's Login":
                 st.error("Please enter a notification message.")
         
         # Display the stored notifications
-        st.subheader("All Notifications:")
+        st.subheader("All Notifications (FOR MOBILE & DESKTOP) :")
         notifications = get_notifications()
         if notifications:
-            for i, notif in enumerate(notifications, start=1):
-                st.write(f"{i}. {notif}")
+            # Button to clear all notifications at once
+            if st.button("Clear All Notifications", key="clear_all_notifications"):
+                clear_all_notifications()
+                st.success("All notifications cleared!")
+                st.experimental_rerun()
+        
+            # Display each notification with an option to remove it
+            for i, notif in enumerate(notifications):
+                col1, col2 = st.columns([0.8, 0.2])
+                with col1:
+                    st.write(f"{i + 1}. {notif}")
+                with col2:
+                    if st.button("Clear", key=f"delete_{i}"):
+                        remove_notification(i)
+                        st.success("Notification cleared!")
+                        st.experimental_rerun()
         else:
             st.write("No notifications yet.")
-        
+                
 
         # # Button to start capture and retry mechanism
         # retry = True
@@ -3740,3 +3772,25 @@ elif menu == "Lab Examination System" :
 elif menu == "Teacher's Registration" :
     st.title("Teacher's Registration")
     st.info("comming soon!!")
+
+elif menu == "Notification Center" :
+    notifications = get_notifications()
+    if notifications:
+        # Button to clear all notifications at once
+        if st.button("Clear All Notifications", key="clear_all_notifications"):
+            clear_all_notifications()
+            st.success("All notifications cleared!")
+            st.experimental_rerun()
+    
+        # Display each notification with an option to remove it
+        for i, notif in enumerate(notifications):
+            col1, col2 = st.columns([0.8, 0.2])
+            with col1:
+                st.write(f"{i + 1}. {notif}")
+            with col2:
+                if st.button("Clear", key=f"delete_{i}"):
+                    remove_notification(i)
+                    st.success("Notification cleared!")
+                    st.experimental_rerun()
+    else:
+        st.write("No notifications yet.")
