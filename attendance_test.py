@@ -3870,33 +3870,33 @@ elif menu == "Teacher's Registration" :
 elif menu == "Notification Center" :
     st.markdown("<hr>", unsafe_allow_html=True)
             
-            # Section: Display All Notifications
-            st.markdown("<h3>All Notifications</h3>", unsafe_allow_html=True)
-            notifications = get_notifications()
-            
-            if notifications:
-                if st.button("Clear All Notifications", key="clear_all_notifications"):
-                    clear_all_notifications()
-                    st.success("All notifications cleared!")
+    # Section: Display All Notifications
+    st.markdown("<h3>All Notifications</h3>", unsafe_allow_html=True)
+    notifications = get_notifications()
+    
+    if notifications:
+        if st.button("Clear All Notifications", key="clear_all_notifications"):
+            clear_all_notifications()
+            st.success("All notifications cleared!")
+            st.experimental_rerun()
+        
+        # Display each notification with a modern card look and a removal button
+        for notif in notifications:
+            col1, col2 = st.columns([0.85, 0.15])
+            with col1:
+                st.markdown(
+                    f"""
+                    <div class="notification-card">
+                        <p><strong>Notification {notif['id']}:</strong> {notif['message']}</p>
+                    </div>
+                    """, unsafe_allow_html=True
+                )
+            with col2:
+                if st.button("Remove", key=f"remove_{notif['id']}"):
+                    remove_notification(notif["id"])
+                    st.success("Notification removed!")
                     st.experimental_rerun()
-                
-                # Display each notification with a modern card look and a removal button
-                for notif in notifications:
-                    col1, col2 = st.columns([0.85, 0.15])
-                    with col1:
-                        st.markdown(
-                            f"""
-                            <div class="notification-card">
-                                <p><strong>Notification {notif['id']}:</strong> {notif['message']}</p>
-                            </div>
-                            """, unsafe_allow_html=True
-                        )
-                    with col2:
-                        if st.button("Remove", key=f"remove_{notif['id']}"):
-                            remove_notification(notif["id"])
-                            st.success("Notification removed!")
-                            st.experimental_rerun()
-            else:
-                st.info("No notifications yet. Add your first notification above!")
-            
-            st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.info("No notifications yet. Add your first notification above!")
+    
+    st.markdown("</div>", unsafe_allow_html=True)
