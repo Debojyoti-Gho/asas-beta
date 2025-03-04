@@ -1516,6 +1516,35 @@ def send_custom_notification():
     return script
 
 
+# Initialize the cookie manager
+cookies = EncryptedCookieManager(
+    prefix="notif_center_",
+    password="noti4321"  # Change this to a secure key in production
+)
+
+# Wait until cookies are ready
+if not cookies.ready():
+    st.stop()
+
+# Function to retrieve notifications from cookies
+def get_notifications():
+    if "notifications" in cookies:
+        try:
+            notifications = json.loads(cookies["notifications"])
+            if isinstance(notifications, list):
+                return notifications
+        except json.JSONDecodeError:
+            return []
+    return []
+
+# Function to add a new notification to the cookies
+def add_notification(message):
+    notifications = get_notifications()
+    notifications.append(message)
+    cookies["notifications"] = json.dumps(notifications)
+    cookies.save()
+
+
 
 def is_strong_password(password):
     if len(password) < 8:
@@ -3001,11 +3030,34 @@ elif menu == "Teacher's Login":
             record_attendance_for_batch(matched_students)
             
         st.markdown("---")
-        st.title("SEND OFFLINE APP NOTIFICATIONS")
+        st.title("SEND ONLINE APP NOTIFICATIONS(FOR DESKTOP)")
 
         # Section for teachers to send notifications
         st.subheader("✉️ Send Custom Notifications (For Teachers)")
         st.components.v1.html(send_custom_notification(), height=150)
+
+        # UI: Notification Center
+        st.title("Notification Center(FOR MOBILE & DESKTOP)")
+        
+        # Input for a new notification
+        new_notif = st.text_input("Enter new notification:")
+        
+        if st.button("Add Notification"):
+            if new_notif.strip():
+                add_notification(new_notif.strip())
+                st.success("Notification added!")
+            else:
+                st.error("Please enter a notification message.")
+        
+        # Display the stored notifications
+        st.subheader("All Notifications:")
+        notifications = get_notifications()
+        if notifications:
+            for i, notif in enumerate(notifications, start=1):
+                st.write(f"{i}. {notif}")
+        else:
+            st.write("No notifications yet.")
+        
 
         # # Button to start capture and retry mechanism
         # retry = True
