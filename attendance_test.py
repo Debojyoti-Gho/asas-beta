@@ -3088,12 +3088,13 @@ elif menu == "Teacher's Login":
             }
             /* Notification card styling */
             .notification-card {
-                background: #f7f7f7;
                 border-left: 5px solid #4caf50;
                 padding: 1.2rem;
                 margin-bottom: 1rem;
                 border-radius: 8px;
                 transition: transform 0.2s, box-shadow 0.2s;
+            }
+
             }
             .notification-card:hover {
                 transform: translateX(5px);
