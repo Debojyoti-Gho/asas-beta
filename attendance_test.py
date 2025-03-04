@@ -3193,22 +3193,15 @@ elif menu == "Teacher's Login":
             
             if st.button("Add Notification", key="add_notif_button"):
                 if new_notif.strip():
-                    # Convert the duration input into hours based on the selected unit
-                    if duration_unit == "Hours":
-                        duration_hours = duration_value
-                    elif duration_unit == "Days":
-                        duration_hours = duration_value * 24
-                    elif duration_unit == "Months":
-                        duration_hours = duration_value * 24 * 30  # approximating 30 days per month
-                    
-                    add_notification(new_notif.strip(), duration_hours=duration_hours)
+                    # Call the updated function with the proper keyword arguments
+                    add_notification(new_notif.strip(), duration_value=duration_value, duration_unit=duration_unit)
                     st.success("Notification added successfully!")
-                    st.experimental_rerun()  # Refresh the page to show the new notification
+                    st.experimental_rerun()  # Refresh the page to show new notification
                 else:
                     st.error("Please enter a notification message.")
             
             st.markdown("<hr>", unsafe_allow_html=True)
-
+        
             
             # Section: Display All Notifications
             st.markdown("<h3>All Notifications</h3>", unsafe_allow_html=True)
