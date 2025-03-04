@@ -3088,20 +3088,29 @@ elif menu == "Teacher's Login":
             }
             /* Notification card styling */
             .notification-card {
-                background: #f7f7f7; /* Light gray */
-                color: #333333;      /* Dark text */
+                /* Example: a vertical gradient from blue to green */
+                background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
+                
+                /* Make text clearly visible on the gradient */
+                color: #FFFFFF;
+                
+                /* Keep or remove the border-left style as you see fit */
                 border-left: 5px solid #4caf50;
+                
+                /* Padding, margin, and rounding for a “card” look */
                 padding: 1.2rem;
                 margin-bottom: 1rem;
                 border-radius: 8px;
+                
+                /* Subtle transition effects for hover */
                 transition: transform 0.2s, box-shadow 0.2s;
             }
-
-            }
+            
             .notification-card:hover {
                 transform: translateX(5px);
                 box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             }
+
             /* Custom button styles */
             .custom-btn {
                 background-color: #2196F3;
@@ -3901,20 +3910,29 @@ elif menu == "Notification Center" :
         }
         /* Notification card styling */
         .notification-card {
-            background: #f7f7f7; /* Light gray */
-            color: #333333;      /* Dark text */
+            /* Example: a vertical gradient from blue to green */
+            background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
+            
+            /* Make text clearly visible on the gradient */
+            color: #FFFFFF;
+            
+            /* Keep or remove the border-left style as you see fit */
             border-left: 5px solid #4caf50;
+            
+            /* Padding, margin, and rounding for a “card” look */
             padding: 1.2rem;
             margin-bottom: 1rem;
             border-radius: 8px;
+            
+            /* Subtle transition effects for hover */
             transition: transform 0.2s, box-shadow 0.2s;
         }
-
-        }
+        
         .notification-card:hover {
             transform: translateX(5px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
+
         /* Custom button styles */
         .custom-btn {
             background-color: #2196F3;
@@ -3948,34 +3966,23 @@ elif menu == "Notification Center" :
     # Main container with modern card styling
     with st.container():
         st.markdown("<hr>", unsafe_allow_html=True)
-                
+                    
         # Section: Display All Notifications
         st.markdown("<h3>All Notifications</h3>", unsafe_allow_html=True)
         notifications = get_notifications()
         
         if notifications:
-            if st.button("Clear All Notifications", key="clear_all_notifications"):
-                clear_all_notifications()
-                st.success("All notifications cleared!")
-                st.rerun()
-            
-            # Display each notification with a modern card look and a removal button
+            # Display each notification with a modern card look
             for notif in notifications:
-                col1, col2 = st.columns([0.85, 0.15])
-                with col1:
-                    st.markdown(
-                        f"""
-                        <div class="notification-card">
-                            <p><strong>Notification {notif['id']}:</strong> {notif['message']}</p>
-                        </div>
-                        """, unsafe_allow_html=True
-                    )
-                with col2:
-                    if st.button("Remove", key=f"remove_{notif['id']}"):
-                        remove_notification(notif["id"])
-                        st.success("Notification removed!")
-                        st.rerun()
+                st.markdown(
+                    f"""
+                    <div class="notification-card">
+                        <p><strong>Notification {notif['id']}:</strong> {notif['message']}</p>
+                    </div>
+                    """, unsafe_allow_html=True
+                )
         else:
             st.info("No notifications yet!")
         
         st.markdown("</div>", unsafe_allow_html=True)
+
