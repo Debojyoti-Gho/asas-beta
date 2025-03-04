@@ -1516,18 +1516,20 @@ def send_custom_notification():
     return script
 
 
-# Initialize or get the cookie manager instance from session state
-if "cookies" not in st.session_state:
-    st.session_state["cookies"] = EncryptedCookieManager(
+# Cache the cookie manager instance so that it is created only once
+@st.cache(allow_output_mutation=True, suppress_st_warning=True)
+def get_cookie_manager():
+    return EncryptedCookieManager(
         prefix="notif_center_",
         password="noti4321"  # Replace with a secure key in production
     )
 
-cookies = st.session_state["cookies"]
+cookies = get_cookie_manager()
 
-# Wait until cookies are ready
+# Wait until cookies are ready before proceeding
 if not cookies.ready():
     st.stop()
+
 
     
 # Function to retrieve notifications from cookies
