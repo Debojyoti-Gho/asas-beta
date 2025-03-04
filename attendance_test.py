@@ -3088,6 +3088,8 @@ elif menu == "Teacher's Login":
             }
             /* Notification card styling */
             .notification-card {
+                background: #f7f7f7; /* Light gray */
+                color: #333333;      /* Dark text */
                 border-left: 5px solid #4caf50;
                 padding: 1.2rem;
                 margin-bottom: 1rem;
@@ -3867,35 +3869,113 @@ elif menu == "Teacher's Registration" :
     st.info("comming soon!!")
 
 elif menu == "Notification Center" :
-    st.markdown("<hr>", unsafe_allow_html=True)
-            
-    # Section: Display All Notifications
-    st.markdown("<h3>All Notifications</h3>", unsafe_allow_html=True)
-    notifications = get_notifications()
+
+    # Inject custom CSS for an ultra modern design
+    st.markdown(
+        """
+        <style>
+        /* Global styling */
+        body {
+            background: linear-gradient(135deg, #ece9e6, #ffffff);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* Main container styling */
+        .main-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin: 2rem auto;
+            max-width: 900px;
+        }
+        /* Title styling */
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+        }
+        h3 {
+            color: #555;
+            margin-top: 1.5rem;
+        }
+        /* Notification card styling */
+        .notification-card {
+            background: #f7f7f7; /* Light gray */
+            color: #333333;      /* Dark text */
+            border-left: 5px solid #4caf50;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        }
+        .notification-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        /* Custom button styles */
+        .custom-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .custom-btn:hover {
+            background-color: #1976D2;
+        }
+        .clear-btn {
+            background-color: #e91e63;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .clear-btn:hover {
+            background-color: #d81b60;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
     
-    if notifications:
-        if st.button("Clear All Notifications", key="clear_all_notifications"):
-            clear_all_notifications()
-            st.success("All notifications cleared!")
-            st.rerun()
+    # Main container with modern card styling
+    with st.container():
+        st.markdown("<hr>", unsafe_allow_html=True)
+                
+        # Section: Display All Notifications
+        st.markdown("<h3>All Notifications</h3>", unsafe_allow_html=True)
+        notifications = get_notifications()
         
-        # Display each notification with a modern card look and a removal button
-        for notif in notifications:
-            col1, col2 = st.columns([0.85, 0.15])
-            with col1:
-                st.markdown(
-                    f"""
-                    <div class="notification-card">
-                        <p><strong>Notification {notif['id']}:</strong> {notif['message']}</p>
-                    </div>
-                    """, unsafe_allow_html=True
-                )
-            with col2:
-                if st.button("Remove", key=f"remove_{notif['id']}"):
-                    remove_notification(notif["id"])
-                    st.success("Notification removed!")
-                    st.rerun()
-    else:
-        st.info("No notifications yet!")
-    
-    st.markdown("</div>", unsafe_allow_html=True)
+        if notifications:
+            if st.button("Clear All Notifications", key="clear_all_notifications"):
+                clear_all_notifications()
+                st.success("All notifications cleared!")
+                st.rerun()
+            
+            # Display each notification with a modern card look and a removal button
+            for notif in notifications:
+                col1, col2 = st.columns([0.85, 0.15])
+                with col1:
+                    st.markdown(
+                        f"""
+                        <div class="notification-card">
+                            <p><strong>Notification {notif['id']}:</strong> {notif['message']}</p>
+                        </div>
+                        """, unsafe_allow_html=True
+                    )
+                with col2:
+                    if st.button("Remove", key=f"remove_{notif['id']}"):
+                        remove_notification(notif["id"])
+                        st.success("Notification removed!")
+                        st.rerun()
+        else:
+            st.info("No notifications yet!")
+        
+        st.markdown("</div>", unsafe_allow_html=True)
