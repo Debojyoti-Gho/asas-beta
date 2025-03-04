@@ -3196,7 +3196,7 @@ elif menu == "Teacher's Login":
                     # Call the updated function with the proper keyword arguments
                     add_notification(new_notif.strip(), duration_value=duration_value, duration_unit=duration_unit)
                     st.success("Notification added successfully!")
-                    st.experimental_rerun()  # Refresh the page to show new notification
+                    st.rerun()  # Refresh the page to show new notification
                 else:
                     st.error("Please enter a notification message.")
             
