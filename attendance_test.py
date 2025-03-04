@@ -1516,14 +1516,18 @@ def send_custom_notification():
     return script
 
 
-# Initialize the database and create the notifications table if it doesn't exist.
+from datetime import datetime, timedelta
+
+# Initialize the database and create the notifications table with an expiration column
 def init_db():
     conn = sqlite3.connect('notifications.db', check_same_thread=False)
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS notifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            message TEXT NOT NULL
+            message TEXT NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME NOT NULL
         )
     ''')
     conn.commit()
@@ -1535,17 +1539,35 @@ init_db()
 def get_notifications():
     conn = sqlite3.connect('notifications.db', check_same_thread=False)
     c = conn.cursor()
-    c.execute('SELECT id, message FROM notifications ORDER BY id')
+    
+    # Remove expired notifications
+    c.execute("DELETE FROM notifications WHERE expires_at < datetime('now')")
+    conn.commit()
+    
+    # Retrieve remaining notifications
+    c.execute('SELECT id, message, expires_at FROM notifications ORDER BY id')
     rows = c.fetchall()
     conn.close()
     # Return a list of dicts for easier handling
-    return [{"id": row[0], "message": row[1]} for row in rows]
+    return [{"id": row[0], "message": row[1], "expires_at": row[2]} for row in rows]
 
-# Function to add a new notification to the database
-def add_notification(message):
+# Function to add a new notification to the database with a configurable duration
+def add_notification(message, duration_value=24, duration_unit="Hours"):
+    # Convert the duration to hours based on the provided unit
+    if duration_unit.lower() == "hours":
+        duration_hours = duration_value
+    elif duration_unit.lower() == "days":
+        duration_hours = duration_value * 24
+    elif duration_unit.lower() == "months":
+        duration_hours = duration_value * 24 * 30  # Approximation: 30 days per month
+    else:
+        duration_hours = duration_value  # Fallback to hours if unit is unrecognized
+
+    expires_at = datetime.utcnow() + timedelta(hours=duration_hours)
+    expires_at_str = expires_at.strftime('%Y-%m-%d %H:%M:%S')
     conn = sqlite3.connect('notifications.db', check_same_thread=False)
     c = conn.cursor()
-    c.execute('INSERT INTO notifications (message) VALUES (?)', (message,))
+    c.execute('INSERT INTO notifications (message, expires_at) VALUES (?, ?)', (message, expires_at_str))
     conn.commit()
     conn.close()
 
@@ -3155,15 +3177,38 @@ elif menu == "Teacher's Login":
                 key="notif_input"
             )
             
+            # Duration input: value and unit
+            duration_value = st.number_input(
+                "Enter duration value:",
+                min_value=1,
+                value=24,
+                step=1,
+                key="duration_value"
+            )
+            duration_unit = st.selectbox(
+                "Select duration unit:",
+                options=["Hours", "Days", "Months"],
+                key="duration_unit"
+            )
+            
             if st.button("Add Notification", key="add_notif_button"):
                 if new_notif.strip():
-                    add_notification(new_notif.strip())
+                    # Convert the duration input into hours based on the selected unit
+                    if duration_unit == "Hours":
+                        duration_hours = duration_value
+                    elif duration_unit == "Days":
+                        duration_hours = duration_value * 24
+                    elif duration_unit == "Months":
+                        duration_hours = duration_value * 24 * 30  # approximating 30 days per month
+                    
+                    add_notification(new_notif.strip(), duration_hours=duration_hours)
                     st.success("Notification added successfully!")
-                    st.rerun()  # Refresh the page to show new notification
+                    st.experimental_rerun()  # Refresh the page to show the new notification
                 else:
                     st.error("Please enter a notification message.")
             
             st.markdown("<hr>", unsafe_allow_html=True)
+
             
             # Section: Display All Notifications
             st.markdown("<h3>All Notifications</h3>", unsafe_allow_html=True)
