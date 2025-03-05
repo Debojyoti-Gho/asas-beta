@@ -1035,6 +1035,7 @@ def is_face_registered(face_blob):
     # Step 1: Anti-Spoofing (Detect if it's a printed photo or screen)
     if not detect_spoof(new_face_path):
         st.error("Possible scam detected! This appears to be a printed photo or screen image.")
+        st.info("scroll to the previous form and click the button again to take a new picture")
         st.stop()
 
     # Step 2: Face Verification (Check if the face is already registered)
@@ -1726,6 +1727,7 @@ elif menu == "Student's Registration":
                 # Check if this face is already registered
                 if is_face_registered(face_blob):
                     st.error("This face is already registered. Please use a different face or login.")
+                    st.info("scroll to the previous form and click the button again to take a new picture")
                     st.stop()  # Stop execution if duplicate face is detected
                 else:
                     st.success("Face captured successfully!")
