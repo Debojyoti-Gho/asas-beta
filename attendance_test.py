@@ -1650,6 +1650,7 @@ if menu == "Home":
         st.subheader(item["question"])
         st.write(item["answer"])
         
+        
 elif menu == "Student's Registration":
     st.header("Student Registration")
 
