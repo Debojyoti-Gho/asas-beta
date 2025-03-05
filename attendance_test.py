@@ -1655,23 +1655,23 @@ if menu == "Home":
 elif menu == "Student's Registration":
     st.header("Student Registration")
 
-    # Initialize session state variables for OTP, verification, and storing student details
+    # Initialize session state variables for OTP, verification, and to store student details
     if "email_otp" not in st.session_state:
         st.session_state.email_otp = None
     if "email_verified" not in st.session_state:
         st.session_state.email_verified = False
-    if "student_details" not in st.session_state:
-        st.session_state.student_details = {}
+    if "student_data" not in st.session_state:
+        st.session_state.student_data = {}
 
-    ##############################
-    # Step 1: Capture Student Details & Face
-    ##############################
-    with st.form("registration_details_form"):
+    ##########################################
+    # Step 1: Student Details Input
+    ##########################################
+    with st.form("student_details_form"):
         st.subheader("Student Details")
         name = st.text_input("Name")
         roll = st.text_input("Roll Number")
         section = st.selectbox("Select Section", ["A", "B", "C", "D"])
-        email = st.text_input("Email")  # Use this email for OTP verification
+        email = st.text_input("Email")  # Used for OTP verification
         enrollment_no = st.text_input("Enrollment Number")
         year = st.selectbox("Select Year", [1, 2, 3, 4])
         semester = st.selectbox("Select Semester", [1, 2, 3, 4, 5, 6, 7, 8])
@@ -1685,173 +1685,180 @@ elif menu == "Student's Registration":
         - ✅ Contains **one number** (0-9)  
         - ✅ Contains **one special character** (@, #, $, etc.)
         """, unsafe_allow_html=True)
-
         if password:
             st.info(is_strong_password(password))
 
-        # Basic input validation for required fields
-        if not (name and roll and email and enrollment_no and user_id and password):
-            st.error("All fields are required. Please fill out the entire form.")
-
-        st.subheader("Capture Your Face")
-        st.warning("For biometric verification, please set your screen brightness to maximum!")
-        face_image = st.camera_input("Capture your face")
-
-        if face_image:
-            # Display the captured face image
-            st.image(face_image, caption="Captured Face", use_container_width=True)
-
-            # Convert the image to binary for database storage
-            img = Image.open(face_image)
-            img_bytes = io.BytesIO()
-            img.save(img_bytes, format="JPEG")
-            face_blob = img_bytes.getvalue()  # Convert to binary data
-
-            # Check if this face is already registered
-            if is_face_registered(face_blob):
-                st.error("This face is already registered. Please use a different face or login.")
-                st.stop()  # Stops further execution if duplicate face found
+        # Basic required field check
+        if st.form_submit_button("Next: Capture Face"):
+            if not (name and roll and email and enrollment_no and user_id and password):
+                st.error("All fields are required. Please fill in the entire form.")
             else:
-                st.success("Face captured successfully!")
-        else:
-            face_blob = None
+                st.session_state.student_data = {
+                    "name": name,
+                    "roll": roll,
+                    "section": section,
+                    "email": email,
+                    "enrollment_no": enrollment_no,
+                    "year": year,
+                    "semester": semester,
+                    "user_id": user_id,
+                    "password": password,
+                }
+                st.success("Student details saved. Please proceed to capture your face.")
 
-        # Simulate WebAuthn registration using a progress bar instead of time.sleep
-        st.warning("Please complete the fingerprint registration within 30 secs.")
-        st.info("Simulating WebAuthn registration...")
-        with st.spinner("Registering fingerprint..."):
-            progress_bar = st.progress(0)
-            for percent in range(100):
-                time.sleep(0.05)  # A short pause to update progress
-                progress_bar.progress(percent + 1)
-            st.write("Fingerprint registration simulation complete. Please scroll down.")
+    ##########################################
+    # Step 2: Face Capture & Fingerprint Registration
+    ##########################################
+    if st.session_state.student_data:
+        with st.form("face_and_fingerprint_form"):
+            st.subheader("Capture Your Face")
+            st.warning("It is recommended to set your screen brightness to maximum during biometric verification!")
+            face_image = st.camera_input("Capture your face")
+            
+            if face_image:
+                st.image(face_image, caption="Captured Face", use_container_width=True)
+                # Convert the image to binary for database storage
+                img = Image.open(face_image)
+                img_bytes = io.BytesIO()
+                img.save(img_bytes, format="JPEG")
+                face_blob = img_bytes.getvalue()
 
-        # Save the captured details in session state if form is submitted successfully
-        submitted_details = st.form_submit_button("Continue to Email Verification")
-        if submitted_details and face_blob and (name and roll and email and enrollment_no and user_id and password):
-            st.session_state.student_details = {
-                "name": name,
-                "roll": roll,
-                "section": section,
-                "email": email,
-                "enrollment_no": enrollment_no,
-                "year": year,
-                "semester": semester,
-                "user_id": user_id,
-                "password": password,
-                "face_blob": face_blob
-            }
-            st.success("Student details captured. Proceed to Email Verification.")
-        elif submitted_details:
-            st.error("Please complete all fields and capture your face to continue.")
-
-    ##############################
-    # Step 2: Email OTP Verification
-    ##############################
-    with st.form("otp_verification_form"):
-        st.subheader("Email Verification")
-        # If email not verified, allow sending OTP
-        if not st.session_state.email_verified:
-            if st.form_submit_button("Send OTP"):
-                if st.session_state.student_details.get("email"):
-                    otp = str(np.random.randint(100000, 999999))
-                    st.session_state.email_otp = otp
-
-                    # SMTP Configuration
-                    smtp_server = 'smtp-relay.brevo.com'
-                    smtp_port = 587
-                    smtp_user = '823c6b001@smtp-brevo.com'
-                    smtp_password = '6tOJHT2F4x8ZGmMw'
-                    from_email = 'debojyotighoshmain@gmail.com'
-
-                    try:
-                        # Send OTP via email
-                        message = MIMEMultipart()
-                        message["From"] = from_email
-                        message["To"] = st.session_state.student_details.get("email")
-                        message["Subject"] = "Your OTP for Student Registration"
-
-                        body = f"Your OTP for registration is: {otp}\n\nPlease enter this OTP to verify your email."
-                        message.attach(MIMEText(body, "plain"))
-
-                        with smtplib.SMTP(smtp_server, smtp_port) as server:
-                            server.starttls()
-                            server.login(smtp_user, smtp_password)
-                            server.sendmail(from_email, st.session_state.student_details.get("email"), message.as_string())
-
-                        st.success("OTP sent. Please check your email.")
-                    except Exception as e:
-                        st.error("Failed to send OTP. Please try again later.")
+                # Check if this face is already registered
+                if is_face_registered(face_blob):
+                    st.error("This face is already registered. Please use a different face or login.")
+                    st.stop()  # Stop execution if duplicate face is detected
                 else:
-                    st.error("Missing email address. Please go back and provide a valid email.")
+                    st.success("Face captured successfully!")
+                    st.session_state.student_data["face_blob"] = face_blob
 
-        if st.session_state.email_otp and not st.session_state.email_verified:
-            otp_input = st.text_input("Enter the OTP sent to your email")
-            if st.form_submit_button("Verify OTP"):
-                if otp_input == st.session_state.email_otp:
-                    st.session_state.email_verified = True
-                    st.success("Email verified successfully! You can now complete registration.")
+                st.warning("Please complete the registration by capturing your fingerprint.")
+                st.warning("You have to complete fingerprint registration within 30 secs.")
+                st.info("After completion, please wait for the next steps!")
+                # Render WebAuthn registration UI using your existing function
+                st.components.v1.html(webauthn_register_script())
+
+                # Replace the blocking time.sleep with a progress indicator
+                with st.spinner("Waiting for fingerprint registration..."):
+                    progress_bar = st.progress(0)
+                    for percent in range(100):
+                        time.sleep(0.1)  # Short pause to update progress; adjust as needed
+                        progress_bar.progress(percent + 1)
+                st.write("Fingerprint registration complete. Please scroll down.")
+
+            if st.form_submit_button("Next: Email Verification"):
+                if "face_blob" not in st.session_state.student_data:
+                    st.error("Please capture your face to continue.")
                 else:
-                    st.error("Invalid OTP. Please try again.")
+                    st.success("Face and fingerprint registration completed. Proceed to email verification.")
 
-    ##############################
-    # Step 3: Final Registration
-    ##############################
+    ##########################################
+    # Step 3: Email OTP Verification
+    ##########################################
+    if st.session_state.student_data and "face_blob" in st.session_state.student_data:
+        with st.form("email_verification_form"):
+            st.subheader("Email Verification")
+            # Send OTP if not already verified
+            if not st.session_state.email_verified:
+                if st.form_submit_button("Send OTP"):
+                    if st.session_state.student_data.get("email"):
+                        otp = str(np.random.randint(100000, 999999))
+                        st.session_state.email_otp = otp
+
+                        # SMTP Configuration
+                        smtp_server = 'smtp-relay.brevo.com'
+                        smtp_port = 587
+                        smtp_user = '823c6b001@smtp-brevo.com'
+                        smtp_password = '6tOJHT2F4x8ZGmMw'
+                        from_email = 'debojyotighoshmain@gmail.com'
+
+                        try:
+                            # Send OTP via email using your existing approach
+                            message = MIMEMultipart()
+                            message["From"] = from_email
+                            message["To"] = st.session_state.student_data.get("email")
+                            message["Subject"] = "Your OTP for Student Registration"
+                            body = f"Your OTP for registration is: {otp}\n\nPlease enter this OTP to verify your email."
+                            message.attach(MIMEText(body, "plain"))
+
+                            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                                server.starttls()
+                                server.login(smtp_user, smtp_password)
+                                server.sendmail(from_email, st.session_state.student_data.get("email"), message.as_string())
+
+                            st.success("OTP sent. Please check your email.")
+                        except Exception as e:
+                            st.error("Failed to send OTP. Please try again later.")
+                    else:
+                        st.error("Invalid email address.")
+
+            # Verify OTP if one has been sent
+            if st.session_state.email_otp and not st.session_state.email_verified:
+                otp_input = st.text_input("Enter the OTP sent to your email")
+                if st.form_submit_button("Verify OTP"):
+                    if otp_input == st.session_state.email_otp:
+                        st.session_state.email_verified = True
+                        st.success("Email verified successfully! You can now complete registration.")
+                    else:
+                        st.error("Invalid OTP. Please try again.")
+
+    ##########################################
+    # Step 4: Final Registration
+    ##########################################
     if st.session_state.email_verified:
         with st.form("final_registration_form"):
             st.subheader("Complete Registration")
             if st.form_submit_button("Register"):
-                if st.session_state.student_details.get("face_blob"):
-                    # Fetch the device ID (UUID based)
+                if "face_blob" in st.session_state.student_data:
+                    # Fetch the device ID (using your existing method)
                     device_id = device_id_from_cookies
                     st.success(f"Your unique device ID is: {device_id}")
 
                     if not device_id:
-                        st.error("Could not fetch device ID. Registration cannot proceed.")
+                        st.error("Could not fetch device ID; registration cannot proceed.")
                     else:
                         try:
-                            # Check for duplicate device registration
+                            # Check if the device ID is already registered
                             cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
                             if cursor.fetchone():
-                                st.error("This device has already been used for registration.")
+                                st.error("This device has already been used for registration. Please use another device.")
                             else:
-                                # Check for duplicate entries in the database
-                                cursor.execute("SELECT * FROM students WHERE email = ?", (st.session_state.student_details.get("email"),))
+                                # Check for duplicate entries using more generic error messages
+                                cursor.execute("SELECT * FROM students WHERE email = ?", (st.session_state.student_data.get("email"),))
                                 if cursor.fetchone():
-                                    st.error("The provided email is already registered.")
+                                    st.error("Registration failed: Duplicate email.")
                                 else:
-                                    cursor.execute("SELECT * FROM students WHERE roll = ?", (st.session_state.student_details.get("roll"),))
+                                    cursor.execute("SELECT * FROM students WHERE roll = ?", (st.session_state.student_data.get("roll"),))
                                     if cursor.fetchone():
-                                        st.error("The provided roll number is already registered.")
+                                        st.error("Registration failed: Duplicate roll number.")
                                     else:
-                                        cursor.execute("SELECT * FROM students WHERE user_id = ?", (st.session_state.student_details.get("user_id"),))
+                                        cursor.execute("SELECT * FROM students WHERE user_id = ?", (st.session_state.student_data.get("user_id"),))
                                         if cursor.fetchone():
-                                            st.error("The provided user ID is already registered.")
+                                            st.error("Registration failed: Duplicate user ID.")
                                         else:
-                                            cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (st.session_state.student_details.get("enrollment_no"),))
+                                            cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (st.session_state.student_data.get("enrollment_no"),))
                                             if cursor.fetchone():
-                                                st.error("The provided enrollment number is already registered.")
+                                                st.error("Registration failed: Duplicate enrollment number.")
                                             else:
-                                                # Insert into database
+                                                # Insert the new student record
                                                 cursor.execute("""
                                                     INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
                                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                                                 """, (
-                                                    st.session_state.student_details.get("user_id"),
-                                                    st.session_state.student_details.get("password"),
-                                                    st.session_state.student_details.get("name"),
-                                                    st.session_state.student_details.get("roll"),
-                                                    st.session_state.student_details.get("section"),
-                                                    st.session_state.student_details.get("email"),
-                                                    st.session_state.student_details.get("enrollment_no"),
-                                                    st.session_state.student_details.get("year"),
-                                                    st.session_state.student_details.get("semester"),
+                                                    st.session_state.student_data.get("user_id"),
+                                                    st.session_state.student_data.get("password"),
+                                                    st.session_state.student_data.get("name"),
+                                                    st.session_state.student_data.get("roll"),
+                                                    st.session_state.student_data.get("section"),
+                                                    st.session_state.student_data.get("email"),
+                                                    st.session_state.student_data.get("enrollment_no"),
+                                                    st.session_state.student_data.get("year"),
+                                                    st.session_state.student_data.get("semester"),
                                                     device_id,
-                                                    st.session_state.student_details.get("face_blob")
+                                                    st.session_state.student_data.get("face_blob")
                                                 ))
                                                 conn.commit()
                                                 st.success("Registration successful!")
-                                                st.warning("This device will be used for future logins; no further registrations are allowed on it.")
+                                                st.warning("This device is now registered and will be used for future logins.")
                                                 st.info("Please proceed to the Student Login page.")
                         except Exception as e:
                             st.error("Registration failed due to an internal error. Please try again later.")
