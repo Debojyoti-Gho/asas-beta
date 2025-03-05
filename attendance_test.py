@@ -1602,7 +1602,7 @@ def is_strong_password(password):
     if not re.search(r"\d", password):
         return "❌ Password must contain at least one number."
         st.stop()
-    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+    if not re.search(r"[!_@#$%^&*(),.?\":{}|<>]", password):
         return "❌ Password must contain at least one special character."
         st.stop()
     return "✅ Strong password!"
@@ -1740,7 +1740,7 @@ elif menu == "Student's Registration":
                 # Replace the blocking time.sleep with a progress indicator
                 with st.spinner("Waiting for fingerprint registration..."):
                     progress_bar = st.progress(0)
-                    for percent in range(100):
+                    for percent in range(50):
                         time.sleep(0.1)  # Short pause to update progress; adjust as needed
                         progress_bar.progress(percent + 1)
                 st.write("Fingerprint registration complete. Please scroll down.")
