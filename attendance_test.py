@@ -1669,14 +1669,17 @@ elif menu == "Student's Registration":
     ##########################################
     with st.form("student_details_form"):
         st.subheader("Student Details")
-        name = st.text_input("Name")
-        roll = st.text_input("Roll Number")
-        section = st.selectbox("Select Section", ["A", "B", "C", "D"])
-        email = st.text_input("Email")  # Used for OTP verification
-        enrollment_no = st.text_input("Enrollment Number")
-        year = st.selectbox("Select Year", [1, 2, 3, 4])
-        semester = st.selectbox("Select Semester", [1, 2, 3, 4, 5, 6, 7, 8])
-        user_id = st.text_input("User ID")
+        name = st.text_input("Name", value=st.session_state.student_data.get("name", ""))
+        roll = st.text_input("Roll Number", value=st.session_state.student_data.get("roll", ""))
+        section = st.selectbox("Select Section", ["A", "B", "C", "D"],
+                               index=["A", "B", "C", "D"].index(st.session_state.student_data.get("section", "A")))
+        email = st.text_input("Email", value=st.session_state.student_data.get("email", ""))
+        enrollment_no = st.text_input("Enrollment Number", value=st.session_state.student_data.get("enrollment_no", ""))
+        year = st.selectbox("Select Year", [1, 2, 3, 4],
+                            index=[1,2,3,4].index(st.session_state.student_data.get("year", 1)))
+        semester = st.selectbox("Select Semester", [1, 2, 3, 4, 5, 6, 7, 8],
+                                index=[1,2,3,4,5,6,7,8].index(st.session_state.student_data.get("semester", 1)))
+        user_id = st.text_input("User ID", value=st.session_state.student_data.get("user_id", ""))
         password = st.text_input("Password", type="password")
         st.markdown("""
         **Password must meet the following criteria:**  
@@ -1689,10 +1692,11 @@ elif menu == "Student's Registration":
         if password:
             st.info(is_strong_password(password))
 
-        # Basic required field check
         if st.form_submit_button("Next: Capture Face"):
             if not (name and roll and email and enrollment_no and user_id and password):
                 st.error("All fields are required. Please fill in the entire form.")
+                if st.button("Try Again", key="try_again_details"):
+                    st.rerun()
             else:
                 st.session_state.student_data = {
                     "name": name,
@@ -1727,8 +1731,9 @@ elif menu == "Student's Registration":
                 # Check if this face is already registered
                 if is_face_registered(face_blob):
                     st.error("This face is already registered. Please use a different face or login.")
-                    st.info("scroll to the previous form and click the button again to take a new picture")
-                    st.stop()  # Stop execution if duplicate face is detected
+                    st.info("Scroll to the previous form and click the button again to take a new picture.")
+                    if st.button("Try Again", key="try_again_face"):
+                        st.rerun()
                 else:
                     st.success("Face captured successfully!")
                     st.session_state.student_data["face_blob"] = face_blob
@@ -1750,6 +1755,8 @@ elif menu == "Student's Registration":
             if st.form_submit_button("Next: Email Verification"):
                 if "face_blob" not in st.session_state.student_data:
                     st.error("Please capture your face to continue.")
+                    if st.button("Try Again", key="try_again_face_submit"):
+                        st.rerun()
                 else:
                     st.success("Face and fingerprint registration completed. Proceed to email verification.")
 
@@ -1790,8 +1797,12 @@ elif menu == "Student's Registration":
                             st.success("OTP sent. Please check your email.")
                         except Exception as e:
                             st.error("Failed to send OTP. Please try again later.")
+                            if st.button("Try Again", key="try_again_otp_send"):
+                                st.rerun()
                     else:
                         st.error("Invalid email address.")
+                        if st.button("Try Again", key="try_again_invalid_email"):
+                            st.rerun()
 
             # Verify OTP if one has been sent
             if st.session_state.email_otp and not st.session_state.email_verified:
@@ -1802,6 +1813,8 @@ elif menu == "Student's Registration":
                         st.success("Email verified successfully! You can now complete registration.")
                     else:
                         st.error("Invalid OTP. Please try again.")
+                        if st.button("Try Again", key="try_again_verify_otp"):
+                            st.rerun()
 
     ##########################################
     # Step 4: Final Registration
@@ -1817,29 +1830,41 @@ elif menu == "Student's Registration":
 
                     if not device_id:
                         st.error("Could not fetch device ID; registration cannot proceed.")
+                        if st.button("Try Again", key="try_again_device_id"):
+                            st.rerun()
                     else:
                         try:
                             # Check if the device ID is already registered
                             cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
                             if cursor.fetchone():
                                 st.error("This device has already been used for registration. Please use another device.")
+                                if st.button("Try Again", key="try_again_duplicate_device"):
+                                    st.rerun()
                             else:
-                                # Check for duplicate entries using more generic error messages
+                                # Check for duplicate entries using generic error messages
                                 cursor.execute("SELECT * FROM students WHERE email = ?", (st.session_state.student_data.get("email"),))
                                 if cursor.fetchone():
                                     st.error("Registration failed: Duplicate email.")
+                                    if st.button("Try Again", key="try_again_duplicate_email"):
+                                        st.rerun()
                                 else:
                                     cursor.execute("SELECT * FROM students WHERE roll = ?", (st.session_state.student_data.get("roll"),))
                                     if cursor.fetchone():
                                         st.error("Registration failed: Duplicate roll number.")
+                                        if st.button("Try Again", key="try_again_duplicate_roll"):
+                                            st.rerun()
                                     else:
                                         cursor.execute("SELECT * FROM students WHERE user_id = ?", (st.session_state.student_data.get("user_id"),))
                                         if cursor.fetchone():
                                             st.error("Registration failed: Duplicate user ID.")
+                                            if st.button("Try Again", key="try_again_duplicate_user"):
+                                                st.rerun()
                                         else:
                                             cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (st.session_state.student_data.get("enrollment_no"),))
                                             if cursor.fetchone():
                                                 st.error("Registration failed: Duplicate enrollment number.")
+                                                if st.button("Try Again", key="try_again_duplicate_enrollment"):
+                                                    st.rerun()
                                             else:
                                                 # Insert the new student record
                                                 cursor.execute("""
@@ -1864,8 +1889,12 @@ elif menu == "Student's Registration":
                                                 st.info("Please proceed to the Student Login page.")
                         except Exception as e:
                             st.error("Registration failed due to an internal error. Please try again later.")
+                            if st.button("Try Again", key="try_again_final"):
+                                st.rerun()
                 else:
                     st.error("Face image not captured. Please go back and capture your face.")
+                    if st.button("Try Again", key="try_again_final_face"):
+                        st.rerun()
 
 
 
