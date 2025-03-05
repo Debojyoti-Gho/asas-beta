@@ -1006,7 +1006,7 @@ def detect_spoof(image_path):
     st.text(f"Depth variance: {depth_variance}")
 
     # Thresholds for spoof detection
-    sharpness_threshold = 130
+    sharpness_threshold = 85
     edge_threshold = 4000
     depth_threshold = 500  # Higher variance means real 3D depth
 
@@ -1926,11 +1926,11 @@ elif menu == "Student's Login":
                                 st.success("Face recognized successfully!")
                                 # Proceed with the rest of the login process (location, Bluetooth, etc.)
                                 st.success("You have passed the location check, and your location has been verified.")
-                                time.sleep(2)
+                        
                                 st.success("Your registered device has been verified successfully.")
-                                time.sleep(2)
+                                
                                 st.success("Fingerprint authentication successful.")
-                                time.sleep(2)
+                                
                                 st.success(f"Login successful! Welcome, {user[2]}")
 
                                 # Check for Bluetooth signal during login session
@@ -3232,7 +3232,7 @@ elif menu == "Teacher's Login":
                             st.success("Notification removed!")
                             st.rerun()
             else:
-                st.info("No notifications yet. No notifications yet. Add your first notification above!")
+                st.info("No notifications yet. Add your first notification above!")
             
             st.markdown("</div>", unsafe_allow_html=True)
         # # Button to start capture and retry mechanism
