@@ -2961,7 +2961,7 @@ elif menu == "Teacher's Login":
                     student_id = student[0]
                     cursor.execute("SELECT * FROM attendance WHERE student_id = ?", (student_id,))
                     attendance_records = cursor.fetchall()
-                    attendance = [{"date": record[1], "status": sum(x or 0 for x in record[3:]) > 0} for record in attendance_records]
+                    attendance = [{"date": record[1], "status": sum(int(x) if str(x).isdigit() else 0 for x in record[3:]) > 0} for record in attendance_records]
                     students.append({
                         "name": student[2],
                         "attendance": attendance
