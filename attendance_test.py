@@ -1036,7 +1036,6 @@ def is_face_registered(face_blob):
     if not detect_spoof(new_face_path):
         st.error("Possible scam detected! This appears to be a printed photo or screen image.")
         st.info("scroll to the previous form and click the previously clicked button again to take a new picture and procceed further")
-        st.stop()
 
     # Step 2: Face Verification (Check if the face is already registered)
     cursor.execute("SELECT student_face FROM students")
