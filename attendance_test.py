@@ -1675,23 +1675,28 @@ elif menu == "Student's Registration":
         semester = st.selectbox("Select Semester", [1, 2, 3, 4, 5, 6, 7, 8])
         user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
-        st.markdown("""
-        **Password must meet the following criteria:**  
-        - ✅ At least **8 characters** long  
-        - ✅ Contains **one uppercase letter** (A-Z)  
-        - ✅ Contains **one lowercase letter** (a-z)  
-        - ✅ Contains **one number** (0-9)  
-        - ✅ Contains **one special character** (@, #, $, etc.)
-        """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            **Password must meet the following criteria:**  
+            - ✅ At least **8 characters** long  
+            - ✅ Contains **one uppercase letter** (A-Z)  
+            - ✅ Contains **one lowercase letter** (a-z)  
+            - ✅ Contains **one number** (0-9)  
+            - ✅ Contains **one special character** (@, #, $, etc.)
+            """,
+            unsafe_allow_html=True,
+        )
 
         if password:
             st.info(is_strong_password(password))
 
         # Capture face photo
         st.subheader("Capture Your Face")
-        st.warning("You are always recommended to set your screen brightness to maximum level while biometric verification!!")
+        st.warning(
+            "You are always recommended to set your screen brightness to maximum level while biometric verification!!"
+        )
         face_image = st.camera_input("Capture your face")
-    
+
         face_blob = None  # To store the binary image data
         if face_image:
             st.image(face_image, caption="Captured Face", use_container_width=True)
@@ -1714,11 +1719,11 @@ elif menu == "Student's Registration":
                 # Simulate waiting for the WebAuthn registration process
                 time.sleep(20)
                 st.write("Please scroll down")
-        
+
         st.subheader("Email Verification")
         # Send OTP Button – this remains visible until email is verified
         if not st.session_state.email_verified:
-            if st.form_submit_button("Send OTP"):
+            if st.form_submit_button("Send OTP", key="send_otp_button"):
                 if email:
                     otp = str(np.random.randint(100000, 999999))
                     st.session_state.email_otp = otp
@@ -1754,7 +1759,7 @@ elif menu == "Student's Registration":
         # OTP Verification
         if st.session_state.email_otp and not st.session_state.email_verified:
             otp_input = st.text_input("Enter the OTP sent to your email")
-            if st.form_submit_button("Verify OTP"):
+            if st.form_submit_button("Verify OTP", key="verify_otp_button"):
                 if otp_input == st.session_state.email_otp:
                     st.session_state.email_verified = True
                     st.success("Email verified successfully! You can proceed with registration.")
@@ -1762,7 +1767,7 @@ elif menu == "Student's Registration":
                     st.error("Invalid OTP. Please try again.")
 
         # Always display the Register button
-        if st.form_submit_button("Register"):
+        if st.form_submit_button("Register", key="register_button"):
             # Check if prerequisites are met before proceeding
             if not st.session_state.email_verified:
                 st.error("Please verify your email before registering.")
@@ -1781,7 +1786,11 @@ elif menu == "Student's Registration":
                     # Check if the device ID is already registered
                     cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
                     if cursor.fetchone():
-                        st.error("This device has already been used for registration. Only one registration is allowed per device. Please refresh and start again!")
+                        st.error(
+                            "This device has already been used for registration. "
+                            "Only one registration is allowed per device. "
+                            "Please refresh and start again!"
+                        )
                     else:
                         # Check for duplicate entries in the database for email, roll, user ID, and enrollment number
                         cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
@@ -1801,14 +1810,35 @@ elif menu == "Student's Registration":
                                         st.error("This enrollment number is already registered. Please refresh and start again!")
                                     else:
                                         # Insert into database
-                                        cursor.execute("""
-                                            INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
+                                        cursor.execute(
+                                            """
+                                            INSERT INTO students 
+                                            (user_id, password, name, roll, section, email, enrollment_no, 
+                                             year, semester, device_id, student_face)
                                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                            """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
+                                            """,
+                                            (
+                                                user_id,
+                                                password,
+                                                name,
+                                                roll,
+                                                section,
+                                                email,
+                                                enrollment_no,
+                                                year,
+                                                semester,
+                                                device_id,
+                                                face_blob,
+                                            ),
+                                        )
                                         conn.commit()
                                         st.success("Registration successful!")
-                                        st.warning("From now on this device will be considered the only registered and verified device for future logins")
+                                        st.warning(
+                                            "From now on this device will be considered the only registered "
+                                            "and verified device for future logins"
+                                        )
                                         st.info("Please proceed to the Student Login page.")
+
 
 
                                                 
