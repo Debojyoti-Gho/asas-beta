@@ -1649,8 +1649,9 @@ if menu == "Home":
     for item in faq:
         st.subheader(item["question"])
         st.write(item["answer"])
-        
-        
+
+
+elif menu == "Student's Registration":
 # ------------------------------
 # Session State Initialization
 # ------------------------------
