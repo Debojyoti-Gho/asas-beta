@@ -1714,25 +1714,30 @@ if st.session_state.step == 1:
 elif st.session_state.step == 2:
     st.subheader("Capture Your Face")
     st.warning("Please set your screen brightness to maximum for better biometric capture.")
-    face_image = st.camera_input("Capture your face")
 
-    if face_image:
-        img = Image.open(face_image)
-        img_bytes = io.BytesIO()
-        img.save(img_bytes, format="JPEG")
-        face_blob = img_bytes.getvalue()
+    with st.form("face_capture_form"):
+        face_image = st.camera_input("Capture your face")
 
-        if is_face_registered(face_blob):
-            st.error("This face is already registered. Please try again with a different face.")
-        else:
-            st.success("Face captured successfully!")
-            st.session_state.face_blob = face_blob
-            st.session_state.face_verified = True
+        submitted = st.form_submit_button("Capture and Continue")
 
-            # Add a "Next" button explicitly
-            if st.button("Next"):
-                st.session_state.step = 3
-                st.rerun()
+        if submitted:
+            if face_image:
+                img = Image.open(face_image)
+                img_bytes = io.BytesIO()
+                img.save(img_bytes, format="JPEG")
+                face_blob = img_bytes.getvalue()
+
+                if is_face_registered(face_blob):
+                    st.error("This face is already registered. Please try again with a different face.")
+                else:
+                    st.success("Face captured successfully!")
+                    st.session_state.face_blob = face_blob
+                    st.session_state.face_verified = True
+                    st.session_state.step = 3
+                    st.rerun()
+            else:
+                st.error("Please capture your face before continuing.")
+
 
 # ---- STEP 3: WebAuthn / Fingerprint ----
 elif st.session_state.step == 3:
