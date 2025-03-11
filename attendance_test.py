@@ -40,61 +40,56 @@ import timm
 import re
 import base64
 
+
+
 def show_intro_video():
     st.markdown("""
         <style>
-            /* Hide Streamlit default elements initially */
-            .main, footer {visibility: hidden;}
-            
-            /* Spinner animation */
-            .spinner {
-                border: 4px solid rgba(255, 255, 255, 0.2);
-                border-top: 4px solid white;
-                border-radius: 50%;
-                width: 40px;
-                height: 40px;
-                animation: spin 1s linear infinite;
-                margin: auto;
+            /* Full screen wrapper */
+            #introWrapper {
+                position: fixed;
+                top: 0; left: 0;
+                height: 100vh; width: 100vw;
+                background: linear-gradient(135deg, #b1d34b, #3cb878);
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                transition: all 1s ease;
             }
 
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-
-            /* 3D text animation */
+            /* Text animation */
             .intro-text {
                 font-size: 3em;
-                font-weight: 900;
-                background: linear-gradient(to right, #ffffff, #c9c9c9);
+                font-weight: bold;
+                background: linear-gradient(to right, #ffffff, #e0e0e0);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
-                animation: textSpin 2.5s ease-in-out forwards;
+                animation: spinIn 2s ease-in-out;
                 transform-style: preserve-3d;
-                text-align: center;
-                margin-bottom: 30px;
             }
 
-            @keyframes textSpin {
+            @keyframes spinIn {
                 0% { transform: rotateY(0deg); opacity: 0; }
                 50% { opacity: 1; }
                 100% { transform: rotateY(360deg); opacity: 1; }
             }
 
-            /* Gradient background for intro */
-            #introWrapper {
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 100vh;
-                width: 100vw;
-                background: linear-gradient(135deg, #b1d34b, #3cb878);
-                z-index: 9999;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-direction: column;
-                transition: all 1s ease;
+            /* Spinner */
+            .spinner {
+                margin-top: 20px;
+                border: 5px solid rgba(255, 255, 255, 0.2);
+                border-top: 5px solid white;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
             }
         </style>
 
@@ -105,32 +100,28 @@ def show_intro_video():
         </div>
 
         <script>
+            // Wait for everything to load
             window.addEventListener("load", function() {
                 const intro = document.getElementById("introWrapper");
                 const chime = document.getElementById("chime");
 
-                // Try to play the sound
+                // Play chime sound (if allowed by browser)
                 if (chime) {
-                    chime.play().catch(e => {
-                        console.log("Auto-play blocked. Will play after interaction.");
-                    });
+                    chime.play().catch(e => console.log("Chime autoplay blocked"));
                 }
 
-                // Hide the intro after 5.5 seconds
-                setTimeout(function() {
+                // Hide the intro screen after 5.5 seconds
+                setTimeout(() => {
                     if (intro) {
-                        intro.style.display = "none";
+                        intro.style.opacity = "0";
+                        intro.style.pointerEvents = "none";
+                        intro.style.zIndex = "-1";
                     }
-
-                    // Unhide main content
-                    const main = parent.document.querySelector(".main");
-                    const footer = parent.document.querySelector("footer");
-                    if (main) main.style.visibility = "visible";
-                    if (footer) footer.style.visibility = "visible";
                 }, 5500);
             });
         </script>
     """, unsafe_allow_html=True)
+
     
 show_intro_video()
 time.sleep(6)
