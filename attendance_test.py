@@ -124,7 +124,7 @@ def show_intro_video():
 
     
 show_intro_video()
-time.sleep(6)
+
 
 
 # Database setup
