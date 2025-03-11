@@ -1650,171 +1650,176 @@ if menu == "Home":
         st.subheader(item["question"])
         st.write(item["answer"])
 
-
-st.header("Student Registration")
-
-# Init session state variables
-for key, default in {
-    "step": 1,
-    "email_otp": None,
-    "email_verified": False,
-    "face_blob": None,
-    "face_verified": False,
-    "form_data": {}
-}.items():
-    if key not in st.session_state:
-        st.session_state[key] = default
-
-# ---- STEP 1: Student Details ----
-if st.session_state.step == 1:
-    with st.form("student_details_form"):
-        st.subheader("Student Details")
-
-        # Persist inputs in session_state
-        def save_student_details():
-            st.session_state.form_data = {
-                "name": name,
-                "roll": roll,
-                "section": section,
-                "email": email,
-                "enrollment_no": enrollment_no,
-                "year": year,
-                "semester": semester,
-                "user_id": user_id,
-                "password": password
-            }
-            st.session_state.step = 2
-
-        name = st.text_input("Name")
-        roll = st.text_input("Roll Number")
-        section = st.selectbox("Select Section", ["A", "B", "C", "D"])
-        email = st.text_input("Email")
-        enrollment_no = st.text_input("Enrollment Number")
-        year = st.selectbox("Select Year", [1, 2, 3, 4])
-        semester = st.selectbox("Select Semester", list(range(1, 9)))
-        user_id = st.text_input("User ID")
-        password = st.text_input("Password", type="password")
-
-        st.markdown("""
-        **Password must meet the following criteria:**  
-        - ✅ At least **8 characters** long  
-        - ✅ Contains **one uppercase letter** (A-Z)  
-        - ✅ Contains **one lowercase letter** (a-z)  
-        - ✅ Contains **one number** (0-9)  
-        - ✅ Contains **one special character** (@, #, $, etc.)
-        """, unsafe_allow_html=True)
-
-        if password:
-            st.info(is_strong_password(password))
-
-        if st.form_submit_button("Next"):
-            save_student_details()
-
-# ---- STEP 2: Face Capture ----
-elif st.session_state.step == 2:
-    st.subheader("Capture Your Face")
-    st.warning("Please set your screen brightness to maximum for better biometric capture.")
-
-    with st.form("face_capture_form"):
-        face_image = st.camera_input("Capture your face")
-
-        submitted = st.form_submit_button("Capture and Continue")
-
-        if submitted:
-            if face_image:
-                img = Image.open(face_image)
-                img_bytes = io.BytesIO()
-                img.save(img_bytes, format="JPEG")
-                face_blob = img_bytes.getvalue()
-
-                if is_face_registered(face_blob):
-                    st.error("This face is already registered. Please try again with a different face.")
+# Reset registration flow if user switches away
+if menu != "Student Registration":
+    st.session_state.step = 1  # Reset only when user leaves registration page
+    
+# Main registration logic
+elif menu == "Student's Registration":
+    st.header("Student Registration")
+    
+    # Init session state variables
+    for key, default in {
+        "step": 1,
+        "email_otp": None,
+        "email_verified": False,
+        "face_blob": None,
+        "face_verified": False,
+        "form_data": {}
+    }.items():
+        if key not in st.session_state:
+            st.session_state[key] = default
+    
+    # ---- STEP 1: Student Details ----
+    if st.session_state.step == 1:
+        with st.form("student_details_form"):
+            st.subheader("Student Details")
+    
+            # Persist inputs in session_state
+            def save_student_details():
+                st.session_state.form_data = {
+                    "name": name,
+                    "roll": roll,
+                    "section": section,
+                    "email": email,
+                    "enrollment_no": enrollment_no,
+                    "year": year,
+                    "semester": semester,
+                    "user_id": user_id,
+                    "password": password
+                }
+                st.session_state.step = 2
+    
+            name = st.text_input("Name")
+            roll = st.text_input("Roll Number")
+            section = st.selectbox("Select Section", ["A", "B", "C", "D"])
+            email = st.text_input("Email")
+            enrollment_no = st.text_input("Enrollment Number")
+            year = st.selectbox("Select Year", [1, 2, 3, 4])
+            semester = st.selectbox("Select Semester", list(range(1, 9)))
+            user_id = st.text_input("User ID")
+            password = st.text_input("Password", type="password")
+    
+            st.markdown("""
+            **Password must meet the following criteria:**  
+            - ✅ At least **8 characters** long  
+            - ✅ Contains **one uppercase letter** (A-Z)  
+            - ✅ Contains **one lowercase letter** (a-z)  
+            - ✅ Contains **one number** (0-9)  
+            - ✅ Contains **one special character** (@, #, $, etc.)
+            """, unsafe_allow_html=True)
+    
+            if password:
+                st.info(is_strong_password(password))
+    
+            if st.form_submit_button("Next"):
+                save_student_details()
+    
+    # ---- STEP 2: Face Capture ----
+    elif st.session_state.step == 2:
+        st.subheader("Capture Your Face")
+        st.warning("Please set your screen brightness to maximum for better biometric capture.")
+    
+        with st.form("face_capture_form"):
+            face_image = st.camera_input("Capture your face")
+    
+            submitted = st.form_submit_button("Capture and Continue")
+    
+            if submitted:
+                if face_image:
+                    img = Image.open(face_image)
+                    img_bytes = io.BytesIO()
+                    img.save(img_bytes, format="JPEG")
+                    face_blob = img_bytes.getvalue()
+    
+                    if is_face_registered(face_blob):
+                        st.error("This face is already registered. Please try again with a different face.")
+                    else:
+                        st.success("Face captured successfully!")
+                        st.session_state.face_blob = face_blob
+                        st.session_state.face_verified = True
+                        st.session_state.step = 3
+                        st.rerun()
                 else:
-                    st.success("Face captured successfully!")
-                    st.session_state.face_blob = face_blob
-                    st.session_state.face_verified = True
-                    st.session_state.step = 3
+                    st.error("Please capture your face before continuing.")
+    
+    
+    # ---- STEP 3: WebAuthn / Fingerprint ----
+    elif st.session_state.step == 3:
+        st.subheader("Fingerprint Verification")
+        st.warning("Complete fingerprint registration within 30 seconds.")
+        st.components.v1.html(webauthn_register_script())
+        time.sleep(20)
+        st.session_state.step = 4
+        st.rerun()
+    
+    # ---- STEP 4: Email OTP Verification ----
+    elif st.session_state.step == 4:
+        st.subheader("Email Verification")
+        email = st.session_state.form_data["email"]
+    
+        if not st.session_state.email_verified:
+            if st.button("Send OTP"):
+                otp = str(np.random.randint(100000, 999999))
+                st.session_state.email_otp = otp
+    
+                try:
+                    message = MIMEMultipart()
+                    message["From"] = 'debojyotighoshmain@gmail.com'
+                    message["To"] = email
+                    message["Subject"] = "Your OTP for Student Registration"
+                    message.attach(MIMEText(f"Your OTP is: {otp}", "plain"))
+    
+                    with smtplib.SMTP('smtp-relay.brevo.com', 587) as server:
+                        server.starttls()
+                        server.login('823c6b001@smtp-brevo.com', '6tOJHT2F4x8ZGmMw')
+                        server.sendmail('debojyotighoshmain@gmail.com', email, message.as_string())
+    
+                    st.success(f"OTP sent to {email}")
+                except Exception as e:
+                    st.error(f"Failed to send OTP: {e}")
+    
+            otp_input = st.text_input("Enter the OTP sent to your email")
+            if st.button("Verify OTP"):
+                if otp_input == st.session_state.email_otp:
+                    st.session_state.email_verified = True
+                    st.success("Email verified successfully!")
+                    st.session_state.step = 5
                     st.rerun()
+                else:
+                    st.error("Invalid OTP. Please try again.")
+    
+    # ---- STEP 5: Final Registration ----
+    elif st.session_state.step == 5:
+        st.subheader("Final Step: Complete Registration")
+        form = st.session_state.form_data
+        face_blob = st.session_state.face_blob
+        device_id = device_id_from_cookies
+    
+        if st.button("Register"):
+            if not device_id:
+                st.error("Could not fetch device ID. Please try again.")
             else:
-                st.error("Please capture your face before continuing.")
-
-
-# ---- STEP 3: WebAuthn / Fingerprint ----
-elif st.session_state.step == 3:
-    st.subheader("Fingerprint Verification")
-    st.warning("Complete fingerprint registration within 30 seconds.")
-    st.components.v1.html(webauthn_register_script())
-    time.sleep(20)
-    st.session_state.step = 4
-    st.rerun()
-
-# ---- STEP 4: Email OTP Verification ----
-elif st.session_state.step == 4:
-    st.subheader("Email Verification")
-    email = st.session_state.form_data["email"]
-
-    if not st.session_state.email_verified:
-        if st.button("Send OTP"):
-            otp = str(np.random.randint(100000, 999999))
-            st.session_state.email_otp = otp
-
-            try:
-                message = MIMEMultipart()
-                message["From"] = 'debojyotighoshmain@gmail.com'
-                message["To"] = email
-                message["Subject"] = "Your OTP for Student Registration"
-                message.attach(MIMEText(f"Your OTP is: {otp}", "plain"))
-
-                with smtplib.SMTP('smtp-relay.brevo.com', 587) as server:
-                    server.starttls()
-                    server.login('823c6b001@smtp-brevo.com', '6tOJHT2F4x8ZGmMw')
-                    server.sendmail('debojyotighoshmain@gmail.com', email, message.as_string())
-
-                st.success(f"OTP sent to {email}")
-            except Exception as e:
-                st.error(f"Failed to send OTP: {e}")
-
-        otp_input = st.text_input("Enter the OTP sent to your email")
-        if st.button("Verify OTP"):
-            if otp_input == st.session_state.email_otp:
-                st.session_state.email_verified = True
-                st.success("Email verified successfully!")
-                st.session_state.step = 5
-                st.rerun()
-            else:
-                st.error("Invalid OTP. Please try again.")
-
-# ---- STEP 5: Final Registration ----
-elif st.session_state.step == 5:
-    st.subheader("Final Step: Complete Registration")
-    form = st.session_state.form_data
-    face_blob = st.session_state.face_blob
-    device_id = device_id_from_cookies
-
-    if st.button("Register"):
-        if not device_id:
-            st.error("Could not fetch device ID. Please try again.")
-        else:
-            # Check for duplicates
-            cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
-            if cursor.fetchone():
-                st.error("Device already registered.")
-            elif any(cursor.execute(f"SELECT * FROM students WHERE {field} = ?", (form[field],)).fetchone()
-                     for field in ["email", "roll", "user_id", "enrollment_no"]):
-                st.error("One of the provided details is already registered.")
-            else:
-                # Insert into DB
-                cursor.execute("""
-                    INSERT INTO students 
-                    (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (form["user_id"], form["password"], form["name"], form["roll"], form["section"],
-                      form["email"], form["enrollment_no"], form["year"], form["semester"],
-                      device_id, face_blob))
-                conn.commit()
-                st.success("Registration completed successfully!")
-                st.info("Proceed to Student Login page.")
-                st.session_state.step = 1  # Reset flow
+                # Check for duplicates
+                cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
+                if cursor.fetchone():
+                    st.error("Device already registered.")
+                elif any(cursor.execute(f"SELECT * FROM students WHERE {field} = ?", (form[field],)).fetchone()
+                         for field in ["email", "roll", "user_id", "enrollment_no"]):
+                    st.error("One of the provided details is already registered.")
+                else:
+                    # Insert into DB
+                    cursor.execute("""
+                        INSERT INTO students 
+                        (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (form["user_id"], form["password"], form["name"], form["roll"], form["section"],
+                          form["email"], form["enrollment_no"], form["year"], form["semester"],
+                          device_id, face_blob))
+                    conn.commit()
+                    st.success("Registration completed successfully!")
+                    st.info("Proceed to Student Login page.")
+                    st.session_state.step = 1  # Reset flow
                                             
 
 # Student Login Page Logic
