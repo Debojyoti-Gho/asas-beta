@@ -40,86 +40,89 @@ import timm
 import re
 import base64
 
+import streamlit as st
+import time
+
 def show_intro():
     if "intro_shown" not in st.session_state:
         st.session_state.intro_shown = False
 
     if not st.session_state.intro_shown:
-        st.markdown(
-            """
+        st.markdown(f"""
             <style>
-            .intro-container {
-                position: fixed;
-                top: 0; left: 0;
-                width: 100vw; height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-direction: column;
-                font-family: 'Bebas Neue', sans-serif;
-                z-index: 9999;
-                background-color: black;
-                overflow: hidden;
-            }
+                body {{
+                    overflow: hidden;
+                    margin: 0;
+                }}
 
-            video.background-video {
-                position: absolute;
-                top: 0; left: 0;
-                width: 100vw;
-                height: 100vh;
-                object-fit: cover;
-                z-index: -1;
-            }
+                .intro-container {{
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-direction: column;
+                    font-family: 'Bebas Neue', sans-serif;
+                    overflow: hidden;
+                }}
 
-            .intro-text {
-                font-size: 6em;
-                background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                animation: fadeIn 2s ease-in-out;
-                text-align: center;
-                margin: 0;
-            }
+                video.background-video {{
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    z-index: -1;
+                }}
 
-            .subtitle {
-                font-size: 1.5em;
-                color: #ffffff;
-                margin-top: 10px;
-                opacity: 0.95;
-                text-align: center;
-            }
+                .intro-text {{
+                    font-size: 6em;
+                    background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    animation: fadeIn 1.8s ease-in-out;
+                    letter-spacing: 2px;
+                    text-align: center;
+                }}
 
-            @keyframes fadeOut {
-                from { opacity: 1; }
-                to { opacity: 0; visibility: hidden; }
-            }
+                .subtitle {{
+                    font-size: 1.5em;
+                    color: #ffffff;
+                    margin-top: 10px;
+                    opacity: 0.95;
+                    text-align: center;
+                }}
 
-            .fade-out {
-                animation: fadeOut 1s ease forwards;
-                animation-delay: 6s;
-            }
+                @keyframes fadeOut {{
+                    from {{ opacity: 1; }}
+                    to {{ opacity: 0; visibility: hidden; }}
+                }}
+
+                .fade-out {{
+                    animation: fadeOut 1s ease forwards;
+                    animation-delay: 6s;
+                }}
             </style>
 
+            <!-- Font -->
             <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 
+            <!-- Intro Container -->
             <div class="intro-container fade-out">
-                <video class="background-video" autoplay muted loop playsinline>
-                    <source src="https://cdnl.iconscout.com/lottie/premium/thumb/gradient-loop-purple-mobile-phone-wallpaper-animation-download-in-lottie-json-gif-static-svg-file-formats--geometric-background-home-screen-abstract-backgrounds-for-pack-patterns-animations-5567091.mp4" type="video/mp4">
+                <video class="background-video" autoplay muted playsinline>
+                    <source src="https://i.pinimg.com/originals/d0/f2/2b/d0f22ba21124dba8fe59dce25575ae67.gif">
                 </video>
-
-                <audio autoplay>
-                    <source src="https://assets.codepen.io/605876/netflix-intro.mp3" type="audio/mpeg">
-                </audio>
-
                 <div class="intro-text">ASAS 2.0</div>
                 <div class="subtitle">Advanced Student Attendance System</div>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+        """, unsafe_allow_html=True)
 
-        # Let the animation + sound finish
-        time.sleep(6.5)
+        time.sleep(6.5)  # Matches the video length for fade-out
         st.session_state.intro_shown = True
         st.rerun()
 
