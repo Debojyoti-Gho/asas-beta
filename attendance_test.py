@@ -186,7 +186,7 @@ def show_intro():
             </div>
         """, unsafe_allow_html=True)
 
-        time.sleep(6.5)
+        time.sleep(5.5)
         st.session_state.intro_shown = True
         st.rerun()
 
