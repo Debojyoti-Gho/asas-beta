@@ -1,6 +1,6 @@
 import streamlit as st
 st.set_page_config( 
-    page_title="ASAS-Beta",  
+    page_title="ASAS 2.0",  
     page_icon="🎓"   
 ) 
 import sqlite3
@@ -115,7 +115,7 @@ def show_intro():
             <!-- Intro Container -->
             <div class="intro-container fade-out">
                 <video class="background-video" autoplay muted playsinline>
-                    <source src="https://videos.pexels.com/video-files/18069235/18069235-uhd_2560_1440_24fps.mp4">
+                    <source src="18069232-sd_640_360_24fps.mp4">
                 </video>
                 <div class="intro-text">ASAS 2.0</div>
                 <div class="subtitle">Advanced Student Attendance System</div>
