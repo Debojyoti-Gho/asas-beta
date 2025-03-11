@@ -164,7 +164,7 @@ def show_intro():
 
             <!-- Audio (separate background music) -->
             <audio id="bg-audio" autoplay>
-                <source src="intro-sound.mp3" type="audio/mp3">
+                <source src="cinematic-intro-3-40041.mp3" type="audio/mp3">
                 Your browser does not support the audio element.
             </audio>
 
