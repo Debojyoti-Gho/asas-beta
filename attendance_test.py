@@ -1618,20 +1618,20 @@ def clear_all_notifications():
 
 def is_strong_password(password):
     if len(password) < 8:
+        st.stop()
         return "❌ Password must be at least 8 characters long."
-        st.stop()
     if not re.search(r"[A-Z]", password):
+        st.stop()
         return "❌ Password must contain at least one uppercase letter."
-        st.stop()
     if not re.search(r"[a-z]", password):
+        st.stop()
         return "❌ Password must contain at least one lowercase letter."
-        st.stop()
     if not re.search(r"\d", password):
+        st.stop()
         return "❌ Password must contain at least one number."
-        st.stop()
     if not re.search(r"[!_@#$%^&*(),.?\":{}|<>]", password):
-        return "❌ Password must contain at least one special character."
         st.stop()
+        return "❌ Password must contain at least one special character."
     return "✅ Strong password!"
     
 
