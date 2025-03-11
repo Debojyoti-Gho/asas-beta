@@ -160,7 +160,7 @@ def show_intro_video():
     </body>
     </html>
     """
-st.markdown(intro_html, unsafe_allow_html=True)
+    st.markdown(intro_html, unsafe_allow_html=True)
 
 # Show the fancy intro first
 show_intro_video()
