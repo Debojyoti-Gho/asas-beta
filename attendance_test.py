@@ -40,7 +40,6 @@ import timm
 import re
 import base64
 
-
 def show_intro():
     if "intro_shown" not in st.session_state:
         st.session_state.intro_shown = False
@@ -50,16 +49,7 @@ def show_intro():
             <style>
                 body {
                     overflow: hidden;
-                }
-
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: scale(0.95); }
-                    to { opacity: 1; transform: scale(1); }
-                }
-
-                @keyframes loader {
-                    0% { transform: translateX(-100%); }
-                    100% { transform: translateX(100%); }
+                    margin: 0;
                 }
 
                 .intro-container {
@@ -69,12 +59,22 @@ def show_intro():
                     width: 100vw;
                     height: 100vh;
                     z-index: 9999;
-                    background: linear-gradient(to bottom, #000000, #1c1c1c);
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     flex-direction: column;
                     font-family: 'Bebas Neue', sans-serif;
+                    overflow: hidden;
+                }
+
+                video.background-video {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    z-index: -1;
                 }
 
                 .intro-text {
@@ -91,68 +91,35 @@ def show_intro():
                     font-size: 1.5em;
                     color: #ffffff;
                     margin-top: 10px;
-                    opacity: 0.85;
+                    opacity: 0.9;
                     text-align: center;
-                }
-
-                .loader-bar {
-                    margin-top: 40px;
-                    width: 220px;
-                    height: 6px;
-                    border-radius: 4px;
-                    background: rgba(255, 255, 255, 0.15);
-                    overflow: hidden;
-                    position: relative;
-                }
-
-                .loader-bar::before {
-                    content: "";
-                    position: absolute;
-                    height: 100%;
-                    width: 40%;
-                    background: #e50914;
-                    animation: loader 1.2s infinite;
-                }
-
-                .fade-out {
-                    animation: fadeOut 1s ease forwards;
-                    animation-delay: 3.8s;
                 }
 
                 @keyframes fadeOut {
                     from { opacity: 1; }
                     to { opacity: 0; visibility: hidden; }
                 }
+
+                .fade-out {
+                    animation: fadeOut 1s ease forwards;
+                    animation-delay: 5.5s;
+                }
             </style>
 
-            <!-- Bebas Neue font -->
+            <!-- Font -->
             <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 
-            <!-- Sound autoplay using JS fallback -->
-            <audio id="netflixSound" autoplay>
-                <source src="https://www.myinstants.com/media/sounds/netflix-intro.mp3" type="audio/mpeg">
-            </audio>
-            <script>
-                const audio = document.getElementById('netflixSound');
-                window.addEventListener('load', () => {
-                    const playPromise = audio.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(error => {
-                            console.log('Autoplay prevented, retrying on interaction...');
-                            window.addEventListener('click', () => audio.play());
-                        });
-                    }
-                });
-            </script>
-
+            <!-- Intro Container -->
             <div class="intro-container fade-out">
+                <video class="background-video" autoplay muted playsinline>
+                    <source src="https://cdn.pixabay.com/video/2022/10/26/135421-761654300_large.mp4" type="video/mp4">
+                </video>
                 <div class="intro-text">ASAS 2.0</div>
                 <div class="subtitle">Advanced Student Attendance System</div>
-                <div class="loader-bar"></div>
             </div>
         """, unsafe_allow_html=True)
 
-        time.sleep(4.5)
+        time.sleep(6)  # match the video length
         st.session_state.intro_shown = True
         st.rerun()
 
