@@ -1006,7 +1006,7 @@ def detect_spoof(image_path):
     st.text(f"Depth variance: {depth_variance}")
 
     # Thresholds for spoof detection
-    sharpness_threshold = 85
+    sharpness_threshold = 60
     edge_threshold = 4000
     depth_threshold = 500  # Higher variance means real 3D depth
 
