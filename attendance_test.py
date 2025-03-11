@@ -175,7 +175,7 @@ def show_intro():
             <!-- Intro Container -->
             <div class="intro-container fade-out">
                 <video class="background-video" autoplay muted playsinline>
-                    <source src="18069232-sd_640_360_24fps.mp4" type="video/mp4">
+                    <source src="https://cdnl.iconscout.com/lottie/premium/preview-watermark/gradient-loop-purple-mobile-phone-wallpaper-animation-download-in-lottie-json-gif-static-svg-file-formats--geometric-background-home-screen-abstract-backgrounds-for-pack-patterns-animations-5567091.mp4" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
                 <div class="intro-text">ASAS 2.0</div>
@@ -187,7 +187,7 @@ def show_intro():
             <div class="white-flash"></div>
         """, unsafe_allow_html=True)
 
-        time.sleep(6.5)  # Matches the video and fade-out timing
+        time.sleep(5.5)  # Matches the video and fade-out timing
         st.session_state.intro_shown = True
         st.rerun()
 
