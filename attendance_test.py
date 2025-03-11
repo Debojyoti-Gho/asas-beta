@@ -184,8 +184,6 @@ def show_intro():
                 <div class="subtitle">Advanced Student Attendance System</div>
                 <div class="spinner"></div>
             </div>
-
-            <div class="white-flash"></div>
         """, unsafe_allow_html=True)
 
         time.sleep(6.5)
