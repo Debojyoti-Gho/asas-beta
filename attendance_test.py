@@ -1675,7 +1675,7 @@ if menu == "Home":
 # Main registration logic
 elif menu == "Student's Registration":
     st.header("Student Registration")
-    
+
     # Init session state variables
     for key, default in {
         "step": 1,
@@ -1687,27 +1687,12 @@ elif menu == "Student's Registration":
     }.items():
         if key not in st.session_state:
             st.session_state[key] = default
-    
-    # ---- STEP 1: Student Details ----
+
     if st.session_state.step == 1:
         with st.form("student_details_form"):
             st.subheader("Student Details")
-    
-            # Persist inputs in session_state
-            def save_student_details():
-                st.session_state.form_data = {
-                    "name": name,
-                    "roll": roll,
-                    "section": section,
-                    "email": email,
-                    "enrollment_no": enrollment_no,
-                    "year": year,
-                    "semester": semester,
-                    "user_id": user_id,
-                    "password": password
-                }
-                st.session_state.step = 2
-    
+
+            # Inputs
             name = st.text_input("Name")
             roll = st.text_input("Roll Number")
             section = st.selectbox("Select Section", ["A", "B", "C", "D"])
@@ -1717,7 +1702,8 @@ elif menu == "Student's Registration":
             semester = st.selectbox("Select Semester", list(range(1, 9)))
             user_id = st.text_input("User ID")
             password = st.text_input("Password", type="password")
-    
+
+            # Password criteria (static note)
             st.markdown("""
             **Password must meet the following criteria:**  
             - ✅ At least **8 characters** long  
@@ -1726,14 +1712,35 @@ elif menu == "Student's Registration":
             - ✅ Contains **one number** (0-9)  
             - ✅ Contains **one special character** (@, #, $, etc.)
             """, unsafe_allow_html=True)
-    
-            if st.form_submit_button("Next"):
+
+            # Live feedback inside the form (no errors)
+            if password:
                 password_check = is_strong_password(password)
                 if password_check == "✅ Strong password!":
-                    save_student_details()
+                    st.success(password_check)
                 else:
-                    st.error(password_check)
+                    st.warning(password_check)
+            else:
+                password_check = None
 
+            # Submit button
+            submitted = st.form_submit_button("Next")
+            if submitted:
+                if password_check == "✅ Strong password!":
+                    st.session_state.form_data = {
+                        "name": name,
+                        "roll": roll,
+                        "section": section,
+                        "email": email,
+                        "enrollment_no": enrollment_no,
+                        "year": year,
+                        "semester": semester,
+                        "user_id": user_id,
+                        "password": password
+                    }
+                    st.session_state.step = 2
+                else:
+                    st.error(password_check or "Please enter a password.")
     
     # ---- STEP 2: Face Capture ----
     elif st.session_state.step == 2:
