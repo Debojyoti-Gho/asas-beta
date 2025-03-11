@@ -46,16 +46,48 @@ def show_intro():
         st.session_state.intro_shown = False
 
     if not st.session_state.intro_shown:
-        # Show the intro screen content
         st.markdown("""
             <style>
+                @keyframes backgroundFlow {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+
+                @keyframes textSpinZoom {
+                    0% {
+                        transform: rotateY(0deg) scale(0.5);
+                        opacity: 0;
+                    }
+                    60% {
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: rotateY(360deg) scale(1);
+                        opacity: 1;
+                    }
+                }
+
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; visibility: hidden; }
+                }
+
+                @keyframes pulse {
+                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.5); }
+                    70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(255,255,255,0); }
+                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+                }
+
                 .intro-container {
                     position: fixed;
                     top: 0;
                     left: 0;
                     height: 100vh;
                     width: 100vw;
-                    background: linear-gradient(135deg, #b1d34b, #3cb878);
+                    background: linear-gradient(135deg, #b1d34b, #3cb878, #4facfe);
+                    background-size: 400% 400%;
+                    animation: backgroundFlow 10s ease infinite;
                     z-index: 9999;
                     display: flex;
                     flex-direction: column;
@@ -66,45 +98,50 @@ def show_intro():
 
                 .intro-text {
                     font-size: 4em;
-                    font-weight: bold;
+                    font-weight: 600;
                     color: white;
-                    animation: spinIn 1.5s ease-in-out;
-                }
-
-                @keyframes spinIn {
-                    0% { transform: rotateY(0deg); opacity: 0; }
-                    50% { opacity: 1; }
-                    100% { transform: rotateY(360deg); opacity: 1; }
+                    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                    animation: textSpinZoom 2s ease-out;
                 }
 
                 .spinner {
                     margin-top: 30px;
-                    border: 5px solid rgba(255, 255, 255, 0.2);
-                    border-top: 5px solid white;
+                    border: 6px solid rgba(255, 255, 255, 0.2);
+                    border-top: 6px solid white;
                     border-radius: 50%;
                     width: 60px;
                     height: 60px;
-                    animation: spin 1s linear infinite;
+                    animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;
                 }
 
                 @keyframes spin {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
+
+                .fade-out {
+                    animation: fadeOut 1s forwards;
+                    animation-delay: 3s;
+                }
             </style>
 
-            <div class="intro-container">
+            <!-- Optional background music (commented out) -->
+            <!-- <audio autoplay>
+                <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+            </audio> -->
+
+            <div class="intro-container fade-out">
                 <div class="intro-text">ASAS 2.0</div>
                 <div class="spinner"></div>
             </div>
         """, unsafe_allow_html=True)
 
-        time.sleep(4)  # Display for 4 seconds
+        time.sleep(4)
         st.session_state.intro_shown = True
-        st.rerun()  # Rerun to remove intro
+        st.rerun()
 
-# Run the intro function at the start
 show_intro()
+
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
