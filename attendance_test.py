@@ -115,7 +115,7 @@ def show_intro():
             <!-- Intro Container -->
             <div class="intro-container fade-out">
                 <video class="background-video" autoplay muted playsinline>
-                    <source src="https://i.pinimg.com/originals/d0/f2/2b/d0f22ba21124dba8fe59dce25575ae67.gif">
+                    <source src="https://i.pinimg.com/originals/45/d1/db/45d1db2f2af39c5c53a43af6ee935079.gif">
                 </video>
                 <div class="intro-text">ASAS 2.0</div>
                 <div class="subtitle">Advanced Student Attendance System</div>
