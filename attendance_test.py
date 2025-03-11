@@ -41,6 +41,9 @@ import re
 import base64
 
 
+import streamlit as st
+import time
+
 def show_intro():
     if "intro_shown" not in st.session_state:
         st.session_state.intro_shown = False
@@ -48,35 +51,29 @@ def show_intro():
     if not st.session_state.intro_shown:
         st.markdown("""
             <style>
-                body {
-                    overflow: hidden;
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; visibility: hidden; }
                 }
 
                 @keyframes glitch {
-                    0% { transform: translate(0); }
-                    20% { transform: translate(-2px, 2px); }
-                    40% { transform: translate(-2px, -2px); }
-                    60% { transform: translate(2px, 2px); }
-                    80% { transform: translate(2px, -2px); }
-                    100% { transform: translate(0); }
+                    0% { text-shadow: 0 0 5px #0ff; }
+                    20% { text-shadow: 2px 0 red; }
+                    40% { text-shadow: -2px 0 blue; }
+                    60% { text-shadow: 2px 2px #0ff; }
+                    80% { text-shadow: -2px -2px red; }
+                    100% { text-shadow: 0 0 8px #0ff; }
                 }
 
-                @keyframes neonFadeIn {
-                    0% {
-                        text-shadow: none;
-                        opacity: 0;
-                        transform: scale(0.9);
-                    }
-                    100% {
-                        text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff;
-                        opacity: 1;
-                        transform: scale(1);
-                    }
+                @keyframes float {
+                    0% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
+                    100% { transform: translateY(0); }
                 }
 
-                @keyframes starfield {
-                    from { background-position: 0 0; }
-                    to { background-position: -10000px 5000px; }
+                @keyframes slideUp {
+                    0% { transform: translateY(20px); opacity: 0; }
+                    100% { transform: translateY(0); opacity: 1; }
                 }
 
                 .intro-container {
@@ -86,82 +83,69 @@ def show_intro():
                     width: 100vw;
                     height: 100vh;
                     z-index: 9999;
-                    background: black url('https://i.gifer.com/VgG.gif') repeat;
-                    background-size: cover;
-                    animation: starfield 300s linear infinite;
+                    background: radial-gradient(ellipse at center, #0a0a0a 0%, #000000 100%);
+                    overflow: hidden;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     flex-direction: column;
+                    animation: fadeOut 1.5s ease forwards;
+                    animation-delay: 4.5s;
                     font-family: 'Orbitron', sans-serif;
                 }
 
                 .intro-text {
                     font-size: 4.5em;
                     color: #0ff;
-                    animation: neonFadeIn 2s ease-in-out, glitch 0.3s infinite;
-                    letter-spacing: 3px;
-                    text-align: center;
+                    letter-spacing: 4px;
+                    animation: glitch 1.5s infinite alternate ease-in-out, slideUp 1.5s ease;
                 }
 
                 .subtitle {
-                    font-size: 1.5em;
-                    color: #fff;
-                    margin-top: 15px;
-                    opacity: 0.8;
+                    font-size: 1.4em;
+                    color: rgba(255,255,255,0.7);
+                    margin-top: 10px;
+                    animation: slideUp 2s ease forwards;
+                    animation-delay: 0.5s;
                 }
 
-                .loader-bar {
-                    margin-top: 40px;
-                    width: 200px;
-                    height: 8px;
-                    border-radius: 5px;
-                    background: rgba(255, 255, 255, 0.1);
-                    overflow: hidden;
-                    position: relative;
-                }
-
-                .loader-bar::before {
-                    content: "";
+                .particles {
                     position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
                     height: 100%;
-                    width: 50%;
-                    background: linear-gradient(90deg, #0ff, #09f);
-                    animation: loadmove 1.5s infinite;
+                    pointer-events: none;
+                    z-index: 0;
+                    overflow: hidden;
                 }
 
-                @keyframes loadmove {
-                    0% { left: -50%; }
-                    100% { left: 100%; }
-                }
-
-                .fade-out {
-                    animation: fadeOut 1s ease forwards;
-                    animation-delay: 3.8s;
-                }
-
-                @keyframes fadeOut {
-                    from { opacity: 1; }
-                    to { opacity: 0; visibility: hidden; }
+                .particle {
+                    position: absolute;
+                    width: 6px;
+                    height: 6px;
+                    background: rgba(0, 255, 255, 0.6);
+                    border-radius: 50%;
+                    animation: float 3s ease-in-out infinite;
                 }
             </style>
 
-            <!-- Custom font -->
             <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
 
-            <!-- Optional Sound -->
-            <!-- <audio autoplay>
-                <source src="https://www.myinstants.com/media/sounds/netflix-intro.mp3" type="audio/mpeg">
-            </audio> -->
-
-            <div class="intro-container fade-out">
+            <div class="intro-container">
                 <div class="intro-text">ASAS 2.0</div>
-                <div class="subtitle">Automated Student Authentication System</div>
-                <div class="loader-bar"></div>
+                <div class="subtitle">Secure. Smart. Streamlined.</div>
+                <div class="particles">
+                    <!-- Generate particles dynamically -->
+                    """ + "\n".join([
+                        f'<div class="particle" style="top:{i*5}%; left:{(i*37)%100}%; animation-delay:{(i%5)*0.3}s;"></div>'
+                        for i in range(20)
+                    ]) + """
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
-        time.sleep(4.5)
+        time.sleep(5.5)
         st.session_state.intro_shown = True
         st.rerun()
 
