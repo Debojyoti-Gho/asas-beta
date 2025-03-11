@@ -40,19 +40,22 @@ import timm
 import re
 import base64
 
+import streamlit as st
+import time
+
 def show_intro():
     if "intro_shown" not in st.session_state:
         st.session_state.intro_shown = False
 
     if not st.session_state.intro_shown:
-        st.markdown("""
+        st.markdown(f"""
             <style>
-                body {
+                body {{
                     overflow: hidden;
                     margin: 0;
-                }
+                }}
 
-                .intro-container {
+                .intro-container {{
                     position: fixed;
                     top: 0;
                     left: 0;
@@ -65,9 +68,9 @@ def show_intro():
                     flex-direction: column;
                     font-family: 'Bebas Neue', sans-serif;
                     overflow: hidden;
-                }
+                }}
 
-                video.background-video {
+                video.background-video {{
                     position: absolute;
                     top: 0;
                     left: 0;
@@ -75,9 +78,9 @@ def show_intro():
                     height: 100%;
                     object-fit: cover;
                     z-index: -1;
-                }
+                }}
 
-                .intro-text {
+                .intro-text {{
                     font-size: 6em;
                     background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
                     -webkit-background-clip: text;
@@ -85,25 +88,25 @@ def show_intro():
                     animation: fadeIn 1.8s ease-in-out;
                     letter-spacing: 2px;
                     text-align: center;
-                }
+                }}
 
-                .subtitle {
+                .subtitle {{
                     font-size: 1.5em;
                     color: #ffffff;
                     margin-top: 10px;
-                    opacity: 0.9;
+                    opacity: 0.95;
                     text-align: center;
-                }
+                }}
 
-                @keyframes fadeOut {
-                    from { opacity: 1; }
-                    to { opacity: 0; visibility: hidden; }
-                }
+                @keyframes fadeOut {{
+                    from {{ opacity: 1; }}
+                    to {{ opacity: 0; visibility: hidden; }}
+                }}
 
-                .fade-out {
+                .fade-out {{
                     animation: fadeOut 1s ease forwards;
-                    animation-delay: 5.5s;
-                }
+                    animation-delay: 6s;
+                }}
             </style>
 
             <!-- Font -->
@@ -112,18 +115,19 @@ def show_intro():
             <!-- Intro Container -->
             <div class="intro-container fade-out">
                 <video class="background-video" autoplay muted playsinline>
-                    <source src="https://cdn.pixabay.com/video/2022/10/26/135421-761654300_large.mp4" type="video/mp4">
+                    <source src="https://cdnl.iconscout.com/lottie/premium/thumb/gradient-loop-blue-phone-background-animation-download-in-lottie-json-gif-static-svg-file-formats--geometric-home-screen-backgrounds-for-pack-patterns-animations-5567090.mp4" type="video/mp4">
                 </video>
                 <div class="intro-text">ASAS 2.0</div>
                 <div class="subtitle">Advanced Student Attendance System</div>
             </div>
         """, unsafe_allow_html=True)
 
-        time.sleep(6)  # match the video length
+        time.sleep(6.5)  # Matches the video length for fade-out
         st.session_state.intro_shown = True
         st.rerun()
 
 show_intro()
+
 
 
 # Database setup
