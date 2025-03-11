@@ -41,130 +41,127 @@ import re
 
 def show_intro_video():
     intro_html = """
-    <html>
-    <head>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
 
-            body {
-                margin: 0;
-                padding: 0;
-                height: 100vh;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                font-family: 'Roboto', sans-serif;
-                background: linear-gradient(-45deg, #4285F4, #34A853, #FBBC05, #EA4335);
-                background-size: 400% 400%;
-                animation: gradientMove 8s ease infinite;
-                overflow: hidden;
-            }
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(-45deg, #4285F4, #34A853, #FBBC05, #EA4335);
+            background-size: 400% 400%;
+            animation: gradientMove 8s ease infinite;
+            overflow: hidden;
+        }
 
-            @keyframes gradientMove {
-                0% {background-position: 0% 50%;}
-                50% {background-position: 100% 50%;}
-                100% {background-position: 0% 50%;}
-            }
+        @keyframes gradientMove {
+            0% {background-position: 0% 50%;}
+            50% {background-position: 100% 50%;}
+            100% {background-position: 0% 50%;}
+        }
 
-            .title-container {
-                text-align: center;
-                z-index: 2;
-            }
+        .title-container {
+            text-align: center;
+            z-index: 2;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
 
+        .title {
+            font-size: 4em;
+            font-weight: bold;
+            color: white;
+            opacity: 0;
+            animation: fadeIn 1s ease-out forwards,
+                       spin3D 2.5s ease-in-out 1s forwards,
+                       exitUp 1s ease-in-out 4.5s forwards;
+            transform-style: preserve-3d;
+            backface-visibility: hidden;
+        }
+
+        .spinner {
+            border: 6px solid rgba(255,255,255,0.2);
+            border-top: 6px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            opacity: 0;
+            animation: spinnerFade 1s ease 1.2s forwards;
+        }
+
+        @keyframes fadeIn {
+            0% {opacity: 0;}
+            100% {opacity: 1;}
+        }
+
+        @keyframes spin3D {
+            0% {transform: rotateY(0deg);}
+            100% {transform: rotateY(360deg);}
+        }
+
+        @keyframes exitUp {
+            0% {transform: translateY(0); opacity: 1;}
+            100% {transform: translateY(-100vh); opacity: 0;}
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes spinnerFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
             .title {
-                font-size: 4em;
-                font-weight: bold;
-                color: white;
-                opacity: 0;
-                animation: fadeIn 1s ease-out forwards,
-                           spin3D 2.5s ease-in-out 1s forwards,
-                           exitUp 1s ease-in-out 4.5s forwards;
-                transform-style: preserve-3d;
-                backface-visibility: hidden;
+                font-size: 2.5em;
             }
-
             .spinner {
-                border: 6px solid rgba(255,255,255,0.2);
-                border-top: 6px solid white;
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                animation: spin 1s linear infinite;
-                margin: 20px auto;
-                opacity: 0;
-                animation: spinnerFade 1s ease 1.2s forwards;
+                width: 35px;
+                height: 35px;
+                border-width: 4px;
             }
+        }
+    </style>
 
-            @keyframes fadeIn {
-                0% {opacity: 0;}
-                100% {opacity: 1;}
-            }
+    <div class="title-container" id="introWrapper">
+        <div class="title" id="introText">ASAS 2.0</div>
+        <div class="spinner"></div>
+    </div>
 
-            @keyframes spin3D {
-                0% {transform: rotateY(0deg);}
-                100% {transform: rotateY(360deg);}
-            }
+    <audio id="chime" preload="auto">
+        <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" type="audio/ogg">
+    </audio>
 
-            @keyframes exitUp {
-                0% {transform: translateY(0); opacity: 1;}
-                100% {transform: translateY(-100vh); opacity: 0;}
-            }
+    <script>
+        window.onload = function() {
+            document.getElementById("chime").play();
 
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-
-            @keyframes spinnerFade {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-
-            .hidden {
-                display: none;
-            }
-
-            @media (max-width: 600px) {
-                .title {
-                    font-size: 2.5em;
-                }
-                .spinner {
-                    width: 35px;
-                    height: 35px;
-                    border-width: 4px;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="title-container" id="introWrapper">
-            <div class="title" id="introText">ASAS 2.0</div>
-            <div class="spinner"></div>
-        </div>
-
-        <!-- Optional sound chime -->
-        <audio id="chime" preload="auto">
-            <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" type="audio/ogg">
-        </audio>
-
-        <script>
-            window.onload = function() {
-                // Uncomment the line below if you want the chime to play
-                   document.getElementById("chime").play();
-
-                setTimeout(function() {
-                    document.getElementById("introWrapper").classList.add("hidden");
-                }, 5500);  // Duration of animation
-            }
-        </script>
-    </body>
-    </html>
+            setTimeout(function() {
+                document.getElementById("introWrapper").classList.add("hidden");
+            }, 5500);
+        }
+    </script>
     """
     st.markdown(intro_html, unsafe_allow_html=True)
 
-# Show the fancy intro first
+# Run the animation first
 show_intro_video()
-time.sleep(3)
+time.sleep(6)  # Let the animation play before the rest of the app loads
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
