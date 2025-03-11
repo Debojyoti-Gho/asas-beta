@@ -41,91 +41,70 @@ import re
 import base64
 
 
+def show_intro():
+    if "intro_shown" not in st.session_state:
+        st.session_state.intro_shown = False
 
-def show_intro_video():
-    st.markdown("""
-        <style>
-            /* Full screen wrapper */
-            #introWrapper {
-                position: fixed;
-                top: 0; left: 0;
-                height: 100vh; width: 100vw;
-                background: linear-gradient(135deg, #b1d34b, #3cb878);
-                z-index: 9999;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                transition: all 1s ease;
-            }
-
-            /* Text animation */
-            .intro-text {
-                font-size: 3em;
-                font-weight: bold;
-                background: linear-gradient(to right, #ffffff, #e0e0e0);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                animation: spinIn 2s ease-in-out;
-                transform-style: preserve-3d;
-            }
-
-            @keyframes spinIn {
-                0% { transform: rotateY(0deg); opacity: 0; }
-                50% { opacity: 1; }
-                100% { transform: rotateY(360deg); opacity: 1; }
-            }
-
-            /* Spinner */
-            .spinner {
-                margin-top: 20px;
-                border: 5px solid rgba(255, 255, 255, 0.2);
-                border-top: 5px solid white;
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                animation: spin 1s linear infinite;
-            }
-
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        </style>
-
-        <div id="introWrapper">
-            <div class="intro-text">ASAS 2.0</div>
-            <div class="spinner"></div>
-            <audio id="chime" src="https://cdn.pixabay.com/audio/2022/03/15/audio_b62b6bf5b3.mp3"></audio>
-        </div>
-
-        <script>
-            // Wait for everything to load
-            window.addEventListener("load", function() {
-                const intro = document.getElementById("introWrapper");
-                const chime = document.getElementById("chime");
-
-                // Play chime sound (if allowed by browser)
-                if (chime) {
-                    chime.play().catch(e => console.log("Chime autoplay blocked"));
+    if not st.session_state.intro_shown:
+        # Show the intro screen content
+        st.markdown("""
+            <style>
+                .intro-container {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    height: 100vh;
+                    width: 100vw;
+                    background: linear-gradient(135deg, #b1d34b, #3cb878);
+                    z-index: 9999;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: 'Segoe UI', sans-serif;
                 }
 
-                // Hide the intro screen after 5.5 seconds
-                setTimeout(() => {
-                    if (intro) {
-                        intro.style.opacity = "0";
-                        intro.style.pointerEvents = "none";
-                        intro.style.zIndex = "-1";
-                    }
-                }, 220);
-            });
-        </script>
-    """, unsafe_allow_html=True)
+                .intro-text {
+                    font-size: 4em;
+                    font-weight: bold;
+                    color: white;
+                    animation: spinIn 1.5s ease-in-out;
+                }
 
-    
-show_intro_video()
+                @keyframes spinIn {
+                    0% { transform: rotateY(0deg); opacity: 0; }
+                    50% { opacity: 1; }
+                    100% { transform: rotateY(360deg); opacity: 1; }
+                }
 
+                .spinner {
+                    margin-top: 30px;
+                    border: 5px solid rgba(255, 255, 255, 0.2);
+                    border-top: 5px solid white;
+                    border-radius: 50%;
+                    width: 60px;
+                    height: 60px;
+                    animation: spin 1s linear infinite;
+                }
 
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+
+            <div class="intro-container">
+                <div class="intro-text">ASAS 2.0</div>
+                <div class="spinner"></div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        time.sleep(4)  # Display for 4 seconds
+        st.session_state.intro_shown = True
+        st.experimental_rerun()  # Rerun to remove intro
+
+# Run the intro function at the start
+show_intro()
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
