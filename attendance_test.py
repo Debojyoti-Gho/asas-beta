@@ -1618,19 +1618,14 @@ def clear_all_notifications():
 
 def is_strong_password(password):
     if len(password) < 8:
-        st.stop()
         return "❌ Password must be at least 8 characters long."
     if not re.search(r"[A-Z]", password):
-        st.stop()
         return "❌ Password must contain at least one uppercase letter."
     if not re.search(r"[a-z]", password):
-        st.stop()
         return "❌ Password must contain at least one lowercase letter."
     if not re.search(r"\d", password):
-        st.stop()
         return "❌ Password must contain at least one number."
     if not re.search(r"[!_@#$%^&*(),.?\":{}|<>]", password):
-        st.stop()
         return "❌ Password must contain at least one special character."
     return "✅ Strong password!"
     
@@ -1732,11 +1727,13 @@ elif menu == "Student's Registration":
             - ✅ Contains **one special character** (@, #, $, etc.)
             """, unsafe_allow_html=True)
     
-            if password:
-                st.info(is_strong_password(password))
-    
             if st.form_submit_button("Next"):
-                save_student_details()
+                password_check = is_strong_password(password)
+                if password_check == "✅ Strong password!":
+                    save_student_details()
+                else:
+                    st.error(password_check)
+
     
     # ---- STEP 2: Face Capture ----
     elif st.session_state.step == 2:
