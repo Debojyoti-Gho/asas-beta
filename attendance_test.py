@@ -1728,8 +1728,11 @@ elif st.session_state.step == 2:
             st.success("Face captured successfully!")
             st.session_state.face_blob = face_blob
             st.session_state.face_verified = True
-            st.session_state.step = 3
-            st.rerun()
+
+            # Add a "Next" button explicitly
+            if st.button("Next"):
+                st.session_state.step = 3
+                st.rerun()
 
 # ---- STEP 3: WebAuthn / Fingerprint ----
 elif st.session_state.step == 3:
