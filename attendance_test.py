@@ -40,22 +40,19 @@ import timm
 import re
 import base64
 
-import streamlit as st
-import time
-
 def show_intro():
     if "intro_shown" not in st.session_state:
         st.session_state.intro_shown = False
 
     if not st.session_state.intro_shown:
-        st.markdown(f"""
+        st.markdown("""
             <style>
-                body {{
+                body {
                     overflow: hidden;
                     margin: 0;
-                }}
+                }
 
-                .intro-container {{
+                .intro-container {
                     position: fixed;
                     top: 0;
                     left: 0;
@@ -68,9 +65,9 @@ def show_intro():
                     flex-direction: column;
                     font-family: 'Bebas Neue', sans-serif;
                     overflow: hidden;
-                }}
+                }
 
-                video.background-video {{
+                video.background-video {
                     position: absolute;
                     top: 0;
                     left: 0;
@@ -78,9 +75,9 @@ def show_intro():
                     height: 100%;
                     object-fit: cover;
                     z-index: -1;
-                }}
+                }
 
-                .intro-text {{
+                .intro-text {
                     font-size: 6em;
                     background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
                     -webkit-background-clip: text;
@@ -88,38 +85,37 @@ def show_intro():
                     animation: fadeIn 2s ease-in-out;
                     letter-spacing: 2px;
                     text-align: center;
-                }}
+                }
 
-                .subtitle {{
+                .subtitle {
                     font-size: 1.5em;
                     color: #ffffff;
                     margin-top: 10px;
                     opacity: 0.95;
                     text-align: center;
-                }}
+                }
 
-                @keyframes fadeOut {{
-                    from {{ opacity: 1; }}
-                    to {{ opacity: 0; visibility: hidden; }}
-                }}
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; visibility: hidden; }
+                }
 
-                .fade-out {{
+                .fade-out {
                     animation: fadeOut 1s ease forwards;
                     animation-delay: 6s;
-                }}
+                }
             </style>
 
             <!-- Fonts -->
             <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 
-            <!-- Intro Container -->
             <div class="intro-container fade-out">
                 <!-- Background Video -->
-                <video class="background-video" autoplay muted playsinline>
+                <video class="background-video" autoplay muted loop playsinline>
                     <source src="https://cdnl.iconscout.com/lottie/premium/thumb/gradient-loop-purple-mobile-phone-wallpaper-animation-download-in-lottie-json-gif-static-svg-file-formats--geometric-background-home-screen-abstract-backgrounds-for-pack-patterns-animations-5567091.mp4" type="video/mp4">
                 </video>
 
-                <!-- Netflix Sound -->
+                <!-- Netflix Intro Sound -->
                 <audio autoplay>
                     <source src="https://assets.codepen.io/605876/netflix-intro.mp3" type="audio/mpeg">
                 </audio>
@@ -130,11 +126,13 @@ def show_intro():
             </div>
         """, unsafe_allow_html=True)
 
+        # Delay to let animation and audio finish before continuing
         time.sleep(6.5)
         st.session_state.intro_shown = True
         st.rerun()
 
 show_intro()
+
 
 
 # Database setup
