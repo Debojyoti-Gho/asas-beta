@@ -117,7 +117,7 @@ def show_intro_video():
                         intro.style.pointerEvents = "none";
                         intro.style.zIndex = "-1";
                     }
-                }, 5500);
+                }, 220);
             });
         </script>
     """, unsafe_allow_html=True)
