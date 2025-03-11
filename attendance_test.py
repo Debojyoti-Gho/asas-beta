@@ -38,10 +38,6 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 import timm
 import re
-import base64
-
-import streamlit as st
-import time
 
 def show_intro():
     if "intro_shown" not in st.session_state:
@@ -67,7 +63,6 @@ def show_intro():
                     justify-content: center;
                     flex-direction: column;
                     font-family: 'Bebas Neue', sans-serif;
-                    overflow: hidden;
                 }}
 
                 video.background-video {{
@@ -98,14 +93,46 @@ def show_intro():
                     text-align: center;
                 }}
 
+                .spinner {{
+                    border: 4px solid rgba(255, 255, 255, 0.3);
+                    border-top: 4px solid white;
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    animation: spin 1s linear infinite;
+                    margin-top: 30px;
+                }}
+
+                @keyframes spin {{
+                    0% {{ transform: rotate(0deg); }}
+                    100% {{ transform: rotate(360deg); }}
+                }}
+
                 @keyframes fadeOut {{
-                    from {{ opacity: 1; }}
-                    to {{ opacity: 0; visibility: hidden; }}
+                    0% {{ opacity: 1; visibility: visible; }}
+                    99% {{ opacity: 0; visibility: visible; }}
+                    100% {{ opacity: 0; visibility: hidden; display: none; }}
                 }}
 
                 .fade-out {{
                     animation: fadeOut 1s ease forwards;
                     animation-delay: 6s;
+                }}
+
+                @keyframes flashWhite {{
+                    0% {{ background: transparent; }}
+                    100% {{ background: white; }}
+                }}
+
+                .white-flash {{
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    z-index: 10000;
+                    animation: flashWhite 0.4s ease-in forwards;
+                    animation-delay: 6.3s;
                 }}
             </style>
 
@@ -115,18 +142,24 @@ def show_intro():
             <!-- Intro Container -->
             <div class="intro-container fade-out">
                 <video class="background-video" autoplay muted playsinline>
-                    <source src="18069232-sd_640_360_24fps.mp4">
+                    <source src="18069232-sd_640_360_24fps.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
                 </video>
                 <div class="intro-text">ASAS 2.0</div>
                 <div class="subtitle">Advanced Student Attendance System</div>
+                <div class="spinner"></div>
             </div>
+
+            <!-- Optional white flash transition -->
+            <div class="white-flash"></div>
         """, unsafe_allow_html=True)
 
-        time.sleep(6.5)  # Matches the video length for fade-out
+        time.sleep(6.5)  # Matches the video and fade-out timing
         st.session_state.intro_shown = True
         st.rerun()
 
 show_intro()
+
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
