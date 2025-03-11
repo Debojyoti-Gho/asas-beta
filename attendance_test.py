@@ -1769,41 +1769,41 @@ elif menu == "Student's Registration":
     
     # ---- STEP 3: WebAuthn / Fingerprint ----
     elif st.session_state.step == 3:
-    st.subheader("🔐 Fingerprint Verification")
-    st.warning("Complete fingerprint registration within 30 seconds.")
-
-    # Inject WebAuthn script
-    st.components.v1.html(webauthn_register_script())
-
-    # Add animated countdown timer
-    st.components.v1.html("""
-        <div style="text-align: center;">
-            <h3 id="timer" style="font-size: 48px; color: #ff4b4b; font-family: monospace;">30</h3>
-            <p style="color: gray;">Time remaining to complete fingerprint verification</p>
-        </div>
-        <script>
-            let count = 30;
-            let timerEl = document.getElementById("timer");
-            let interval = setInterval(() => {
-                count--;
-                timerEl.textContent = count;
-                if (count <= 0) {
-                    clearInterval(interval);
-                    window.parent.postMessage({ stepComplete: true }, "*");
-                }
-            }, 1000);
-        </script>
-    """, height=150)
-
-    # JS -> Streamlit message listener (via query param rerun or state is tricky)
-    # So instead, use a Streamlit timer fallback:
-    st.toast("Waiting for fingerprint input...", icon="⏳")
-
-    # Use Streamlit's `st.experimental_set_query_params()` as a fallback timer trigger
-    import time
-    time.sleep(32)  # Sleep slightly more than countdown (non-blocking workaround)
-    st.session_state.step = 4
-    st.rerun()
+        st.subheader("🔐 Fingerprint Verification")
+        st.warning("Complete fingerprint registration within 30 seconds.")
+    
+        # Inject WebAuthn script
+        st.components.v1.html(webauthn_register_script())
+    
+        # Add animated countdown timer
+        st.components.v1.html("""
+            <div style="text-align: center;">
+                <h3 id="timer" style="font-size: 48px; color: #ff4b4b; font-family: monospace;">30</h3>
+                <p style="color: gray;">Time remaining to complete fingerprint verification</p>
+            </div>
+            <script>
+                let count = 30;
+                let timerEl = document.getElementById("timer");
+                let interval = setInterval(() => {
+                    count--;
+                    timerEl.textContent = count;
+                    if (count <= 0) {
+                        clearInterval(interval);
+                        window.parent.postMessage({ stepComplete: true }, "*");
+                    }
+                }, 1000);
+            </script>
+        """, height=150)
+    
+        # JS -> Streamlit message listener (via query param rerun or state is tricky)
+        # So instead, use a Streamlit timer fallback:
+        st.toast("Waiting for fingerprint input...", icon="⏳")
+    
+        # Use Streamlit's `st.experimental_set_query_params()` as a fallback timer trigger
+        import time
+        time.sleep(32)  # Sleep slightly more than countdown (non-blocking workaround)
+        st.session_state.step = 4
+        st.rerun()
     
     # ---- STEP 4: Email OTP Verification ----
     elif st.session_state.step == 4:
