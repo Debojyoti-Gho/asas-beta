@@ -1782,7 +1782,7 @@ elif menu == "Student's Registration":
                 <p style="color: gray;">Time remaining to complete fingerprint verification</p>
             </div>
             <script>
-                let count = 30;
+                let count = 15;
                 let timerEl = document.getElementById("timer");
                 let interval = setInterval(() => {
                     count--;
