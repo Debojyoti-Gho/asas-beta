@@ -44,80 +44,117 @@ def show_intro_video():
     <html>
     <head>
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
 
-            body { 
-                margin: 0; 
-                padding: 0; 
-                height: 100vh; 
-                display: flex; 
-                justify-content: center; 
-                align-items: center; 
-                background-color: #ffffff;
-                font-family: 'Roboto', sans-serif;
-                overflow: hidden;
-                perspective: 1000px;
-            }
-
-            .logo-text {
-                font-size: 3em;
-                font-weight: 700;
-                letter-spacing: 0.05em;
+            body {
+                margin: 0;
+                padding: 0;
+                height: 100vh;
                 display: flex;
-                gap: 0.1em;
-                opacity: 0;
-                transform-style: preserve-3d;
-                animation: fadeInUp 1s ease-out forwards, spinY 1.2s ease-out 1s forwards;
+                justify-content: center;
+                align-items: center;
+                font-family: 'Roboto', sans-serif;
+                background: linear-gradient(-45deg, #4285F4, #34A853, #FBBC05, #EA4335);
+                background-size: 400% 400%;
+                animation: gradientMove 8s ease infinite;
+                overflow: hidden;
             }
 
-            .logo-text span {
-                display: inline-block;
+            @keyframes gradientMove {
+                0% {background-position: 0% 50%;}
+                50% {background-position: 100% 50%;}
+                100% {background-position: 0% 50%;}
+            }
+
+            .title-container {
+                text-align: center;
+                z-index: 2;
+            }
+
+            .title {
+                font-size: 4em;
                 font-weight: bold;
-                font-size: 1.1em;
+                color: white;
                 opacity: 0;
-                animation: bounceIn 0.6s ease-out forwards;
+                animation: fadeIn 1s ease-out forwards,
+                           spin3D 2.5s ease-in-out 1s forwards,
+                           exitUp 1s ease-in-out 4.5s forwards;
+                transform-style: preserve-3d;
+                backface-visibility: hidden;
             }
 
-            .logo-text span:nth-child(1) { color: #4285F4; animation-delay: 0.1s; }
-            .logo-text span:nth-child(2) { color: #EA4335; animation-delay: 0.2s; }
-            .logo-text span:nth-child(3) { color: #FBBC05; animation-delay: 0.3s; }
-            .logo-text span:nth-child(4) { color: #34A853; animation-delay: 0.4s; }
-            .logo-text span:nth-child(5) { color: #4285F4; animation-delay: 0.5s; }
-            .logo-text span:nth-child(6) { color: #EA4335; animation-delay: 0.6s; }
-            .logo-text span:nth-child(7) { color: #FBBC05; animation-delay: 0.7s; }
-
-            @keyframes bounceIn {
-                0% { transform: scale(0.8); opacity: 0; }
-                60% { transform: scale(1.1); opacity: 1; }
-                100% { transform: scale(1); }
+            .spinner {
+                border: 6px solid rgba(255,255,255,0.2);
+                border-top: 6px solid white;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1s linear infinite;
+                margin: 20px auto;
+                opacity: 0;
+                animation: spinnerFade 1s ease 1.2s forwards;
             }
 
-            @keyframes fadeInUp {
-                0% { opacity: 0; transform: translateY(20px); }
-                100% { opacity: 1; transform: translateY(0); }
+            @keyframes fadeIn {
+                0% {opacity: 0;}
+                100% {opacity: 1;}
             }
 
-            @keyframes spinY {
-                0% { transform: rotateY(0deg); }
-                100% { transform: rotateY(360deg); }
+            @keyframes spin3D {
+                0% {transform: rotateY(0deg);}
+                100% {transform: rotateY(360deg);}
+            }
+
+            @keyframes exitUp {
+                0% {transform: translateY(0); opacity: 1;}
+                100% {transform: translateY(-100vh); opacity: 0;}
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            @keyframes spinnerFade {
+                from { opacity: 0; }
+                to { opacity: 1; }
             }
 
             .hidden {
                 display: none;
             }
+
+            @media (max-width: 600px) {
+                .title {
+                    font-size: 2.5em;
+                }
+                .spinner {
+                    width: 35px;
+                    height: 35px;
+                    border-width: 4px;
+                }
+            }
         </style>
     </head>
     <body>
-        <div class="logo-text" id="introText">
-            <span>A</span><span>S</span><span>A</span><span>S</span><span>&nbsp;</span><span>2</span><span>.0</span>
+        <div class="title-container" id="introWrapper">
+            <div class="title" id="introText">ASAS 2.0</div>
+            <div class="spinner"></div>
         </div>
+
+        <!-- Optional sound chime -->
+        <audio id="chime" preload="auto">
+            <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" type="audio/ogg">
+        </audio>
 
         <script>
             window.onload = function() {
+                // Uncomment the line below if you want the chime to play
+                   document.getElementById("chime").play();
+
                 setTimeout(function() {
-                    document.getElementById("introText").classList.add("hidden");
-                    window.location.reload();
-                }, 4500); // Enough for bounce + spin
+                    document.getElementById("introWrapper").classList.add("hidden");
+                }, 5500);  // Duration of animation
             }
         </script>
     </body>
