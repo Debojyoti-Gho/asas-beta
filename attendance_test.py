@@ -38,129 +38,100 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 import timm
 import re
+import base64
 
 def show_intro_video():
-    intro_html = """
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
-
-        .intro-wrapper {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Roboto', sans-serif;
-            background: linear-gradient(-45deg, #4285F4, #34A853, #FBBC05, #EA4335);
-            background-size: 400% 400%;
-            animation: gradientMove 8s ease infinite;
-            overflow: hidden;
-            position: relative;
-            z-index: 1000;
-        }
-
-        @keyframes gradientMove {
-            0% {background-position: 0% 50%;}
-            50% {background-position: 100% 50%;}
-            100% {background-position: 0% 50%;}
-        }
-
-        .title-container {
-            text-align: center;
-            z-index: 2;
-        }
-
-        .title {
-            font-size: 4em;
-            font-weight: bold;
-            color: white;
-            opacity: 0;
-            animation: fadeIn 1s ease-out forwards,
-                       spin3D 2.5s ease-in-out 1s forwards,
-                       exitUp 1s ease-in-out 4.5s forwards;
-            transform-style: preserve-3d;
-            backface-visibility: hidden;
-        }
-
-        .spinner {
-            border: 6px solid rgba(255,255,255,0.2);
-            border-top: 6px solid white;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-            opacity: 0;
-            animation: spinnerFade 1s ease 1.2s forwards;
-        }
-
-        @keyframes fadeIn {
-            0% {opacity: 0;}
-            100% {opacity: 1;}
-        }
-
-        @keyframes spin3D {
-            0% {transform: rotateY(0deg);}
-            100% {transform: rotateY(360deg);}
-        }
-
-        @keyframes exitUp {
-            0% {transform: translateY(0); opacity: 1;}
-            100% {transform: translateY(-100vh); opacity: 0;}
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @keyframes spinnerFade {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        @media (max-width: 600px) {
-            .title {
-                font-size: 2.5em;
-            }
+    st.markdown("""
+        <style>
+            /* Hide Streamlit default elements initially */
+            .main, footer {visibility: hidden;}
+            
+            /* Spinner animation */
             .spinner {
-                width: 35px;
-                height: 35px;
-                border-width: 4px;
+                border: 4px solid rgba(255, 255, 255, 0.2);
+                border-top: 4px solid white;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin: auto;
             }
-        }
-    </style>
 
-    <div class="intro-wrapper" id="introWrapper">
-        <div class="title-container">
-            <div class="title" id="introText">ASAS 2.0</div>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            /* 3D text animation */
+            .intro-text {
+                font-size: 3em;
+                font-weight: 900;
+                background: linear-gradient(to right, #ffffff, #c9c9c9);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                animation: textSpin 2.5s ease-in-out forwards;
+                transform-style: preserve-3d;
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+            @keyframes textSpin {
+                0% { transform: rotateY(0deg); opacity: 0; }
+                50% { opacity: 1; }
+                100% { transform: rotateY(360deg); opacity: 1; }
+            }
+
+            /* Gradient background for intro */
+            #introWrapper {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: 100vw;
+                background: linear-gradient(135deg, #b1d34b, #3cb878);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                transition: all 1s ease;
+            }
+        </style>
+
+        <div id="introWrapper">
+            <div class="intro-text">ASAS 2.0</div>
             <div class="spinner"></div>
+            <audio id="chime" src="https://cdn.pixabay.com/audio/2022/03/15/audio_b62b6bf5b3.mp3"></audio>
         </div>
-    </div>
 
-    <audio id="chime" preload="auto">
-        <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" type="audio/ogg">
-    </audio>
+        <script>
+            window.addEventListener("load", function() {
+                const intro = document.getElementById("introWrapper");
+                const chime = document.getElementById("chime");
 
-    <script>
-        window.onload = function() {
-            document.getElementById("chime").play();
+                // Try to play the sound
+                if (chime) {
+                    chime.play().catch(e => {
+                        console.log("Auto-play blocked. Will play after interaction.");
+                    });
+                }
 
-            setTimeout(function() {
-                document.getElementById("introWrapper").classList.add("hidden");
-            }, 5500);
-        }
-    </script>
-    """
+                // Hide the intro after 5.5 seconds
+                setTimeout(function() {
+                    if (intro) {
+                        intro.style.display = "none";
+                    }
 
-    st.markdown(intro_html, unsafe_allow_html=True)
-
+                    // Unhide main content
+                    const main = parent.document.querySelector(".main");
+                    const footer = parent.document.querySelector("footer");
+                    if (main) main.style.visibility = "visible";
+                    if (footer) footer.style.visibility = "visible";
+                }, 5500);
+            });
+        </script>
+    """, unsafe_allow_html=True)
+    
 show_intro_video()
 time.sleep(6)
 
