@@ -41,9 +41,6 @@ import re
 import base64
 
 
-import streamlit as st
-import time
-
 def show_intro():
     if "intro_shown" not in st.session_state:
         st.session_state.intro_shown = False
