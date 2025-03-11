@@ -48,29 +48,18 @@ def show_intro():
     if not st.session_state.intro_shown:
         st.markdown("""
             <style>
-                @keyframes fadeOut {
-                    from { opacity: 1; }
-                    to { opacity: 0; visibility: hidden; }
+                body {
+                    overflow: hidden;
                 }
 
-                @keyframes glitch {
-                    0% { text-shadow: 0 0 5px #0ff; }
-                    20% { text-shadow: 2px 0 red; }
-                    40% { text-shadow: -2px 0 blue; }
-                    60% { text-shadow: 2px 2px #0ff; }
-                    80% { text-shadow: -2px -2px red; }
-                    100% { text-shadow: 0 0 8px #0ff; }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: scale(0.95); }
+                    to { opacity: 1; transform: scale(1); }
                 }
 
-                @keyframes float {
-                    0% { transform: translateY(0); }
-                    50% { transform: translateY(-10px); }
-                    100% { transform: translateY(0); }
-                }
-
-                @keyframes slideUp {
-                    0% { transform: translateY(20px); opacity: 0; }
-                    100% { transform: translateY(0); opacity: 1; }
+                @keyframes loader {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
                 }
 
                 .intro-container {
@@ -80,73 +69,83 @@ def show_intro():
                     width: 100vw;
                     height: 100vh;
                     z-index: 9999;
-                    background: radial-gradient(ellipse at center, #0a0a0a 0%, #000000 100%);
-                    overflow: hidden;
+                    background: linear-gradient(to bottom, #000000, #1c1c1c);
+                    background-size: cover;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     flex-direction: column;
-                    animation: fadeOut 1.5s ease forwards;
-                    animation-delay: 4.5s;
-                    font-family: 'Orbitron', sans-serif;
+                    font-family: 'Bebas Neue', sans-serif;
                 }
 
                 .intro-text {
-                    font-size: 4.5em;
-                    color: #0ff;
-                    letter-spacing: 4px;
-                    animation: glitch 1.5s infinite alternate ease-in-out, slideUp 1.5s ease;
+                    font-size: 6em;
+                    color: #e50914;
+                    animation: fadeIn 1.8s ease-in-out;
+                    letter-spacing: 2px;
+                    text-align: center;
+                    text-shadow: 0px 0px 10px #e50914;
                 }
 
                 .subtitle {
-                    font-size: 1.4em;
-                    color: rgba(255,255,255,0.7);
+                    font-size: 1.8em;
+                    color: #ffffff;
                     margin-top: 10px;
-                    animation: slideUp 2s ease forwards;
-                    animation-delay: 0.5s;
+                    opacity: 0.85;
+                    text-align: center;
                 }
 
-                .particles {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    pointer-events: none;
-                    z-index: 0;
-                    overflow: hidden;
-                }
-
-                .particle {
-                    position: absolute;
-                    width: 6px;
+                .loader-bar {
+                    margin-top: 40px;
+                    width: 220px;
                     height: 6px;
-                    background: rgba(0, 255, 255, 0.6);
-                    border-radius: 50%;
-                    animation: float 3s ease-in-out infinite;
+                    border-radius: 4px;
+                    background: rgba(255, 255, 255, 0.15);
+                    overflow: hidden;
+                    position: relative;
+                }
+
+                .loader-bar::before {
+                    content: "";
+                    position: absolute;
+                    height: 100%;
+                    width: 40%;
+                    background: #e50914;
+                    animation: loader 1.2s infinite;
+                }
+
+                .fade-out {
+                    animation: fadeOut 1s ease forwards;
+                    animation-delay: 3.8s;
+                }
+
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; visibility: hidden; }
                 }
             </style>
 
-            <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
+            <!-- Netflix-style font -->
+            <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 
-            <div class="intro-container">
+            <!-- Netflix intro sound autoplay -->
+            <audio autoplay>
+                <source src="https://www.myinstants.com/media/sounds/netflix-intro.mp3" type="audio/mpeg">
+            </audio>
+
+            <div class="intro-container fade-out">
                 <div class="intro-text">ASAS 2.0</div>
-                <div class="subtitle">Secure. Smart. Streamlined.</div>
-                <div class="particles">
-                    <!-- Generate particles dynamically -->
-                    """ + "\n".join([
-                        f'<div class="particle" style="top:{i*5}%; left:{(i*37)%100}%; animation-delay:{(i%5)*0.3}s;"></div>'
-                        for i in range(20)
-                    ]) + """
-                </div>
+                <div class="subtitle">Automated Student Authentication System</div>
+                <div class="loader-bar"></div>
             </div>
         """, unsafe_allow_html=True)
 
-        time.sleep(5.5)
+        time.sleep(4.5)
         st.session_state.intro_shown = True
         st.rerun()
 
 show_intro()
+
 
 
 # Database setup
