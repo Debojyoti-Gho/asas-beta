@@ -1675,7 +1675,7 @@ if menu == "Home":
 # Main registration logic
 elif menu == "Student's Registration":
     st.header("Student Registration")
-
+    
     # Init session state variables
     for key, default in {
         "step": 1,
@@ -1687,40 +1687,14 @@ elif menu == "Student's Registration":
     }.items():
         if key not in st.session_state:
             st.session_state[key] = default
-
+    
     # ---- STEP 1: Student Details ----
     if st.session_state.step == 1:
         with st.form("student_details_form"):
             st.subheader("Student Details")
     
-            # Input fields
-            name = st.text_input("Name")
-            roll = st.text_input("Roll Number")
-            section = st.selectbox("Select Section", ["A", "B", "C", "D"])
-            email = st.text_input("Email")
-            enrollment_no = st.text_input("Enrollment Number")
-            year = st.selectbox("Select Year", [1, 2, 3, 4])
-            semester = st.selectbox("Select Semester", list(range(1, 9)))
-            user_id = st.text_input("User ID")
-            password = st.text_input("Password", type="password")
-    
-            # Password criteria info
-            st.markdown("""
-            **Password must meet the following criteria:**  
-            - ✅ At least **8 characters** long  
-            - ✅ Contains **one uppercase letter** (A-Z)  
-            - ✅ Contains **one lowercase letter** (a-z)  
-            - ✅ Contains **one number** (0-9)  
-            - ✅ Contains **one special character** (@, #, $, etc.)
-            """, unsafe_allow_html=True)
-    
-            submitted = st.form_submit_button("Next")
-    
-        # ⬅️ This block runs **after form is submitted**
-        if submitted:
-            password_check = is_strong_password(password)
-    
-            if password_check == "✅ Strong password!":
+            # Persist inputs in session_state
+            def save_student_details():
                 st.session_state.form_data = {
                     "name": name,
                     "roll": roll,
@@ -1733,9 +1707,31 @@ elif menu == "Student's Registration":
                     "password": password
                 }
                 st.session_state.step = 2
-            else:
-                st.error(password_check)
-
+    
+            name = st.text_input("Name")
+            roll = st.text_input("Roll Number")
+            section = st.selectbox("Select Section", ["A", "B", "C", "D"])
+            email = st.text_input("Email")
+            enrollment_no = st.text_input("Enrollment Number")
+            year = st.selectbox("Select Year", [1, 2, 3, 4])
+            semester = st.selectbox("Select Semester", list(range(1, 9)))
+            user_id = st.text_input("User ID")
+            password = st.text_input("Password", type="password")
+    
+            st.markdown("""
+            **Password must meet the following criteria:**  
+            - ✅ At least **8 characters** long  
+            - ✅ Contains **one uppercase letter** (A-Z)  
+            - ✅ Contains **one lowercase letter** (a-z)  
+            - ✅ Contains **one number** (0-9)  
+            - ✅ Contains **one special character** (@, #, $, etc.)
+            """, unsafe_allow_html=True)
+    
+            if password:
+                st.info(is_strong_password(password))
+    
+            if st.form_submit_button("Next"):
+                save_student_details()
                     
     
     # ---- STEP 2: Face Capture ----
