@@ -1651,29 +1651,50 @@ if menu == "Home":
         st.write(item["answer"])
 
 
-# Main registration logic
-elif menu == "Student's Registration":
-    st.header("Student Registration")
+st.header("Student Registration")
 
-    # Initialize session state variables for OTP and verification
-    if "email_otp" not in st.session_state:
-        st.session_state.email_otp = None
-    if "email_verified" not in st.session_state:
-        st.session_state.email_verified = False
+# Init session state variables
+for key, default in {
+    "step": 1,
+    "email_otp": None,
+    "email_verified": False,
+    "face_blob": None,
+    "face_verified": False,
+    "form_data": {}
+}.items():
+    if key not in st.session_state:
+        st.session_state[key] = default
 
-    # Registration Form
-    with st.form("registration_form"):
-        # Input fields for student details
+# ---- STEP 1: Student Details ----
+if st.session_state.step == 1:
+    with st.form("student_details_form"):
         st.subheader("Student Details")
+
+        # Persist inputs in session_state
+        def save_student_details():
+            st.session_state.form_data = {
+                "name": name,
+                "roll": roll,
+                "section": section,
+                "email": email,
+                "enrollment_no": enrollment_no,
+                "year": year,
+                "semester": semester,
+                "user_id": user_id,
+                "password": password
+            }
+            st.session_state.step = 2
+
         name = st.text_input("Name")
         roll = st.text_input("Roll Number")
         section = st.selectbox("Select Section", ["A", "B", "C", "D"])
-        email = st.text_input("Email")  # Use this email for OTP verification
+        email = st.text_input("Email")
         enrollment_no = st.text_input("Enrollment Number")
         year = st.selectbox("Select Year", [1, 2, 3, 4])
-        semester = st.selectbox("Select Semester", [1, 2, 3, 4, 5, 6, 7, 8])
+        semester = st.selectbox("Select Semester", list(range(1, 9)))
         user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
+
         st.markdown("""
         **Password must meet the following criteria:**  
         - ✅ At least **8 characters** long  
@@ -1686,129 +1707,106 @@ elif menu == "Student's Registration":
         if password:
             st.info(is_strong_password(password))
 
-        # Capture face photo
-        st.subheader("Capture Your Face")
-        st.warning("you are always recommended to set your screen brightness to maximum level while biometric verification!!")
-        face_image = st.camera_input("Capture your face")
-    
-        if face_image:
-            # Display the captured face image
-            st.image(face_image, caption="Captured Face", use_container_width=True)
+        if st.form_submit_button("Next"):
+            save_student_details()
 
-            # Convert the image to binary for database storage
-            img = Image.open(face_image)
-            img_bytes = io.BytesIO()
-            img.save(img_bytes, format="JPEG")
-            face_blob = img_bytes.getvalue()  # Convert to binary data
+# ---- STEP 2: Face Capture ----
+elif st.session_state.step == 2:
+    st.subheader("Capture Your Face")
+    st.warning("Please set your screen brightness to maximum for better biometric capture.")
+    face_image = st.camera_input("Capture your face")
 
-            # Check if this face is already registered
-            if is_face_registered(face_blob):
-                st.error("This face is already registered. Please use a different face or login.")
-                st.stop()  # This stops further execution immediately
+    if face_image:
+        img = Image.open(face_image)
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format="JPEG")
+        face_blob = img_bytes.getvalue()
+
+        if is_face_registered(face_blob):
+            st.error("This face is already registered. Please try again with a different face.")
+        else:
+            st.success("Face captured successfully!")
+            st.session_state.face_blob = face_blob
+            st.session_state.face_verified = True
+            st.session_state.step = 3
+            st.rerun()
+
+# ---- STEP 3: WebAuthn / Fingerprint ----
+elif st.session_state.step == 3:
+    st.subheader("Fingerprint Verification")
+    st.warning("Complete fingerprint registration within 30 seconds.")
+    st.components.v1.html(webauthn_register_script())
+    time.sleep(20)
+    st.session_state.step = 4
+    st.rerun()
+
+# ---- STEP 4: Email OTP Verification ----
+elif st.session_state.step == 4:
+    st.subheader("Email Verification")
+    email = st.session_state.form_data["email"]
+
+    if not st.session_state.email_verified:
+        if st.button("Send OTP"):
+            otp = str(np.random.randint(100000, 999999))
+            st.session_state.email_otp = otp
+
+            try:
+                message = MIMEMultipart()
+                message["From"] = 'debojyotighoshmain@gmail.com'
+                message["To"] = email
+                message["Subject"] = "Your OTP for Student Registration"
+                message.attach(MIMEText(f"Your OTP is: {otp}", "plain"))
+
+                with smtplib.SMTP('smtp-relay.brevo.com', 587) as server:
+                    server.starttls()
+                    server.login('823c6b001@smtp-brevo.com', '6tOJHT2F4x8ZGmMw')
+                    server.sendmail('debojyotighoshmain@gmail.com', email, message.as_string())
+
+                st.success(f"OTP sent to {email}")
+            except Exception as e:
+                st.error(f"Failed to send OTP: {e}")
+
+        otp_input = st.text_input("Enter the OTP sent to your email")
+        if st.button("Verify OTP"):
+            if otp_input == st.session_state.email_otp:
+                st.session_state.email_verified = True
+                st.success("Email verified successfully!")
+                st.session_state.step = 5
+                st.rerun()
             else:
-                st.success("Face captured successfully!")
+                st.error("Invalid OTP. Please try again.")
 
-            st.warning("Please complete the registration by capturing your fingerprint.")
-            st.warning("you have to complete fingerprint registration within 30 secs")
-            st.info("after completion please wait for the next steps!")
-            # Render WebAuthn registration UI using JavaScript
-            st.components.v1.html(webauthn_register_script())
-            
-            # Mock the WebAuthn registration after 5 seconds
-            time.sleep(20)  # Simulate waiting for the WebAuthn registration process
-            st.write("please scroll down")
-            
-        st.subheader("Email Verification")
-        if not st.session_state.email_verified:
-            # Send OTP Button
-            if st.form_submit_button("Send OTP"):
-                if email:
-                    otp = str(np.random.randint(100000, 999999))
-                    st.session_state.email_otp = otp
+# ---- STEP 5: Final Registration ----
+elif st.session_state.step == 5:
+    st.subheader("Final Step: Complete Registration")
+    form = st.session_state.form_data
+    face_blob = st.session_state.face_blob
+    device_id = device_id_from_cookies
 
-                    # SMTP Configuration
-                    smtp_server = 'smtp-relay.brevo.com'
-                    smtp_port = 587
-                    smtp_user = '823c6b001@smtp-brevo.com'
-                    smtp_password = '6tOJHT2F4x8ZGmMw'
-                    from_email = 'debojyotighoshmain@gmail.com'
-
-                    try:
-                        # Send OTP via email
-                        message = MIMEMultipart()
-                        message["From"] = from_email
-                        message["To"] = email
-                        message["Subject"] = "Your OTP for Student Registration"
-
-                        body = f"Your OTP for registration is: {otp}\n\nPlease enter this OTP to verify your email."
-                        message.attach(MIMEText(body, "plain"))
-
-                        with smtplib.SMTP(smtp_server, smtp_port) as server:
-                            server.starttls()
-                            server.login(smtp_user, smtp_password)
-                            server.sendmail(from_email, email, message.as_string())
-
-                        st.success(f"OTP sent to {email}. Please check your email.")
-                    except Exception as e:
-                        st.error(f"Failed to send OTP: {e}")
-                else:
-                    st.error("Please enter a valid email address.")
-
-        # OTP Verification
-        if st.session_state.email_otp and not st.session_state.email_verified:
-            otp_input = st.text_input("Enter the OTP sent to your email")
-            if st.form_submit_button("Verify OTP"):
-                if otp_input == st.session_state.email_otp:
-                    st.session_state.email_verified = True
-                    st.success("Email verified successfully! You can proceed with registration.")
-                else:
-                    st.error("Invalid OTP. Please try again.")
-
-        # Registration Button
-        if st.session_state.email_verified:
-            st.subheader("Complete Registration")
-            if st.form_submit_button("Register"):
-                if face_image:  # Ensure face image is captured
-                    # Fetch the device ID (UUID based)
-                    device_id = device_id_from_cookies
-                    st.success(f"Your unique device ID is: {device_id_from_cookies}")
-
-                    if not device_id:
-                        st.error("Could not fetch device ID, registration cannot proceed.")
-                    else:
-                        # Check if the device ID is already registered
-                        cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
-                        if cursor.fetchone():
-                            st.error("This device has already been used for registration. Only one registration is allowed per device.Please refresh and start again!")
-                        else:
-                            # Check for duplicate entries in the database for email, roll, user ID, and enrollment number
-                            cursor.execute("SELECT * FROM students WHERE email = ?", (email,))
-                            if cursor.fetchone():
-                                st.error("This email is already registered.Please refresh and start again!")
-                            else:
-                                cursor.execute("SELECT * FROM students WHERE roll = ?", (roll,))
-                                if cursor.fetchone():
-                                    st.error("This roll number is already registered.Please refresh and start again!")
-                                else:
-                                    cursor.execute("SELECT * FROM students WHERE user_id = ?", (user_id,))
-                                    if cursor.fetchone():
-                                        st.error("This user ID is already registered.Please refresh and start again!")
-                                    else:
-                                        cursor.execute("SELECT * FROM students WHERE enrollment_no = ?", (enrollment_no,))
-                                        if cursor.fetchone():
-                                            st.error("This enrollment number is already registered.Please refresh and start again!")
-                                        else:
-                                            # Insert into database
-                                            cursor.execute("""
-                                            INSERT INTO students (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
-                                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                            """, (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, face_blob))
-                                            conn.commit()
-                                            st.success("Registration successful!")
-                                            st.warning("From now on this device will be considered the only registered and verified device for future logins")
-                                            st.info("Please proceed to the Student Login page.")
-
-
+    if st.button("Register"):
+        if not device_id:
+            st.error("Could not fetch device ID. Please try again.")
+        else:
+            # Check for duplicates
+            cursor.execute("SELECT * FROM students WHERE device_id = ?", (device_id,))
+            if cursor.fetchone():
+                st.error("Device already registered.")
+            elif any(cursor.execute(f"SELECT * FROM students WHERE {field} = ?", (form[field],)).fetchone()
+                     for field in ["email", "roll", "user_id", "enrollment_no"]):
+                st.error("One of the provided details is already registered.")
+            else:
+                # Insert into DB
+                cursor.execute("""
+                    INSERT INTO students 
+                    (user_id, password, name, roll, section, email, enrollment_no, year, semester, device_id, student_face)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (form["user_id"], form["password"], form["name"], form["roll"], form["section"],
+                      form["email"], form["enrollment_no"], form["year"], form["semester"],
+                      device_id, face_blob))
+                conn.commit()
+                st.success("Registration completed successfully!")
+                st.info("Proceed to Student Login page.")
+                st.session_state.step = 1  # Reset flow
                                             
 
 # Student Login Page Logic
@@ -2321,22 +2319,35 @@ elif menu == "Teacher's Login":
                 
         st.markdown("---")
         # Advanced Search Section for Registered Students
-        st.subheader("Advanced Search for Registered Students")
-
-        # Search Inputs for Student Filters
-        student_name = st.text_input("Search by Name")
-        student_id = st.text_input("Search by Student ID")
-        student_department = st.text_input("Search by Department")
-        student_year = st.selectbox("Search by Year", ["All", "1st Year", "2nd Year", "3rd Year", "4th Year"])
-
-        # Search Inputs for Date, Month, Year, and Day (Attendance filters)
-        search_by_month = st.selectbox("Search by Month", ["All", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
-        search_by_year = st.selectbox("Search by Year (Attendance)", ["All", "2024", "2023", "2022", "2021", "2020"])
-        search_by_day = st.selectbox("Search by Day", ["All", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
-        search_by_date = st.date_input("Search by Date", value=None)
-
-        if st.button("Search"):
-            # Start building SQL query
+        st.subheader("🔍 Advanced Search for Registered Students")
+        
+        # === Layout: Group inputs into 3 clean columns ===
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            student_name = st.text_input("👤 Name")
+            student_id = st.text_input("🆔 Student ID")
+        
+        with col2:
+            student_department = st.text_input("🏫 Department")
+            student_year = st.selectbox("🎓 Year", ["All", "1st Year", "2nd Year", "3rd Year", "4th Year"])
+        
+        with col3:
+            search_by_month = st.selectbox("📅 Month", [
+                "All", "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ])
+            search_by_year = st.selectbox("📆 Attendance Year", ["All", "2024", "2023", "2022", "2021", "2020"])
+            search_by_day = st.selectbox("🗓️ Day", [
+                "All", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+            ])
+            search_by_date = st.date_input("📌 Specific Date", value=None)
+        
+        st.markdown("")
+        
+        # Search Button
+        if st.button("🔍 Search Students"):
+            # SQL Base
             query = """
                 SELECT DISTINCT students.* 
                 FROM students
@@ -2344,131 +2355,130 @@ elif menu == "Teacher's Login":
                 WHERE 1=1
             """
             params = []
-
-            # Apply filters based on input
+        
+            # Apply filters
             if student_name:
                 query += " AND students.name LIKE ?"
                 params.append(f"%{student_name}%")
-
+        
             if student_id:
                 query += " AND students.user_id = ?"
                 params.append(student_id)
-
+        
             if student_department:
                 query += " AND students.section LIKE ?"
                 params.append(f"%{student_department}%")
-
+        
             if student_year and student_year != "All":
                 query += " AND students.year = ?"
                 params.append(student_year)
-
+        
             if search_by_month != "All":
-                query += " AND strftime('%m', attendance.date) = ?"
                 month_number = {
                     "January": "01", "February": "02", "March": "03", "April": "04", 
                     "May": "05", "June": "06", "July": "07", "August": "08", 
                     "September": "09", "October": "10", "November": "11", "December": "12"
                 }[search_by_month]
+                query += " AND strftime('%m', attendance.date) = ?"
                 params.append(month_number)
-
+        
             if search_by_year != "All":
                 query += " AND strftime('%Y', attendance.date) = ?"
                 params.append(search_by_year)
-
+        
             if search_by_day != "All":
-                query += " AND strftime('%w', attendance.date) = ?"
                 day_number = {
                     "Sunday": "0", "Monday": "1", "Tuesday": "2", "Wednesday": "3", 
                     "Thursday": "4", "Friday": "5", "Saturday": "6"
                 }[search_by_day]
+                query += " AND strftime('%w', attendance.date) = ?"
                 params.append(day_number)
-
+        
             if search_by_date:
                 query += " AND attendance.date = ?"
                 params.append(search_by_date.strftime('%Y-%m-%d'))
-
-            # Execute the query based on the applied filters
+        
+            # Execute query
             cursor.execute(query, params)
             filtered_students = cursor.fetchall()
-
-            # Display filtered students and their details
-            st.subheader("Filtered Students")
+        
+            # === Display Results ===
+            st.subheader("📋 Filtered Students")
+        
             if filtered_students:
                 for student in filtered_students:
                     student_id = student[0]
                     student_name = student[2]
-                    st.write(f"Student ID: {student_id}, Name: {student_name}")
-
-                    # Display student's full details
-                    st.write(f"User ID: {student[0]}")
-                    st.write(f"Name: {student[2]}")
-                    st.write(f"Roll: {student[3]}")
-                    st.write(f"Section: {student[4]}")
-                    st.write(f"Email: {student[5]}")
-                    st.write(f"Enrollment No: {student[6]}")
-                    st.write(f"Year: {student[7]}")
-                    st.write(f"Semester: {student[8]}")
-                    st.write(f"Device ID: {student[9]}")
-
-                    # Fetch the student's year and semester
-                    cursor.execute("""
-                        SELECT year, semester 
-                        FROM students 
-                        WHERE user_id = ?
-                    """, (student_id,))
-                    student_details = cursor.fetchone()
-
-                    if student_details:
-                        year, semester = student_details
-
-                        # Fetch semester details
-                        cursor.execute("""
-                            SELECT total_classes, total_periods 
-                            FROM semester_dates 
-                            WHERE year = ? AND semester = ?
-                        """, (year, semester))
-                        semester_details = cursor.fetchone()
-
-                        if semester_details:
-                            total_classes_in_semester, total_periods_in_semester = semester_details
-
-                            # Fetch attendance records for the student
-                            cursor.execute("SELECT * FROM attendance WHERE student_id = ?", (student_id,))
-                            attendance_records = cursor.fetchall()
-
-                            if attendance_records:
-                                total_classes_attended = len(attendance_records)  # Number of days attended
-                                total_periods_attended = sum(
-                                    sum(1 if record[i] == 1 else 0 for i in range(3, 10))  # Count periods attended
-                                    for record in attendance_records
-                                )
-
-                                # Calculate attendance percentage
-                                if total_periods_in_semester > 0:  # Avoid division by zero
-                                    attendance_percentage = (total_periods_attended / total_periods_in_semester) * 100
+        
+                    with st.expander(f"👨‍🎓 {student_name} ({student_id})"):
+                        st.markdown(f"**🎓 Roll:** {student[3]}")
+                        st.markdown(f"**🏫 Department:** {student[4]}")
+                        st.markdown(f"**📧 Email:** {student[5]}")
+                        st.markdown(f"**🆕 Enrollment No:** {student[6]}")
+                        st.markdown(f"**📘 Year:** {student[7]} | **Semester:** {student[8]}")
+                        st.markdown(f"**🔐 Device ID:** `{student[9]}`")
+        
+                        # Get year & semester
+                        cursor.execute("SELECT year, semester FROM students WHERE user_id = ?", (student_id,))
+                        student_details = cursor.fetchone()
+        
+                        if student_details:
+                            year, semester = student_details
+        
+                            # Semester info
+                            cursor.execute("""
+                                SELECT total_classes, total_periods 
+                                FROM semester_dates 
+                                WHERE year = ? AND semester = ?
+                            """, (year, semester))
+                            semester_details = cursor.fetchone()
+        
+                            if semester_details:
+                                total_classes_in_semester, total_periods_in_semester = semester_details
+        
+                                # Attendance data
+                                cursor.execute("SELECT * FROM attendance WHERE student_id = ?", (student_id,))
+                                attendance_records = cursor.fetchall()
+        
+                                if attendance_records:
+                                    total_classes_attended = len(attendance_records)
+                                    total_periods_attended = sum(
+                                        sum(1 if record[i] == 1 else 0 for i in range(3, 10))
+                                        for record in attendance_records
+                                    )
+        
+                                    # Attendance % calculation
+                                    if total_periods_in_semester > 0:
+                                        attendance_percentage = (total_periods_attended / total_periods_in_semester) * 100
+                                    else:
+                                        attendance_percentage = 0.0
+        
+                                    # Summary
+                                    st.success(f"✅ **Attendance Percentage:** {attendance_percentage:.2f}%")
+                                    st.write(f"📅 Total Classes in Semester: {total_classes_in_semester}")
+                                    st.write(f"⏰ Total Periods: {total_periods_in_semester}")
+                                    st.write(f"📚 Attended Classes: {total_classes_attended}")
+                                    st.write(f"📖 Attended Periods: {total_periods_attended}")
+        
+                                    with st.expander("🗂️ View Detailed Attendance Records"):
+                                        for record in attendance_records:
+                                            st.markdown(f"**🗓️ Date:** {record[1]} | **📌 Day:** {record[2]}")
+                                            for i in range(3, 10):
+                                                status = record[i]
+                                                period_status = (
+                                                    "✅ Present" if status == 1 else
+                                                    "❌ Absent" if status == 0 else "⚪ N/A"
+                                                )
+                                                st.markdown(f"• Period {i-2}: {period_status}")
                                 else:
-                                    attendance_percentage = 0.0
-
-                                # Display attendance summary
-                                st.subheader(f"Attendance Report for {student_id}")
-                                st.write(f"Total Classes in Semester: {total_classes_in_semester}")
-                                st.write(f"Total Periods in Semester: {total_periods_in_semester}")
-                                st.write(f"Classes Attended: {total_classes_attended}")
-                                st.write(f"Periods Attended: {total_periods_attended}")
-                                st.write(f"Attendance Percentage: {attendance_percentage:.2f}%")
-
-                                # Detailed attendance
-                                for record in attendance_records:
-                                    st.write(f"Date: {record[1]}, Day: {record[2]}")
-                                    for i in range(3, 10):  # Columns for periods
-                                        period_status = 'Present' if record[i] == 1 else ('Absent' if record[i] == 0 else 'N/A')
-                                        st.write(f"Period {i-2}: {period_status}")
+                                    st.warning("⚠️ No attendance records found.")
                             else:
-                                st.write("No attendance records found for this student.")
+                                st.error("❌ Semester info not available.")
                         else:
-                            st.write("Semester details not available. Cannot calculate attendance percentage.")
-                    else:
-                        st.write("Student details not found.")
+                            st.error("❌ Student details missing.")
+            else:
+                st.info("🔎 No students found matching the criteria.")
+
                         
         st.markdown("---")
         st.markdown("---")
