@@ -2369,19 +2369,15 @@ elif menu == "Teacher's Login":
             if student_name:
                 query += " AND students.name LIKE ?"
                 params.append(f"%{student_name}%")
-        
             if student_id:
                 query += " AND students.user_id = ?"
                 params.append(student_id)
-        
             if student_department:
                 query += " AND students.section LIKE ?"
                 params.append(f"%{student_department}%")
-        
             if student_year and student_year != "All":
                 query += " AND students.year = ?"
                 params.append(student_year)
-        
             if search_by_month != "All":
                 month_number = {
                     "January": "01", "February": "02", "March": "03", "April": "04", 
@@ -2390,11 +2386,9 @@ elif menu == "Teacher's Login":
                 }[search_by_month]
                 query += " AND strftime('%m', attendance.date) = ?"
                 params.append(month_number)
-        
             if search_by_year != "All":
                 query += " AND strftime('%Y', attendance.date) = ?"
                 params.append(search_by_year)
-        
             if search_by_day != "All":
                 day_number = {
                     "Sunday": "0", "Monday": "1", "Tuesday": "2", "Wednesday": "3", 
@@ -2402,7 +2396,6 @@ elif menu == "Teacher's Login":
                 }[search_by_day]
                 query += " AND strftime('%w', attendance.date) = ?"
                 params.append(day_number)
-        
             if search_by_date:
                 query += " AND attendance.date = ?"
                 params.append(search_by_date.strftime('%Y-%m-%d'))
@@ -2411,7 +2404,13 @@ elif menu == "Teacher's Login":
             cursor.execute(query, params)
             filtered_students = cursor.fetchall()
         
-            # === Display Results ===
+            # Save to session_state
+            st.session_state["search_results"] = filtered_students
+        
+        # === Display Results (If Available) ===
+        if "search_results" in st.session_state:
+            filtered_students = st.session_state["search_results"]
+        
             st.subheader("📋 Filtered Students")
         
             if filtered_students:
@@ -2457,29 +2456,22 @@ elif menu == "Teacher's Login":
                                     )
         
                                     # Attendance % calculation
-                                    if total_periods_in_semester > 0:
-                                        attendance_percentage = (total_periods_attended / total_periods_in_semester) * 100
-                                    else:
-                                        attendance_percentage = 0.0
+                                    attendance_percentage = (
+                                        (total_periods_attended / total_periods_in_semester) * 100
+                                        if total_periods_in_semester > 0 else 0.0
+                                    )
         
-                                    # Summary
                                     st.success(f"✅ **Attendance Percentage:** {attendance_percentage:.2f}%")
                                     st.write(f"📅 Total Classes in Semester: {total_classes_in_semester}")
                                     st.write(f"⏰ Total Periods: {total_periods_in_semester}")
                                     st.write(f"📚 Attended Classes: {total_classes_attended}")
                                     st.write(f"📖 Attended Periods: {total_periods_attended}")
         
-                                    toggle_key = f"{student_id}_toggle"
-
-                                    # Initialize the state if not already
-                                    if toggle_key not in st.session_state:
-                                        st.session_state[toggle_key] = False
-                                    
-                                    # Create checkbox and update session state
+                                    # Unique toggle key for each student
+                                    toggle_key = f"{student_id}_detailed_attendance"
+        
+                                    # Show checkbox (preserves state)
                                     if st.checkbox("🗂️ Show Detailed Attendance Records", key=toggle_key):
-                                        st.session_state[toggle_key] = True
-                                    
-                                    if st.session_state[toggle_key]:
                                         for record in attendance_records:
                                             st.markdown(f"**🗓️ Date:** {record[1]} | **📌 Day:** {record[2]}")
                                             for i in range(3, 10):
@@ -2489,7 +2481,6 @@ elif menu == "Teacher's Login":
                                                     "❌ Absent" if status == 0 else "⚪ N/A"
                                                 )
                                                 st.markdown(f"• Period {i-2}: {period_status}")
-
                                 else:
                                     st.warning("⚠️ No attendance records found.")
                             else:
