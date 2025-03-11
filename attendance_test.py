@@ -1692,7 +1692,7 @@ elif menu == "Student's Registration":
     if st.session_state.step == 1:
         with st.form("student_details_form"):
             st.subheader("Student Details")
-
+    
             # Input fields
             name = st.text_input("Name")
             roll = st.text_input("Roll Number")
@@ -1703,7 +1703,7 @@ elif menu == "Student's Registration":
             semester = st.selectbox("Select Semester", list(range(1, 9)))
             user_id = st.text_input("User ID")
             password = st.text_input("Password", type="password")
-
+    
             # Password criteria info
             st.markdown("""
             **Password must meet the following criteria:**  
@@ -1713,34 +1713,29 @@ elif menu == "Student's Registration":
             - ✅ Contains **one number** (0-9)  
             - ✅ Contains **one special character** (@, #, $, etc.)
             """, unsafe_allow_html=True)
-
-            # Validate password in real-time
-            password_check = None
-            if password:
-                password_check = is_strong_password(password)
-                if password_check == "✅ Strong password!":
-                    st.success(password_check)
-                else:
-                    st.info(password_check)  # use info instead of warning inside forms
-
-            # Submit button
+    
             submitted = st.form_submit_button("Next")
-            if submitted:
-                if password_check == "✅ Strong password!":
-                    st.session_state.form_data = {
-                        "name": name,
-                        "roll": roll,
-                        "section": section,
-                        "email": email,
-                        "enrollment_no": enrollment_no,
-                        "year": year,
-                        "semester": semester,
-                        "user_id": user_id,
-                        "password": password
-                    }
-                    st.session_state.step = 2
-                else:
-                    st.error(password_check or "Please enter a valid password.")
+    
+        # ⬅️ This block runs **after form is submitted**
+        if submitted:
+            password_check = is_strong_password(password)
+    
+            if password_check == "✅ Strong password!":
+                st.session_state.form_data = {
+                    "name": name,
+                    "roll": roll,
+                    "section": section,
+                    "email": email,
+                    "enrollment_no": enrollment_no,
+                    "year": year,
+                    "semester": semester,
+                    "user_id": user_id,
+                    "password": password
+                }
+                st.session_state.step = 2
+            else:
+                st.error(password_check)
+
                     
     
     # ---- STEP 2: Face Capture ----
