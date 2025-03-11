@@ -63,6 +63,7 @@ def show_intro():
                     justify-content: center;
                     flex-direction: column;
                     font-family: 'Bebas Neue', sans-serif;
+                    padding: 0 20px;
                 }}
 
                 video.background-video {{
@@ -80,9 +81,26 @@ def show_intro():
                     background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
-                    animation: fadeIn 1.8s ease-in-out;
+                    animation: zoomFade 1.6s ease-in-out;
                     letter-spacing: 2px;
                     text-align: center;
+                    max-width: 100%;
+                    word-wrap: break-word;
+                }}
+
+                @keyframes zoomFade {{
+                    0% {{
+                        transform: scale(0.8);
+                        opacity: 0;
+                    }}
+                    50% {{
+                        transform: scale(1.05);
+                        opacity: 1;
+                    }}
+                    100% {{
+                        transform: scale(1);
+                        opacity: 1;
+                    }}
                 }}
 
                 .subtitle {{
@@ -134,6 +152,21 @@ def show_intro():
                     animation: flashWhite 0.4s ease-in forwards;
                     animation-delay: 6.3s;
                 }}
+
+                /* Responsive Text Scaling */
+                @media (max-width: 768px) {{
+                    .intro-text {{
+                        font-size: 3em;
+                    }}
+                    .subtitle {{
+                        font-size: 1.2em;
+                    }}
+                    .spinner {{
+                        width: 30px;
+                        height: 30px;
+                        border-width: 3px;
+                    }}
+                }}
             </style>
 
             <!-- Font -->
@@ -159,6 +192,7 @@ def show_intro():
         st.rerun()
 
 show_intro()
+
 
 
 # Database setup
