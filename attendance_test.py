@@ -1688,11 +1688,12 @@ elif menu == "Student's Registration":
         if key not in st.session_state:
             st.session_state[key] = default
 
+    # ---- STEP 1: Student Details ----
     if st.session_state.step == 1:
         with st.form("student_details_form"):
             st.subheader("Student Details")
 
-            # Inputs
+            # Input fields
             name = st.text_input("Name")
             roll = st.text_input("Roll Number")
             section = st.selectbox("Select Section", ["A", "B", "C", "D"])
@@ -1703,7 +1704,7 @@ elif menu == "Student's Registration":
             user_id = st.text_input("User ID")
             password = st.text_input("Password", type="password")
 
-            # Password criteria (static note)
+            # Password criteria info
             st.markdown("""
             **Password must meet the following criteria:**  
             - ✅ At least **8 characters** long  
@@ -1713,15 +1714,14 @@ elif menu == "Student's Registration":
             - ✅ Contains **one special character** (@, #, $, etc.)
             """, unsafe_allow_html=True)
 
-            # Live feedback inside the form (no errors)
+            # Validate password in real-time
+            password_check = None
             if password:
                 password_check = is_strong_password(password)
                 if password_check == "✅ Strong password!":
                     st.success(password_check)
                 else:
-                    st.warning(password_check)
-            else:
-                password_check = None
+                    st.info(password_check)  # use info instead of warning inside forms
 
             # Submit button
             submitted = st.form_submit_button("Next")
@@ -1740,7 +1740,8 @@ elif menu == "Student's Registration":
                     }
                     st.session_state.step = 2
                 else:
-                    st.error(password_check or "Please enter a password.")
+                    st.error(password_check or "Please enter a valid password.")
+                    
     
     # ---- STEP 2: Face Capture ----
     elif st.session_state.step == 2:
