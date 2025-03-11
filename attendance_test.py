@@ -1649,10 +1649,6 @@ if menu == "Home":
     for item in faq:
         st.subheader(item["question"])
         st.write(item["answer"])
-
-# Reset registration flow if user switches away
-if menu != "Student Registration":
-    st.session_state.step = 1  # Reset only when user leaves registration page
     
 # Main registration logic
 elif menu == "Student's Registration":
