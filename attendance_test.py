@@ -101,7 +101,7 @@ def show_intro():
 
         time.sleep(4)  # Display for 4 seconds
         st.session_state.intro_shown = True
-        st.experimental_rerun()  # Rerun to remove intro
+        st.rerun()  # Rerun to remove intro
 
 # Run the intro function at the start
 show_intro()
