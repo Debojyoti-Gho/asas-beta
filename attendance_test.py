@@ -48,95 +48,120 @@ def show_intro():
     if not st.session_state.intro_shown:
         st.markdown("""
             <style>
-                @keyframes backgroundFlow {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
+                body {
+                    overflow: hidden;
                 }
 
-                @keyframes textSpinZoom {
+                @keyframes glitch {
+                    0% { transform: translate(0); }
+                    20% { transform: translate(-2px, 2px); }
+                    40% { transform: translate(-2px, -2px); }
+                    60% { transform: translate(2px, 2px); }
+                    80% { transform: translate(2px, -2px); }
+                    100% { transform: translate(0); }
+                }
+
+                @keyframes neonFadeIn {
                     0% {
-                        transform: rotateY(0deg) scale(0.5);
+                        text-shadow: none;
                         opacity: 0;
-                    }
-                    60% {
-                        opacity: 1;
+                        transform: scale(0.9);
                     }
                     100% {
-                        transform: rotateY(360deg) scale(1);
+                        text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff;
                         opacity: 1;
+                        transform: scale(1);
                     }
                 }
 
-                @keyframes fadeOut {
-                    from { opacity: 1; }
-                    to { opacity: 0; visibility: hidden; }
-                }
-
-                @keyframes pulse {
-                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.5); }
-                    70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(255,255,255,0); }
-                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+                @keyframes starfield {
+                    from { background-position: 0 0; }
+                    to { background-position: -10000px 5000px; }
                 }
 
                 .intro-container {
                     position: fixed;
                     top: 0;
                     left: 0;
-                    height: 100vh;
                     width: 100vw;
-                    background: linear-gradient(135deg, #b1d34b, #3cb878, #4facfe);
-                    background-size: 400% 400%;
-                    animation: backgroundFlow 10s ease infinite;
+                    height: 100vh;
                     z-index: 9999;
+                    background: black url('https://i.gifer.com/VgG.gif') repeat;
+                    background-size: cover;
+                    animation: starfield 300s linear infinite;
                     display: flex;
-                    flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    font-family: 'Segoe UI', sans-serif;
+                    flex-direction: column;
+                    font-family: 'Orbitron', sans-serif;
                 }
 
                 .intro-text {
-                    font-size: 4em;
-                    font-weight: 600;
-                    color: white;
-                    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-                    animation: textSpinZoom 2s ease-out;
+                    font-size: 4.5em;
+                    color: #0ff;
+                    animation: neonFadeIn 2s ease-in-out, glitch 0.3s infinite;
+                    letter-spacing: 3px;
+                    text-align: center;
                 }
 
-                .spinner {
-                    margin-top: 30px;
-                    border: 6px solid rgba(255, 255, 255, 0.2);
-                    border-top: 6px solid white;
-                    border-radius: 50%;
-                    width: 60px;
-                    height: 60px;
-                    animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;
+                .subtitle {
+                    font-size: 1.5em;
+                    color: #fff;
+                    margin-top: 15px;
+                    opacity: 0.8;
                 }
 
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
+                .loader-bar {
+                    margin-top: 40px;
+                    width: 200px;
+                    height: 8px;
+                    border-radius: 5px;
+                    background: rgba(255, 255, 255, 0.1);
+                    overflow: hidden;
+                    position: relative;
+                }
+
+                .loader-bar::before {
+                    content: "";
+                    position: absolute;
+                    height: 100%;
+                    width: 50%;
+                    background: linear-gradient(90deg, #0ff, #09f);
+                    animation: loadmove 1.5s infinite;
+                }
+
+                @keyframes loadmove {
+                    0% { left: -50%; }
+                    100% { left: 100%; }
                 }
 
                 .fade-out {
-                    animation: fadeOut 1s forwards;
-                    animation-delay: 3s;
+                    animation: fadeOut 1s ease forwards;
+                    animation-delay: 3.8s;
+                }
+
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; visibility: hidden; }
                 }
             </style>
 
-            <!-- Optional background music (commented out) -->
+            <!-- Custom font -->
+            <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
+
+            <!-- Optional Sound -->
             <!-- <audio autoplay>
-                <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+                <source src="https://www.myinstants.com/media/sounds/netflix-intro.mp3" type="audio/mpeg">
             </audio> -->
 
             <div class="intro-container fade-out">
                 <div class="intro-text">ASAS 2.0</div>
-                <div class="spinner"></div>
+                <div class="subtitle">Automated Student Authentication System</div>
+                <div class="loader-bar"></div>
             </div>
         """, unsafe_allow_html=True)
 
-        time.sleep(4)
+        time.sleep(4.5)
         st.session_state.intro_shown = True
         st.rerun()
 
