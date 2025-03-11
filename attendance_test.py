@@ -2469,9 +2469,17 @@ elif menu == "Teacher's Login":
                                     st.write(f"📚 Attended Classes: {total_classes_attended}")
                                     st.write(f"📖 Attended Periods: {total_periods_attended}")
         
-                                    show_details = st.checkbox("🗂️ Show Detailed Attendance Records", key=f"{student_id}_toggle")
+                                    toggle_key = f"{student_id}_toggle"
 
-                                    if show_details:
+                                    # Initialize the state if not already
+                                    if toggle_key not in st.session_state:
+                                        st.session_state[toggle_key] = False
+                                    
+                                    # Create checkbox and update session state
+                                    if st.checkbox("🗂️ Show Detailed Attendance Records", key=toggle_key):
+                                        st.session_state[toggle_key] = True
+                                    
+                                    if st.session_state[toggle_key]:
                                         for record in attendance_records:
                                             st.markdown(f"**🗓️ Date:** {record[1]} | **📌 Day:** {record[2]}")
                                             for i in range(3, 10):
