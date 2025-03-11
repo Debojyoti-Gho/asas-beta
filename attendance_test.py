@@ -44,10 +44,11 @@ def show_intro_video():
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
 
-        body {
+        .intro-wrapper {
             margin: 0;
             padding: 0;
             height: 100vh;
+            width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -56,6 +57,8 @@ def show_intro_video():
             background-size: 400% 400%;
             animation: gradientMove 8s ease infinite;
             overflow: hidden;
+            position: relative;
+            z-index: 1000;
         }
 
         @keyframes gradientMove {
@@ -67,10 +70,6 @@ def show_intro_video():
         .title-container {
             text-align: center;
             z-index: 2;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
         }
 
         .title {
@@ -138,9 +137,11 @@ def show_intro_video():
         }
     </style>
 
-    <div class="title-container" id="introWrapper">
-        <div class="title" id="introText">ASAS 2.0</div>
-        <div class="spinner"></div>
+    <div class="intro-wrapper" id="introWrapper">
+        <div class="title-container">
+            <div class="title" id="introText">ASAS 2.0</div>
+            <div class="spinner"></div>
+        </div>
     </div>
 
     <audio id="chime" preload="auto">
@@ -157,11 +158,12 @@ def show_intro_video():
         }
     </script>
     """
+
     st.markdown(intro_html, unsafe_allow_html=True)
 
-# Run the animation first
 show_intro_video()
-time.sleep(6)  # Let the animation play before the rest of the app loads
+time.sleep(6)
+
 
 # Database setup
 conn = sqlite3.connect("asasspecial.db", check_same_thread=False) 
