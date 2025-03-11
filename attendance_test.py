@@ -70,7 +70,6 @@ def show_intro():
                     height: 100vh;
                     z-index: 9999;
                     background: linear-gradient(to bottom, #000000, #1c1c1c);
-                    background-size: cover;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -80,15 +79,16 @@ def show_intro():
 
                 .intro-text {
                     font-size: 6em;
-                    color: #e50914;
+                    background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
                     animation: fadeIn 1.8s ease-in-out;
                     letter-spacing: 2px;
                     text-align: center;
-                    text-shadow: 0px 0px 10px #e50914;
                 }
 
                 .subtitle {
-                    font-size: 1.8em;
+                    font-size: 1.5em;
                     color: #ffffff;
                     margin-top: 10px;
                     opacity: 0.85;
@@ -125,17 +125,29 @@ def show_intro():
                 }
             </style>
 
-            <!-- Netflix-style font -->
+            <!-- Bebas Neue font -->
             <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 
-            <!-- Netflix intro sound autoplay -->
-            <audio autoplay>
+            <!-- Sound autoplay using JS fallback -->
+            <audio id="netflixSound" autoplay>
                 <source src="https://www.myinstants.com/media/sounds/netflix-intro.mp3" type="audio/mpeg">
             </audio>
+            <script>
+                const audio = document.getElementById('netflixSound');
+                window.addEventListener('load', () => {
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => {
+                            console.log('Autoplay prevented, retrying on interaction...');
+                            window.addEventListener('click', () => audio.play());
+                        });
+                    }
+                });
+            </script>
 
             <div class="intro-container fade-out">
                 <div class="intro-text">ASAS 2.0</div>
-                <div class="subtitle">Automated Student Authentication System</div>
+                <div class="subtitle">Advanced Student Attendance System</div>
                 <div class="loader-bar"></div>
             </div>
         """, unsafe_allow_html=True)
@@ -145,7 +157,6 @@ def show_intro():
         st.rerun()
 
 show_intro()
-
 
 
 # Database setup
