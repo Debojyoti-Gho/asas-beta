@@ -2469,7 +2469,9 @@ elif menu == "Teacher's Login":
                                     st.write(f"📚 Attended Classes: {total_classes_attended}")
                                     st.write(f"📖 Attended Periods: {total_periods_attended}")
         
-                                    with st.expander("🗂️ View Detailed Attendance Records"):
+                                    show_details = st.checkbox("🗂️ Show Detailed Attendance Records", key=f"{student_id}_toggle")
+
+                                    if show_details:
                                         for record in attendance_records:
                                             st.markdown(f"**🗓️ Date:** {record[1]} | **📌 Day:** {record[2]}")
                                             for i in range(3, 10):
@@ -2479,6 +2481,7 @@ elif menu == "Teacher's Login":
                                                     "❌ Absent" if status == 0 else "⚪ N/A"
                                                 )
                                                 st.markdown(f"• Period {i-2}: {period_status}")
+
                                 else:
                                     st.warning("⚠️ No attendance records found.")
                             else:
