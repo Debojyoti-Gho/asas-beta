@@ -85,7 +85,7 @@ def show_intro():
                     background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
-                    animation: fadeIn 1.8s ease-in-out;
+                    animation: fadeIn 2s ease-in-out;
                     letter-spacing: 2px;
                     text-align: center;
                 }}
@@ -109,25 +109,32 @@ def show_intro():
                 }}
             </style>
 
-            <!-- Font -->
+            <!-- Fonts -->
             <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 
             <!-- Intro Container -->
             <div class="intro-container fade-out">
+                <!-- Background Video -->
                 <video class="background-video" autoplay muted playsinline>
-                    <source src="https://cdnl.iconscout.com/lottie/premium/thumb/gradient-loop-blue-phone-background-animation-download-in-lottie-json-gif-static-svg-file-formats--geometric-home-screen-backgrounds-for-pack-patterns-animations-5567090.mp4" type="video/mp4">
+                    <source src="https://cdnl.iconscout.com/lottie/premium/thumb/gradient-loop-purple-mobile-phone-wallpaper-animation-download-in-lottie-json-gif-static-svg-file-formats--geometric-background-home-screen-abstract-backgrounds-for-pack-patterns-animations-5567091.mp4" type="video/mp4">
                 </video>
+
+                <!-- Netflix Sound -->
+                <audio autoplay>
+                    <source src="https://assets.codepen.io/605876/netflix-intro.mp3" type="audio/mpeg">
+                </audio>
+
+                <!-- Title & Subtitle -->
                 <div class="intro-text">ASAS 2.0</div>
                 <div class="subtitle">Advanced Student Attendance System</div>
             </div>
         """, unsafe_allow_html=True)
 
-        time.sleep(6.5)  # Matches the video length for fade-out
+        time.sleep(6.5)
         st.session_state.intro_shown = True
         st.rerun()
 
 show_intro()
-
 
 
 # Database setup
