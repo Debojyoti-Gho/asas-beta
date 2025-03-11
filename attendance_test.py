@@ -39,6 +39,7 @@ import torchvision.transforms as transforms
 import timm
 import re
 
+
 def show_intro():
     if "intro_shown" not in st.session_state:
         st.session_state.intro_shown = False
@@ -89,18 +90,9 @@ def show_intro():
                 }}
 
                 @keyframes zoomFade {{
-                    0% {{
-                        transform: scale(0.8);
-                        opacity: 0;
-                    }}
-                    50% {{
-                        transform: scale(1.05);
-                        opacity: 1;
-                    }}
-                    100% {{
-                        transform: scale(1);
-                        opacity: 1;
-                    }}
+                    0% {{ transform: scale(0.8); opacity: 0; }}
+                    50% {{ transform: scale(1.05); opacity: 1; }}
+                    100% {{ transform: scale(1); opacity: 1; }}
                 }}
 
                 .subtitle {{
@@ -128,7 +120,6 @@ def show_intro():
 
                 @keyframes fadeOut {{
                     0% {{ opacity: 1; visibility: visible; }}
-                    99% {{ opacity: 0; visibility: visible; }}
                     100% {{ opacity: 0; visibility: hidden; display: none; }}
                 }}
 
@@ -153,7 +144,6 @@ def show_intro():
                     animation-delay: 6.3s;
                 }}
 
-                /* Responsive Text Scaling */
                 @media (max-width: 768px) {{
                     .intro-text {{
                         font-size: 3em;
@@ -172,22 +162,33 @@ def show_intro():
             <!-- Font -->
             <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 
+            <!-- Audio (separate background music) -->
+            <audio id="bg-audio" autoplay>
+                <source src="intro-sound.mp3" type="audio/mp3">
+                Your browser does not support the audio element.
+            </audio>
+
+            <script>
+                const audio = document.getElementById("bg-audio");
+                document.addEventListener("click", () => {{
+                    audio.play().catch(e => console.log("Autoplay blocked"));
+                }});
+            </script>
+
             <!-- Intro Container -->
             <div class="intro-container fade-out">
                 <video class="background-video" autoplay muted playsinline>
-                    <source src="https://cdnl.iconscout.com/lottie/premium/preview-watermark/gradient-loop-purple-mobile-phone-wallpaper-animation-download-in-lottie-json-gif-static-svg-file-formats--geometric-background-home-screen-abstract-backgrounds-for-pack-patterns-animations-5567091.mp4" type="video/mp4">
-                    Your browser does not support the video tag.
+                    <source src="18069232-sd_640_360_24fps.mp4" type="video/mp4">
                 </video>
                 <div class="intro-text">ASAS 2.0</div>
                 <div class="subtitle">Advanced Student Attendance System</div>
                 <div class="spinner"></div>
             </div>
 
-            <!-- Optional white flash transition -->
             <div class="white-flash"></div>
         """, unsafe_allow_html=True)
 
-        time.sleep(5.5)  # Matches the video and fade-out timing
+        time.sleep(6.5)
         st.session_state.intro_shown = True
         st.rerun()
 
