@@ -1798,10 +1798,7 @@ elif menu == "Student's Registration":
         # JS -> Streamlit message listener (via query param rerun or state is tricky)
         # So instead, use a Streamlit timer fallback:
         st.toast("Waiting for fingerprint input...", icon="⏳")
-    
-        # Use Streamlit's `st.experimental_set_query_params()` as a fallback timer trigger
-        import time
-        time.sleep(32)  # Sleep slightly more than countdown (non-blocking workaround)
+        time.sleep(15)  # Sleep slightly more than countdown (non-blocking workaround)
         st.session_state.step = 4
         st.rerun()
     
