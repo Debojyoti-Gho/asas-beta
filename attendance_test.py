@@ -178,7 +178,7 @@ def show_intro():
             <!-- Intro Container -->
             <div class="intro-container fade-out">
                 <video class="background-video" autoplay muted playsinline>
-                    <source src="18069232-sd_640_360_24fps.mp4" type="video/mp4">
+                    <source src="https://cdnl.iconscout.com/lottie/premium/thumb/background-color-animation-download-in-lottie-json-gif-static-svg-file-formats--gradient-pack-patterns-animations-4330097.mp4" type="video/mp4">
                 </video>
                 <div class="intro-text">ASAS 2.0</div>
                 <div class="subtitle">Advanced Student Attendance System</div>
