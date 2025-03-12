@@ -186,7 +186,7 @@ def show_intro():
             </div>
         """, unsafe_allow_html=True)
 
-        time.sleep(5.5)
+        time.sleep(5)
         st.session_state.intro_shown = True
         st.rerun()
 
@@ -1729,8 +1729,8 @@ elif menu == "Student's Registration":
     
             
             if st.form_submit_button("Next"):
-               st.info(is_strong_password(password))
                if is_strong_password(password) == "✅ Strong password!":
+                  st.info(is_strong_password(password))
                   save_student_details()
                else :
                   st.info(is_strong_password(password))
@@ -1905,6 +1905,30 @@ elif menu == "Student's Login":
         """,
         unsafe_allow_html=True,
     )
+
+    # Add animated countdown timer
+    st.components.v1.html("""
+        <div style="text-align: center;">
+            <h3 id="timer" style="font-size: 48px; color: #ff4b4b; font-family: monospace;">30</h3>
+            <p style="color: gray;">Time remaining to complete fingerprint verification</p>
+        </div>
+        <script>
+            let count = 10;
+            let timerEl = document.getElementById("timer");
+            let interval = setInterval(() => {
+                count--;
+                timerEl.textContent = count;
+                if (count <= 0) {
+                    clearInterval(interval);
+                    window.parent.postMessage({ stepComplete: true }, "*");
+                }
+            }, 1000);
+        </script>
+    """, height=70)
+    
+    # JS -> Streamlit message listener (via query param rerun or state is tricky)
+    # So instead, use a Streamlit timer fallback:
+    st.toast("Waiting for fingerprint input...", icon="⏳")
     
     # Wait for WebAuthn result
     time.sleep(10)  # Delay to allow authentication
