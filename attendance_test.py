@@ -1737,7 +1737,7 @@ elif menu == "Student's Registration":
             if st.form_submit_button("Next"):
                if is_strong_password(password) == "✅ Strong password!":
                   st.info(is_strong_password(password))
-                  st.success("now you click next to proceed with the registration")
+                  st.success("now you can click next to proceed with the registration")
                   save_student_details()
                else :
                   st.info(is_strong_password(password))
@@ -1803,10 +1803,10 @@ elif menu == "Student's Registration":
     
         # JS -> Streamlit message listener (via query param rerun or state is tricky)
         # So instead, use a Streamlit timer fallback:
-        with st.empty():
-            for i in range(15, 0, -1):
-                st.toast(f"⏳ Waiting for fingerprint input... ({i}s)", icon="⏳")
-                time.sleep(1)
+        
+        st.toast("⏳ Waiting for fingerprint input.", icon="⏳")
+        st.toast("⏳ Waiting for fingerprint input...", icon="⏳")
+        st.toast("⏳ Waiting for fingerprint input.....", icon="⏳")
 
         time.sleep(15)  # Sleep slightly more than countdown (non-blocking workaround)
         st.session_state.step = 4
