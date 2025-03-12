@@ -1729,8 +1729,8 @@ elif menu == "Student's Registration":
     
             if password == "✅ Strong password!":
                 st.info(is_strong_password(password))
-                st.form_submit_button("Next"):
-                save_student_details()
+                if st.form_submit_button("Next"):
+                   save_student_details()
             else :
                 st.info(is_strong_password(password))
                 
