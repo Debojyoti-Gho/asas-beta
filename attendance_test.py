@@ -1959,10 +1959,10 @@ elif menu == "Student's Login":
 
     # Proceed after the login button is clicked
     if submit_button:
-        # Lottie Animation
+        # Load Lottie animation
         chill_lottie = load_lottie_url("https://assets2.lottiefiles.com/packages/lf20_kyu7xb1v.json")
-
-        # Header Section
+        
+        # Display header and animation
         st.markdown("""
             <div style="text-align: center;">
                 <h2 style="color: #00c2cb;">🚀 All set!</h2>
@@ -1970,79 +1970,22 @@ elif menu == "Student's Login":
             </div>
         """, unsafe_allow_html=True)
         
-        # Display Lottie Animation
         if chill_lottie:
             st_lottie(chill_lottie, height=300, key="chill")
         else:
             st.warning("Couldn’t load animation, but we're still vibin'.")
         
-        # List of toast messages
+        # Toast-style messages
         messages = [
             "✨ You vibe, we verify.",
             "📋 Attendance? We ate. No crumbs left.",
             "😎 Chillax, we're on attendance duty."
         ]
         
-        # CSS + JS to render toast-like messages
-        toast_code = f"""
-        <style>
-        .toast-container {{
-            position: fixed;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 99999;
-        }}
-        .toast-msg {{
-            background-color: #00c2cb;
-            color: white;
-            font-weight: 600;
-            font-size: 16px;
-            padding: 12px 24px;
-            margin-top: 10px;
-            border-radius: 12px;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-            animation: fadeInOut 2.2s ease-in-out forwards;
-            text-align: center;
-        }}
-        @keyframes fadeInOut {{
-            0% {{opacity: 0; transform: translateY(20px);}}
-            10% {{opacity: 1; transform: translateY(0);}}
-            90% {{opacity: 1; transform: translateY(0);}}
-            100% {{opacity: 0; transform: translateY(-20px);}}
-        }}
-        </style>
-        <div class="toast-container" id="toastBox"></div>
-        <script>
-        const messages = {messages};
-        let index = 0;
-        
-        function showNextToast() {{
-            if (index >= messages.length) {{
-                setTimeout(() => {{
-                    window.location.href = "#";
-                }}, 1000);
-                return;
-            }}
-            const toast = document.createElement("div");
-            toast.className = "toast-msg";
-            toast.textContent = messages[index];
-            document.getElementById("toastBox").appendChild(toast);
-            setTimeout(() => {{
-                toast.remove();
-                index++;
-                showNextToast();
-            }}, 2200);
-        }}
-        
-        showNextToast();
-        </script>
-        """
-
-        
-        # Inject into Streamlit app
-        components.html(toast_code, height=0)
-
+        for msg in messages:
+            st.toast(msg)
+            time.sleep(2.2)  # Toast duration default is ~2 seconds
+                
         # Fetch the device ID (IP address)
         device_id = device_id_from_cookies
         st.success(f"Your unique device ID is: {device_id_from_cookies}")
