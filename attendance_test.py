@@ -1959,30 +1959,58 @@ elif menu == "Student's Login":
 
     # Proceed after the login button is clicked
     if submit_button:
-        # Replace the animation URL with a tested one
+        # Lottie Animation
         chill_lottie = load_lottie_url("https://assets2.lottiefiles.com/packages/lf20_kyu7xb1v.json")
-
-        # Display heading and animation
-        with st.container():
-            st.markdown("""
-                <div style="text-align: center;">
-                    <h2 style="color: #00c2cb;">🚀 All set!</h2>
-                    <p style="font-size: 18px;">Just chill, we’re taking over now 😎</p>
-                </div>
-            """, unsafe_allow_html=True)
         
+        # Display the animation
+        if chill_lottie:
             st_lottie(chill_lottie, height=300, key="chill")
+        else:
+            st.warning("Couldn't load animation.")
         
-            # Show 3 messages with animation
-            messages = [
-                "✨ You vibe, we verify.",
-                "📋 Attendance? We ate. No crumbs left.",
-                "😎 Chillax, we're on attendance duty."
-            ]
+        # CSS & JS for animated popup messages
+        popup_style = """
+        <style>
+        .popup-message {
+          position: fixed;
+          top: 10%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background-color: #00c2cb;
+          color: white;
+          padding: 20px 30px;
+          border-radius: 15px;
+          font-size: 20px;
+          font-weight: bold;
+          z-index: 9999;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          animation: fadeInOut 3s ease-in-out forwards;
+          opacity: 0;
+        }
         
-            for msg in messages:
-                st.info(msg)
-                time.sleep(1.8)
+        @keyframes fadeInOut {
+          0% { opacity: 0; top: 8%; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { opacity: 0; top: 6%; }
+        }
+        </style>
+        """
+        
+        # Inject CSS
+        st.markdown(popup_style, unsafe_allow_html=True)
+        
+        # Messages to show
+        messages = [
+            "✨ You vibe, we verify.",
+            "📋 Attendance? We ate. No crumbs left.",
+            "😎 Chillax, we're on attendance duty."
+        ]
+        
+        # Inject HTML one by one with pause
+        for msg in messages:
+            components.html(f'<div class="popup-message">{msg}</div>', height=100)
+            time.sleep(3)  # Wait for fadeInOut to complete
         # Fetch the device ID (IP address)
         device_id = device_id_from_cookies
         st.success(f"Your unique device ID is: {device_id_from_cookies}")
