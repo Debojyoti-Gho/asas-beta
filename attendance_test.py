@@ -1959,9 +1959,9 @@ elif menu == "Student's Login":
 
     # Proceed after the login button is clicked
     if submit_button:
-        # Load a fun animation (e.g., tech scan / chill loop)
-        chill_lottie = load_lottie_url("https://lottie.host/77a4a6aa-02bb-4b8d-88ab-20ae2f2a26ea/fL8jJ4xgE8.json")
-        
+        # Replace the animation URL with a tested one
+        chill_lottie = load_lottie_url("https://assets2.lottiefiles.com/packages/lf20_kyu7xb1v.json")
+
         # Display heading and animation
         with st.container():
             st.markdown("""
