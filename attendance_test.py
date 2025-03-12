@@ -1961,56 +1961,80 @@ elif menu == "Student's Login":
     if submit_button:
         # Lottie Animation
         chill_lottie = load_lottie_url("https://assets2.lottiefiles.com/packages/lf20_kyu7xb1v.json")
+
+        # Header Section
+        st.markdown("""
+            <div style="text-align: center;">
+                <h2 style="color: #00c2cb;">🚀 All set!</h2>
+                <p style="font-size: 18px;">Just chill, we’re taking over now 😎</p>
+            </div>
+        """, unsafe_allow_html=True)
         
-        # Display the animation
+        # Display Lottie Animation
         if chill_lottie:
             st_lottie(chill_lottie, height=300, key="chill")
         else:
-            st.warning("Couldn't load animation.")
+            st.warning("Couldn’t load animation, but we're still vibin'.")
         
-        # CSS & JS for animated popup messages
-        popup_style = """
-        <style>
-        .popup-message {
-          position: fixed;
-          top: 10%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background-color: #00c2cb;
-          color: white;
-          padding: 20px 30px;
-          border-radius: 15px;
-          font-size: 20px;
-          font-weight: bold;
-          z-index: 9999;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          animation: fadeInOut 3s ease-in-out forwards;
-          opacity: 0;
-        }
-        
-        @keyframes fadeInOut {
-          0% { opacity: 0; top: 8%; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { opacity: 0; top: 6%; }
-        }
-        </style>
-        """
-        
-        # Inject CSS
-        st.markdown(popup_style, unsafe_allow_html=True)
-        
-        # Messages to show
+        # List of toast messages
         messages = [
             "✨ You vibe, we verify.",
             "📋 Attendance? We ate. No crumbs left.",
             "😎 Chillax, we're on attendance duty."
         ]
         
-        # Inject HTML one by one with pause
-        for msg in messages:
-            components.html(f'<div class="popup-message">{msg}</div>', height=100)
-            time.sleep(3)  # Wait for fadeInOut to complete
+        # CSS + JS to render toast-like messages
+        toast_code = """
+        <style>
+        .toast-container {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99999;
+        }
+        .toast-msg {
+            background-color: #00c2cb;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            padding: 12px 24px;
+            margin-top: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+            animation: fadeInOut 2.2s ease-in-out forwards;
+            text-align: center;
+        }
+        @keyframes fadeInOut {
+            0% {opacity: 0; transform: translateY(20px);}
+            10% {opacity: 1; transform: translateY(0);}
+            90% {opacity: 1; transform: translateY(0);}
+            100% {opacity: 0; transform: translateY(-20px);}
+        }
+        </style>
+        <div class="toast-container" id="toastBox"></div>
+        <script>
+        const messages = %s;
+        let index = 0;
+        
+        function showNextToast() {
+            if (index >= messages.length) return;
+            const toast = document.createElement("div");
+            toast.className = "toast-msg";
+            toast.textContent = messages[index];
+            document.getElementById("toastBox").appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+                showNextToast();
+            }, 2200); // Time matches CSS animation
+        }
+        showNextToast();
+        </script>
+        """ % messages
+        
+        # Inject into Streamlit app
+        components.html(toast_code, height=0)
+
         # Fetch the device ID (IP address)
         device_id = device_id_from_cookies
         st.success(f"Your unique device ID is: {device_id_from_cookies}")
