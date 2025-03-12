@@ -38,7 +38,7 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 import timm
 import re
-
+from streamlit_lottie import st_lottie
 
 def show_intro():
     if "intro_shown" not in st.session_state:
@@ -752,6 +752,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 #         return True
 #     return False
 
+# Function to load Lottie animation
+def load_lottie_url(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
 
 # 📌 Load Haar Cascade model for face detection
 FACE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
@@ -1953,6 +1959,30 @@ elif menu == "Student's Login":
 
     # Proceed after the login button is clicked
     if submit_button:
+        # Load a fun animation (e.g., tech scan / chill loop)
+        chill_lottie = load_lottie_url("https://lottie.host/77a4a6aa-02bb-4b8d-88ab-20ae2f2a26ea/fL8jJ4xgE8.json")
+        
+        # Display heading and animation
+        with st.container():
+            st.markdown("""
+                <div style="text-align: center;">
+                    <h2 style="color: #00c2cb;">🚀 All set!</h2>
+                    <p style="font-size: 18px;">Just chill, we’re taking over now 😎</p>
+                </div>
+            """, unsafe_allow_html=True)
+        
+            st_lottie(chill_lottie, height=300, key="chill")
+        
+            # Show 3 messages with animation
+            messages = [
+                "✨ You vibe, we verify.",
+                "📋 Attendance? We ate. No crumbs left.",
+                "😎 Chillax, we're on attendance duty."
+            ]
+        
+            for msg in messages:
+                st.info(msg)
+                time.sleep(1.8)
         # Fetch the device ID (IP address)
         device_id = device_id_from_cookies
         st.success(f"Your unique device ID is: {device_id_from_cookies}")
