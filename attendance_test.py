@@ -1984,16 +1984,16 @@ elif menu == "Student's Login":
         ]
         
         # CSS + JS to render toast-like messages
-        toast_code = """
+        toast_code = f"""
         <style>
-        .toast-container {
+        .toast-container {{
             position: fixed;
             bottom: 50px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 99999;
-        }
-        .toast-msg {
+        }}
+        .toast-msg {{
             background-color: #00c2cb;
             color: white;
             font-weight: 600;
@@ -2004,33 +2004,41 @@ elif menu == "Student's Login":
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
             animation: fadeInOut 2.2s ease-in-out forwards;
             text-align: center;
-        }
-        @keyframes fadeInOut {
-            0% {opacity: 0; transform: translateY(20px);}
-            10% {opacity: 1; transform: translateY(0);}
-            90% {opacity: 1; transform: translateY(0);}
-            100% {opacity: 0; transform: translateY(-20px);}
-        }
+        }}
+        @keyframes fadeInOut {{
+            0% {{opacity: 0; transform: translateY(20px);}}
+            10% {{opacity: 1; transform: translateY(0);}}
+            90% {{opacity: 1; transform: translateY(0);}}
+            100% {{opacity: 0; transform: translateY(-20px);}}
+        }}
         </style>
         <div class="toast-container" id="toastBox"></div>
         <script>
-        const messages = %s;
+        const messages = {messages};
         let index = 0;
         
-        function showNextToast() {
-            if (index >= messages.length) return;
+        function showNextToast() {{
+            if (index >= messages.length) {{
+                setTimeout(() => {{
+                    window.location.href = "{next_page_url}";
+                }}, 1000);
+                return;
+            }}
             const toast = document.createElement("div");
             toast.className = "toast-msg";
             toast.textContent = messages[index];
             document.getElementById("toastBox").appendChild(toast);
-            setTimeout(() => {
+            setTimeout(() => {{
                 toast.remove();
+                index++;
                 showNextToast();
-            }, 2200); // Time matches CSS animation
-        }
+            }}, 2200);
+        }}
+        
         showNextToast();
         </script>
-        """ % messages
+        """
+
         
         # Inject into Streamlit app
         components.html(toast_code, height=0)
