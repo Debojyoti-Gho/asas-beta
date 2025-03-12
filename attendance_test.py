@@ -2020,7 +2020,7 @@ elif menu == "Student's Login":
         function showNextToast() {{
             if (index >= messages.length) {{
                 setTimeout(() => {{
-                    window.location.href = "{next_page_url}";
+                    window.location.href = "#";
                 }}, 1000);
                 return;
             }}
