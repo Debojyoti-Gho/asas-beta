@@ -1924,7 +1924,7 @@ elif menu == "Student's Login":
                 }
             }, 1000);
         </script>
-    """, height=70)
+    """, height=100)
     
     # JS -> Streamlit message listener (via query param rerun or state is tricky)
     # So instead, use a Streamlit timer fallback:
