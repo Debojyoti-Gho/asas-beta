@@ -1727,11 +1727,13 @@ elif menu == "Student's Registration":
             - ✅ Contains **one special character** (@, #, $, etc.)
             """, unsafe_allow_html=True)
     
-            if password:
+            if password == "✅ Strong password!":
                 st.info(is_strong_password(password))
-    
-            if st.form_submit_button("Next"):
+                st.form_submit_button("Next"):
                 save_student_details()
+            else :
+                st.info(is_strong_password(password))
+                
                     
     
     # ---- STEP 2: Face Capture ----
