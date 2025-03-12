@@ -1737,6 +1737,7 @@ elif menu == "Student's Registration":
             if st.form_submit_button("Next"):
                if is_strong_password(password) == "✅ Strong password!":
                   st.info(is_strong_password(password))
+                  st.success("now you click next to proceed with the registration")
                   save_student_details()
                else :
                   st.info(is_strong_password(password))
@@ -1783,7 +1784,7 @@ elif menu == "Student's Registration":
         # Add animated countdown timer
         st.components.v1.html("""
             <div style="text-align: center;">
-                <h3 id="timer" style="font-size: 48px; color: #ff4b4b; font-family: monospace;">30</h3>
+                <h3 id="timer" style="font-size: 48px; color: #ff4b4b; font-family: monospace;">15</h3>
                 <p style="color: gray;">Time remaining to complete fingerprint verification</p>
             </div>
             <script>
@@ -1802,7 +1803,11 @@ elif menu == "Student's Registration":
     
         # JS -> Streamlit message listener (via query param rerun or state is tricky)
         # So instead, use a Streamlit timer fallback:
-        st.toast("Waiting for fingerprint input...", icon="⏳")
+        with st.empty():
+            for i in range(15, 0, -1):
+                st.toast(f"⏳ Waiting for fingerprint input... ({i}s)", icon="⏳")
+                time.sleep(1)
+
         time.sleep(15)  # Sleep slightly more than countdown (non-blocking workaround)
         st.session_state.step = 4
         st.rerun()
@@ -1915,7 +1920,7 @@ elif menu == "Student's Login":
     # Add animated countdown timer
     st.components.v1.html("""
         <div style="text-align: center;">
-            <h3 id="timer" style="font-size: 48px; color: #ff4b4b; font-family: monospace;">30</h3>
+            <h3 id="timer" style="font-size: 48px; color: #ff4b4b; font-family: monospace;">10</h3>
             <p style="color: gray;">Time remaining to complete fingerprint verification</p>
         </div>
         <script>
@@ -1931,10 +1936,6 @@ elif menu == "Student's Login":
             }, 1000);
         </script>
     """, height=100)
-    
-    # JS -> Streamlit message listener (via query param rerun or state is tricky)
-    # So instead, use a Streamlit timer fallback:
-    st.toast("Waiting for fingerprint input...", icon="⏳")
     
     # Wait for WebAuthn result
     time.sleep(10)  # Delay to allow authentication
