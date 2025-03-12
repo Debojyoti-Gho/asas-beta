@@ -1776,7 +1776,7 @@ elif menu == "Student's Registration":
     # ---- STEP 3: WebAuthn / Fingerprint ----
     elif st.session_state.step == 3:
         st.subheader("🔐 Fingerprint Verification")
-        st.warning("Complete fingerprint registration within 30 seconds.")
+        st.warning("Complete fingerprint registration within 15 seconds.")
     
         # Inject WebAuthn script
         st.components.v1.html(webauthn_register_script())
@@ -1805,10 +1805,12 @@ elif menu == "Student's Registration":
         # So instead, use a Streamlit timer fallback:
         
         st.toast("⏳ Waiting for fingerprint input.", icon="⏳")
+        time.sleep(2)
         st.toast("⏳ Waiting for fingerprint input...", icon="⏳")
+        time.sleep(2)
         st.toast("⏳ Waiting for fingerprint input.....", icon="⏳")
 
-        time.sleep(15)  # Sleep slightly more than countdown (non-blocking workaround)
+        time.sleep(11)  # Sleep slightly more than countdown (non-blocking workaround)
         st.session_state.step = 4
         st.rerun()
     
