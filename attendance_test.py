@@ -1280,7 +1280,7 @@ def get_ble_signal_from_api():
     Fetch BLE signals by making a GET request to the Flask BLE API server.
     Only proceeds if the network latency is below the threshold (considered within 10 meters).
     """
-    flask_server_url = "http://192.168.29.139/scan_ble"  # Your Flask API URL
+    flask_server_url = "http://192.168.29.139:80/scan_ble"  # Your Flask API URL
     
     # Measure the latency first
     latency = measure_latency(flask_server_url)
