@@ -2077,8 +2077,8 @@ elif menu == "Student's Login":
                                             st.write(f"Device Name: {mac_address}, MAC Address: {device_name}")
 
                                         # Automatically check if the required Bluetooth device is in the list
-                                        required_device_name = "76:6B:E1:0F:92:09"
-                                        required_mac_id = "INSTITUTE BLE VERIFY SIGNA"  # Replace with the actual MAC address if known
+                                        required_device_name = "75:04:2e:42:09:64"
+                                        required_mac_id = "VERIFICATION DEVICE"  # Replace with the actual MAC address if known
 
                                         found_device = False
                                         for device_name, mac_address in ble_signal.items():
