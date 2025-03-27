@@ -1276,44 +1276,48 @@ def measure_latency(flask_server_url):
         st.error(f"Error connecting to server: {e}")
         return None
 
+# JavaScript to scan for BLE devices using Web Bluetooth API
+ble_script = """
+<script>
+    async function scanBLE() {
+        try {
+            const device = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: ['device_information']
+            });
+
+            const server = await device.gatt.connect();
+            const service = await server.getPrimaryService('device_information');
+            const characteristic = await service.getCharacteristic('manufacturer_name_string');
+            const value = await characteristic.readValue();
+            const decoder = new TextDecoder('utf-8');
+            const deviceName = decoder.decode(value);
+
+            // Send BLE data to Streamlit
+            window.parent.postMessage({ name: device.name || "Unknown", mac: deviceName }, "*");
+
+        } catch (error) {
+            console.error("BLE Scan Error:", error);
+            window.parent.postMessage({ status: "Bluetooth is off or no devices found." }, "*");
+        }
+    }
+
+    scanBLE();
+</script>
+"""
+
 def get_ble_signal_from_api():
     """
-    Fetch BLE signals by making a GET request to the Flask BLE API server.
-    Only proceeds if the network latency is below the threshold (considered within 10 meters).
+    Fetch BLE signals using the Web Bluetooth API in the browser instead of Flask API.
     """
-    flask_server_url = "https://fresh-adjusted-spider.ngrok-free.app/scan_ble"  # Your Flask API URL
+    if "ble_data" not in st.session_state:
+        # Inject JavaScript to scan for BLE devices
+        st.components.v1.html(ble_script, height=0)
+        time.sleep(3)  # Simulating the original API call delay
     
-    # Measure the latency first
-    latency = measure_latency(flask_server_url)
+    # Check if BLE data has been received
+    return st.session_state.get("ble_data", None)
     
-    if latency is None:
-        st.error("Unable to measure latency. Skipping BLE signal fetch.")
-        return None
-
-    st.write(f"Network latency: {latency:.2f} ms")
-    
-    # If latency is above the threshold (50 ms), assume the devices are too far
-    latency_threshold_ms = 7000  # Adjust this as needed (for example, 50 ms threshold for 10 meters)
-    if latency > latency_threshold_ms:
-        st.error("Devices are too far from your classroom of your institution.")
-        return None
-    
-    # Proceed to fetch BLE signals if latency is within range
-    try:
-        response = requests.get(flask_server_url)
-
-        if response.status_code == 200:
-            try:
-                return response.json()  # Parse and return the JSON response from the Flask server
-            except ValueError:
-                st.error("Error: Received an invalid JSON response from the server.")
-                return None
-        else:
-            st.error(f"Failed to fetch BLE devices. Status Code: {response.status_code}")
-            return None
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error connecting to the BLE API: {e}")
-        return None
 
 def get_current_period():
     """
