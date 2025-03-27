@@ -5,7 +5,7 @@ st.set_page_config(
 ) 
 
 meta_tag = """
-<meta name="google-site-verification" content="your_code_here" />
+<meta name="google-site-verification" content="PzKEX19PPf13ImdBn3p7tVjy5yOarzgHJ059SzvS8Q0" />
 """
 st.markdown(meta_tag, unsafe_allow_html=True)
 
