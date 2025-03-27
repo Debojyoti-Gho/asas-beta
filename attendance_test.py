@@ -3,6 +3,12 @@ st.set_page_config(
     page_title="ASAS 2.0",  
     page_icon="🎓"   
 ) 
+
+meta_tag = """
+<meta name="google-site-verification" content="your_code_here" />
+"""
+st.markdown(meta_tag, unsafe_allow_html=True)
+
 import sqlite3
 import datetime
 from datetime import date, datetime,timedelta,timezone
@@ -3224,7 +3230,6 @@ elif menu == "Teacher's Login":
             <style>
             /* Global styling */
             body {
-                <meta name="google-site-verification" content="PzKEX19PPf13ImdBn3p7tVjy5yOarzgHJ059SzvS8Q0" />
                 background: linear-gradient(135deg, #ece9e6, #ffffff);
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
