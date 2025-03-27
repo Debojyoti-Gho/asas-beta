@@ -1145,7 +1145,7 @@ def create_table():
     conn.close()
 
 def insert_device_id(device_id):
-    conn = create_connection()
+    conn = create_connection() 
     c = conn.cursor()
     try:
         c.execute("INSERT OR IGNORE INTO device_ids (device_id, created_at) VALUES (?, ?)",
