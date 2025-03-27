@@ -1276,34 +1276,29 @@ def measure_latency(flask_server_url):
         st.error(f"Error connecting to server: {e}")
         return None
 
-# JavaScript for BLE scanning (this runs in the browser)
+
+# JavaScript for Bluetooth scanning
 ble_script = """
 <script>
     async function scanBLE() {
         try {
             const device = await navigator.bluetooth.requestDevice({
                 acceptAllDevices: true,
-                optionalServices: ['device_information']
+                optionalServices: ['generic_access']
             });
 
-            // Connect to the device
-            const server = await device.gatt.connect();
-            const service = await server.getPrimaryService('device_information');
-            const characteristic = await service.getCharacteristic('manufacturer_name_string');
-            const value = await characteristic.readValue();
-            const decoder = new TextDecoder('utf-8');
-            const deviceName = decoder.decode(value);
+            // Store BLE data in URL params
+            const bleData = {
+                name: device.name || "Unknown",
+                id: device.id || "No ID",
+            };
 
-            // Send BLE data to Streamlit (store in URL params)
-            const url = new URL(window.location);
-            url.searchParams.set("ble_data", JSON.stringify({ name: device.name || "Unknown", mac: deviceName }));
-            window.history.pushState({}, '', url);
+            // Update Streamlit with BLE data
+            window.parent.postMessage(bleData, "*");
 
         } catch (error) {
             console.error("BLE Scan Error:", error);
-            const url = new URL(window.location);
-            url.searchParams.set("ble_data", JSON.stringify({ status: "Bluetooth is off or no devices found." }));
-            window.history.pushState({}, '', url);
+            window.parent.postMessage({ status: "Bluetooth is off or no devices found." }, "*");
         }
     }
 
@@ -1311,20 +1306,17 @@ ble_script = """
 </script>
 """
 
-def get_ble_signal_from_api():
-    """
-    Fetch BLE devices using Web Bluetooth API.
-    """
+# **🔹 Function to Inject JavaScript & Receive Data**
+def get_ble_signal():
+    """Injects JavaScript into Streamlit to scan BLE devices."""
     if "ble_data" not in st.session_state:
-        # Inject JavaScript into Streamlit
+        # Run JavaScript in browser to scan BLE devices
         st.components.v1.html(ble_script, height=0)
-        time.sleep(3)  # Simulating delay
+        time.sleep(3)  # Wait for JavaScript to execute
 
-    # Retrieve BLE data from the URL parameters
-    ble_data = st.query_params.get("ble_data")
-
-    if ble_data:
-        return eval(ble_data)  # Convert JSON string to dictionary
+    # Check if the BLE data was received from the browser
+    if "ble_data" in st.session_state:
+        return json.loads(st.session_state.ble_data)
 
     return None
     
@@ -2075,40 +2067,35 @@ elif menu == "Student's Login":
                                 st.info("Just a step away from your dashboard!! Scanning for physical verification devices...")
 
                                 # Replace the original BLE signal detection logic
-                                ble_signal = get_ble_signal_from_api()
-                                time.sleep(3)
+                                ble_signal = get_ble_signal()
 
                                 if ble_signal:
                                     if isinstance(ble_signal, dict) and "status" in ble_signal:
-                                        # Handle API status response (e.g., Bluetooth is off)
                                         st.warning(ble_signal["status"])
                                     else:
-                                        st.success("You are in your classroom. Have a nice study time! We will mark your attendance shortly.")
-                                        st.info("Verification devices found. Listing all available devices...")
-
-                                        # Display all available Bluetooth devices
-                                        st.write("Available physical verification devices:")
-                                        for device_name, mac_address in ble_signal.items():
-                                            st.write(f"Device Name: {mac_address}, MAC Address: {device_name}")
-
-                                        # Automatically check if the required Bluetooth device is in the list
+                                        st.success("✅ You are in your classroom. Attendance will be marked shortly.")
+                                        st.info("🔍 Listing all available verification devices...")
+                                
+                                        # Display detected Bluetooth devices
+                                        st.write(f"Device Name: {ble_signal.get('name', 'Unknown')}")
+                                        st.write(f"Device ID: {ble_signal.get('id', 'Unknown')}")
+                                
+                                        # Required Bluetooth Device (Modify as needed)
                                         required_device_name = "75:04:2e:42:09:64"
-                                        required_mac_id = "VERIFICATION DEVICE"  # Replace with the actual MAC address if known
-
+                                        required_mac_id = "VERIFICATION DEVICE"  # Replace if needed
+                                
                                         found_device = False
-                                        for device_name, mac_address in ble_signal.items():
-                                            if required_device_name in device_name or mac_address == required_mac_id:
-                                                st.success(f"Required verifying device found! MAC Address: {device_name}, Device Name: {mac_address}")
-                                                found_device = True
-                                                break
-
+                                        if ble_signal.get('name') == required_device_name or ble_signal.get('id') == required_mac_id:
+                                            st.success(f"✅ Required verifying device found! Name: {ble_signal['name']}, ID: {ble_signal['id']}")
+                                            found_device = True
+                                
                                         if found_device:
                                             # Save user login to session state
                                             st.session_state.logged_in = True
-                                            st.session_state.user_id = user_id  # Replace with actual user ID if available
+                                            st.session_state.user_id = "user_id_placeholder"  # Replace with actual user ID if available
                                             st.session_state.bluetooth_selected = True  # Mark Bluetooth as selected
                                         else:
-                                            st.error("Required verifying device not found. Login failed.")
+                                            st.error("❌ Required verifying device not found. Login failed.")
                                             st.stop()
 
                                     # Define constant for period times
