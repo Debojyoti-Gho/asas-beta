@@ -4,10 +4,16 @@ st.set_page_config(
     page_icon="🎓"   
 ) 
 
-meta_tag = """
-<meta name="google-site-verification" content="PzKEX19PPf13ImdBn3p7tVjy5yOarzgHJ059SzvS8Q0" />
+tracking_code = """
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RVQ68YBXLB"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-RVQ68YBXLB');
+</script>
 """
-st.markdown(meta_tag, unsafe_allow_html=True)
+st.markdown(tracking_code, unsafe_allow_html=True)
 
 import sqlite3
 import datetime
