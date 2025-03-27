@@ -1276,50 +1276,51 @@ def measure_latency(flask_server_url):
         st.error(f"Error connecting to server: {e}")
         return None
 
-
-# JavaScript for Bluetooth scanning
+# **🔹 JavaScript for Bluetooth Scanning**
 ble_script = """
 <script>
-    async function scanBLE() {
+    async function scanBluetooth() {
         try {
             const device = await navigator.bluetooth.requestDevice({
                 acceptAllDevices: true,
                 optionalServices: ['generic_access']
             });
 
-            // Store BLE data in URL params
+            // Store BLE data in Streamlit session state
             const bleData = {
                 name: device.name || "Unknown",
-                id: device.id || "No ID",
+                id: device.id || "No ID"
             };
 
-            // Update Streamlit with BLE data
-            window.parent.postMessage(bleData, "*");
+            // Send data to Streamlit using sessionStorage
+            sessionStorage.setItem("ble_data", JSON.stringify(bleData));
+
+            // Notify Streamlit that new data is available
+            fetch("/_stcore_update", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "ble_data": bleData })
+            });
 
         } catch (error) {
-            console.error("BLE Scan Error:", error);
-            window.parent.postMessage({ status: "Bluetooth is off or no devices found." }, "*");
+            console.error("Bluetooth Error:", error);
+            sessionStorage.setItem("ble_data", JSON.stringify({ status: "Bluetooth scan failed or no devices found." }));
         }
     }
 
-    scanBLE();
+    scanBluetooth();
 </script>
 """
 
-# **🔹 Function to Inject JavaScript & Receive Data**
-def get_ble_signal():
-    """Injects JavaScript into Streamlit to scan BLE devices."""
-    if "ble_data" not in st.session_state:
-        # Run JavaScript in browser to scan BLE devices
-        st.components.v1.html(ble_script, height=0)
-        time.sleep(3)  # Wait for JavaScript to execute
+# **🔹 Inject JavaScript into Streamlit**
+st.components.v1.html(ble_script, height=0)
 
-    # Check if the BLE data was received from the browser
+# **🔹 Function to Get BLE Data from Session Storage**
+def get_ble_signal():
+    """Retrieve BLE scan results from session storage."""
     if "ble_data" in st.session_state:
         return json.loads(st.session_state.ble_data)
-
     return None
-    
 
 def get_current_period():
     """
@@ -2077,8 +2078,8 @@ elif menu == "Student's Login":
                                         st.info("🔍 Listing all available verification devices...")
                                 
                                         # Display detected Bluetooth devices
-                                        st.write(f"Device Name: {ble_signal.get('name', 'Unknown')}")
-                                        st.write(f"Device ID: {ble_signal.get('id', 'Unknown')}")
+                                        st.write(f"📡 Device Name: {ble_signal.get('name', 'Unknown')}")
+                                        st.write(f"🔗 Device ID: {ble_signal.get('id', 'Unknown')}")
                                 
                                         # Required Bluetooth Device (Modify as needed)
                                         required_device_name = "75:04:2e:42:09:64"
@@ -2092,12 +2093,15 @@ elif menu == "Student's Login":
                                         if found_device:
                                             # Save user login to session state
                                             st.session_state.logged_in = True
-                                            st.session_state.user_id = "user_id_placeholder"  # Replace with actual user ID if available
+                                            st.session_state.user_id = "user_id_placeholder"  # Replace with actual user ID
                                             st.session_state.bluetooth_selected = True  # Mark Bluetooth as selected
                                         else:
                                             st.error("❌ Required verifying device not found. Login failed.")
                                             st.stop()
-
+                                
+                                # **🔹 Button to Trigger BLE Scan**
+                                if st.button("🔍 Scan for Bluetooth Devices"):
+                                    st.components.v1.html(ble_script, height=0)
                                     # Define constant for period times
                                     PERIOD_TIMES = {
                                         "Period 1": ("09:30", "10:20"),
