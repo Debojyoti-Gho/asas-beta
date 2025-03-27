@@ -1276,7 +1276,7 @@ def measure_latency(flask_server_url):
         st.error(f"Error connecting to server: {e}")
         return None
 
-# JavaScript to scan for BLE devices using Web Bluetooth API
+# JavaScript to scan for BLE devices and send results to Streamlit
 ble_script = """
 <script>
     async function scanBLE() {
@@ -1286,6 +1286,7 @@ ble_script = """
                 optionalServices: ['device_information']
             });
 
+            // Connect to the device
             const server = await device.gatt.connect();
             const service = await server.getPrimaryService('device_information');
             const characteristic = await service.getCharacteristic('manufacturer_name_string');
@@ -1294,11 +1295,14 @@ ble_script = """
             const deviceName = decoder.decode(value);
 
             // Send BLE data to Streamlit
-            window.parent.postMessage({ name: device.name || "Unknown", mac: deviceName }, "*");
+            const bleData = { name: device.name || "Unknown", mac: deviceName };
+
+            // Store in localStorage (Streamlit cannot access JS directly)
+            localStorage.setItem("bleData", JSON.stringify(bleData));
 
         } catch (error) {
             console.error("BLE Scan Error:", error);
-            window.parent.postMessage({ status: "Bluetooth is off or no devices found." }, "*");
+            localStorage.setItem("bleData", JSON.stringify({ status: "Bluetooth is off or no devices found." }));
         }
     }
 
@@ -1315,9 +1319,13 @@ def get_ble_signal_from_api():
         st.components.v1.html(ble_script, height=0)
         time.sleep(3)  # Simulating the original API call delay
     
-    # Check if BLE data has been received
-    return st.session_state.get("ble_data", None)
-    
+    # Retrieve BLE data from localStorage (user must refresh manually)
+    ble_data = st.experimental_get_query_params().get("ble_data", None)
+
+    if ble_data:
+        return eval(ble_data[0])  # Convert string to dictionary
+
+    return None
 
 def get_current_period():
     """
