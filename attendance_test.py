@@ -1276,7 +1276,7 @@ def measure_latency(flask_server_url):
         st.error(f"Error connecting to server: {e}")
         return None
 
-# JavaScript to scan for BLE devices and send results to Streamlit
+# JavaScript for BLE scanning (this runs in the browser)
 ble_script = """
 <script>
     async function scanBLE() {
@@ -1294,15 +1294,16 @@ ble_script = """
             const decoder = new TextDecoder('utf-8');
             const deviceName = decoder.decode(value);
 
-            // Send BLE data to Streamlit
-            const bleData = { name: device.name || "Unknown", mac: deviceName };
-
-            // Store in localStorage (Streamlit cannot access JS directly)
-            localStorage.setItem("bleData", JSON.stringify(bleData));
+            // Send BLE data to Streamlit (store in URL params)
+            const url = new URL(window.location);
+            url.searchParams.set("ble_data", JSON.stringify({ name: device.name || "Unknown", mac: deviceName }));
+            window.history.pushState({}, '', url);
 
         } catch (error) {
             console.error("BLE Scan Error:", error);
-            localStorage.setItem("bleData", JSON.stringify({ status: "Bluetooth is off or no devices found." }));
+            const url = new URL(window.location);
+            url.searchParams.set("ble_data", JSON.stringify({ status: "Bluetooth is off or no devices found." }));
+            window.history.pushState({}, '', url);
         }
     }
 
@@ -1312,20 +1313,21 @@ ble_script = """
 
 def get_ble_signal_from_api():
     """
-    Fetch BLE signals using the Web Bluetooth API in the browser instead of Flask API.
+    Fetch BLE devices using Web Bluetooth API.
     """
     if "ble_data" not in st.session_state:
-        # Inject JavaScript to scan for BLE devices
+        # Inject JavaScript into Streamlit
         st.components.v1.html(ble_script, height=0)
-        time.sleep(3)  # Simulating the original API call delay
-    
-    # Retrieve BLE data from localStorage (user must refresh manually)
-    ble_data = st.experimental_get_query_params().get("ble_data", None)
+        time.sleep(3)  # Simulating delay
+
+    # Retrieve BLE data from the URL parameters
+    ble_data = st.query_params.get("ble_data")
 
     if ble_data:
-        return eval(ble_data[0])  # Convert string to dictionary
+        return eval(ble_data)  # Convert JSON string to dictionary
 
     return None
+    
 
 def get_current_period():
     """
