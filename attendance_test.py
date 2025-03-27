@@ -4,17 +4,6 @@ st.set_page_config(
     page_icon="🎓"   
 ) 
 
-tracking_code = """
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-RVQ68YBXLB"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-RVQ68YBXLB');
-</script>
-"""
-st.markdown(tracking_code, unsafe_allow_html=True)
-
 import sqlite3
 import datetime
 from datetime import date, datetime,timedelta,timezone
