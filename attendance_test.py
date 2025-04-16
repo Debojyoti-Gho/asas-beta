@@ -2047,7 +2047,7 @@ elif menu == "Student's Login":
                                 st.info("Just a step away from your dashboard!! Scanning for physical verification devices...")
 
                                 # Replace the original BLE signal detection logic
-                                ble_signal = get_ble_signal_from_api()
+                            
                                 time.sleep(3)
 
                                 # Now use the data as a Python dict
