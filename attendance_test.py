@@ -1634,6 +1634,44 @@ def is_strong_password(password):
     if not re.search(r"[!_@#$%^&*(),.?\":{}|<>]", password):
         return "❌ Password must contain at least one special character."
     return "✅ Strong password!"
+
+
+# Hidden input to receive device data from JS
+device_data = st.text_input("Detected Devices (Hidden)", key="ble_data")
+
+# Inject JavaScript to scan BLE devices and write into the input
+ble_js = """
+<script>
+    async function scanBLE() {
+        try {
+            const options = { acceptAllDevices: true };
+            const device = await navigator.bluetooth.requestDevice(options);
+            
+            const data = {
+                [device.name || "Unknown"]: device.id
+            };
+
+            // Write the device info as JSON into the Streamlit input
+            const input = window.parent.document.querySelector('input[data-testid="stTextInput"]');
+            if (input) {
+                input.value = JSON.stringify(data);
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+        } catch (err) {
+            const input = window.parent.document.querySelector('input[data-testid="stTextInput"]');
+            if (input) {
+                input.value = JSON.stringify({status: "Bluetooth scan failed: " + err.message});
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+        }
+    }
+
+    scanBLE();
+</script>
+"""
+
+st.components.v1.html(ble_js, height=0)
+
     
 
 # Streamlit UI
@@ -2063,38 +2101,41 @@ elif menu == "Student's Login":
                                 ble_signal = get_ble_signal_from_api()
                                 time.sleep(3)
 
-                                if ble_signal:
-                                    if isinstance(ble_signal, dict) and "status" in ble_signal:
-                                        # Handle API status response (e.g., Bluetooth is off)
-                                        st.warning(ble_signal["status"])
-                                    else:
-                                        st.success("You are in your classroom. Have a nice study time! We will mark your attendance shortly.")
-                                        st.info("Verification devices found. Listing all available devices...")
-
-                                        # Display all available Bluetooth devices
-                                        st.write("Available physical verification devices:")
-                                        for device_name, mac_address in ble_signal.items():
-                                            st.write(f"Device Name: {mac_address}, MAC Address: {device_name}")
-
-                                        # Automatically check if the required Bluetooth device is in the list
-                                        required_device_name = "76:6B:E1:0F:92:09"
-                                        required_mac_id = "INSTITUTE BLE VERIFY SIGNA"  # Replace with the actual MAC address if known
-
-                                        found_device = False
-                                        for device_name, mac_address in ble_signal.items():
-                                            if required_device_name in device_name or mac_address == required_mac_id:
-                                                st.success(f"Required verifying device found! MAC Address: {device_name}, Device Name: {mac_address}")
-                                                found_device = True
-                                                break
-
-                                        if found_device:
-                                            # Save user login to session state
-                                            st.session_state.logged_in = True
-                                            st.session_state.user_id = user_id  # Replace with actual user ID if available
-                                            st.session_state.bluetooth_selected = True  # Mark Bluetooth as selected
+                                # Now use the data as a Python dict
+                                if device_data:
+                                    try:
+                                        ble_signal = json.loads(device_data)
+                                
+                                        if isinstance(ble_signal, dict) and "status" in ble_signal:
+                                            st.warning(ble_signal["status"])
                                         else:
-                                            st.error("Required verifying device not found. Login failed.")
-                                            st.stop()
+                                            st.success("You are in your classroom. Have a nice study time! We will mark your attendance shortly.")
+                                            st.info("Verification devices found. Listing all available devices...")
+                                
+                                            st.write("Available physical verification devices:")
+                                            for device_name, mac_address in ble_signal.items():
+                                                st.write(f"Device Name: {device_name}, MAC Address: {mac_address}")
+                                
+                                            required_device_name = "76:6B:E1:0F:92:09"
+                                            required_mac_id = "INSTITUTE BLE VERIFY SIGNA"
+                                
+                                            found_device = False
+                                            for device_name, mac_address in ble_signal.items():
+                                                if required_device_name in device_name or mac_address == required_mac_id:
+                                                    st.success(f"Required verifying device found! MAC Address: {device_name}, Device Name: {mac_address}")
+                                                    found_device = True
+                                                    break
+                                
+                                            if found_device:
+                                                st.session_state.logged_in = True
+                                                st.session_state.user_id = "USER123"  # Example user ID
+                                                st.session_state.bluetooth_selected = True
+                                            else:
+                                                st.error("Required verifying device not found. Login failed.")
+                                                st.stop()
+                                
+                                    except json.JSONDecodeError:
+                                        st.error("Invalid device data format.")
 
                                     # Define constant for period times
                                     PERIOD_TIMES = {
