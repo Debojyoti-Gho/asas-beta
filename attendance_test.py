@@ -1355,6 +1355,7 @@ st.text_area(
 
 # --- Device Verification ---
 if st.button("🔒 Verify Device"):
+    # Try to process the current JSON in the text area
     if st.session_state.auto_json:
         try:
             device = json.loads(st.session_state.auto_json)
@@ -1367,9 +1368,8 @@ if st.button("🔒 Verify Device"):
                 st.success(f"Device added: {device_name} ({device_id})")
         except Exception as e:
             st.error(f"❌ Failed to parse device data: {e}")
-    else:
-        st.warning("⚠️ No devices scanned yet.")
-
+    
+    # Now check if we have any devices to verify
     if st.session_state.scanned_devices:
         match_found = any(
             d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
@@ -1387,7 +1387,6 @@ if st.button("🔒 Verify Device"):
             st.error("❌ Required verifying device not found. Access Denied.")
     else:
         st.warning("⚠️ No devices scanned yet.")
-
 
 
 def measure_latency(flask_server_url):
