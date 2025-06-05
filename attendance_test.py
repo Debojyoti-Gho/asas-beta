@@ -1268,13 +1268,13 @@ import streamlit as st
 import streamlit.components.v1 as components
 import json
 
+st.set_page_config(page_title="BLE Scanner + Verification", layout="centered")
 st.title("📡 BLE Scanner and Device Verification")
 
 # Required device info for verification - replace as needed
 REQUIRED_DEVICE_NAME = "76:6B:E1:0F:92:09"
 REQUIRED_MAC_ID = "INSTITUTE BLE VERIFY SIGNA"
 
-# Initialize session state for scanned devices
 if "scanned_devices" not in st.session_state:
     st.session_state.scanned_devices = []
 
@@ -1282,7 +1282,6 @@ if "scanned_devices" not in st.session_state:
 name_filter = st.text_input("Filter by device name prefix (optional):")
 uuid_filter = st.text_input("Filter by service UUID (optional, e.g. '180D'):")
 
-# Raw HTML + JS for BLE scanning component with placeholders
 scan_html_template = r"""
 <script>
 async function scanBLE() {{
@@ -1312,49 +1311,37 @@ async function scanBLE() {{
             name: device.name || "Unnamed Device",
             id: device.id
         }};
-        // Send device info to Streamlit via postMessage
-        window.parent.postMessage(result, "*");
+        // Set hidden input value and notify Streamlit
+        const input = document.getElementById("ble_data");
+        input.value = JSON.stringify(result);
+        input.dispatchEvent(new Event("input", {{ bubbles: true }}));
     }} catch(e) {{
         alert("Scan cancelled or failed. See console for details.");
         console.error(e);
     }}
 }}
-
-// Listen for device info from postMessage and update hidden input
-window.addEventListener("message", (event) => {{
-    if(event.data && event.data.id) {{
-        const input = document.getElementById("ble_data");
-        input.value = JSON.stringify(event.data);
-        input.dispatchEvent(new Event("input", {{ bubbles: true }}));
-    }}
-}});
 </script>
 
 <button onclick="scanBLE()">🔎 Scan Bluetooth Device</button><br><br>
 <input type="text" id="ble_data" oninput="streamlit.setComponentValue(this.value)" style="display:none" />
 """
 
-# Format the HTML with current filters (escaping quotes as needed)
 scan_html = scan_html_template.format(
     name_filter=name_filter.replace('"', '\\"'),
     uuid_filter=uuid_filter.replace('"', '\\"'),
 )
 
-# Render the BLE scan component and receive scanned device JSON string
-scanned_device_json = components.html(scan_html, height=170)
+scanned_device_json = components.html(scan_html, height=180)
 
-# Process new scanned device info
 if scanned_device_json:
     try:
         device = json.loads(scanned_device_json)
-        # Add new device if not already scanned
         if not any(d["id"] == device["id"] for d in st.session_state.scanned_devices):
             st.session_state.scanned_devices.append(device)
             st.success(f"Device added: {device['name']} ({device['id']})")
     except Exception as e:
         st.error(f"Failed to parse scanned device data: {e}")
 
-# Display all scanned devices
 st.subheader(f"Scanned Devices ({len(st.session_state.scanned_devices)})")
 if st.session_state.scanned_devices:
     for d in st.session_state.scanned_devices:
@@ -1362,7 +1349,6 @@ if st.session_state.scanned_devices:
 else:
     st.info("No devices scanned yet. Click the button above to start scanning.")
 
-# Button to verify if the required device is in the scanned list
 if st.button("Verify Required Device in Scanned List"):
     if not st.session_state.scanned_devices:
         st.error("No scanned devices to verify. Please scan first.")
@@ -1372,13 +1358,13 @@ if st.button("Verify Required Device in Scanned List"):
             if REQUIRED_DEVICE_NAME in device["id"] or device["name"] == REQUIRED_MAC_ID:
                 found = True
                 st.success(f"✅ Required verifying device found!\nName: {device['name']}, ID: {device['id']}")
-                # Set login/verification state here
                 st.session_state.logged_in = True
                 st.session_state.bluetooth_selected = True
                 break
         if not found:
             st.error("❌ Required verifying device not found. Login failed.")
             st.stop()
+
 
 
 def measure_latency(flask_server_url):
