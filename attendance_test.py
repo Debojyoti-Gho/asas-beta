@@ -1324,7 +1324,7 @@ components.html(js_code, height=160)
 
 # --- Hidden Input to Receive JSON from JS ---
 # This field is not shown, but is used to get data from JS
-st.text_area("Hidden BLE JSON Input", key="raw_json_input", label_visibility="collapsed", height=1)
+st.text_area("Hidden BLE JSON Input", key="raw_json_input", label_visibility="collapsed", height=68)
 
 # --- Trigger Update on Change ---
 if st.session_state.raw_json_input:
