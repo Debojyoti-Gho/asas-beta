@@ -1262,7 +1262,6 @@ def get_precise_location(api_key=None):
             return "Error with ip-api request."
 
 
-
 import streamlit as st
 import streamlit.components.v1 as components
 import json
@@ -1273,11 +1272,13 @@ st.title("📡 BLE Scanner and Device Verification")
 REQUIRED_DEVICE_ID = "76:6B:E1:0F:92:09"
 REQUIRED_DEVICE_NAME = "INSTITUTE BLE VERIFY SIGNA"
 
-# Init session state
+# Initialize session state
 if "scanned_devices" not in st.session_state:
     st.session_state.scanned_devices = []
 if "verified" not in st.session_state:
     st.session_state.verified = False
+if "auto_json" not in st.session_state:
+    st.session_state.auto_json = ""
 
 # Filter inputs
 name_filter = st.text_input("Filter by device name prefix (optional):")
@@ -1287,7 +1288,7 @@ uuid_filter = st.text_input("Filter by service UUID (optional, e.g. 180D):")
 safe_name_filter = json.dumps(name_filter.strip())
 safe_uuid_filter = json.dumps(uuid_filter.strip())
 
-# JavaScript + HTML with proper braces escaped for .format()
+# JavaScript for BLE scanning
 js_code = """
 <script>
     async function scanBLE() {{
@@ -1341,27 +1342,28 @@ js_code = """
 <button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
 """
 
-# Format the JS with safe JSON variables
+# Render the BLE scanner button
 final_js = js_code.format(safe_name_filter=safe_name_filter, safe_uuid_filter=safe_uuid_filter)
-
 components.html(final_js, height=160)
 
-# Form to hold scanned JSON and verify button
-with st.form(key="verify_form"):
-    if "scanned_device_json" not in st.session_state:
-        st.session_state.scanned_device_json = ""
+# --- Device Verification Form ---
+def on_json_change():
+    st.session_state.auto_json = st.session_state._form_auto_json
 
+with st.form(key="verify_form"):
     scanned_device_json = st.text_area(
         "Scanned device JSON:",
-        value=st.session_state.scanned_device_json,
-        key="auto_json",
-        height=100
+        key="_form_auto_json",
+        value=st.session_state.auto_json,
+        height=100,
+        on_change=on_json_change
     )
 
     submit = st.form_submit_button("🔒 Verify Device")
 
     if submit:
-        st.session_state.scanned_device_json = scanned_device_json  # <-- store persistently
+        # Update session state
+        st.session_state.auto_json = scanned_device_json
 
         if scanned_device_json:
             try:
@@ -1369,6 +1371,7 @@ with st.form(key="verify_form"):
                 device_name = device.get("name", "").strip()
                 device_id = device.get("id", "").strip()
 
+                # Add to scanned list if not already present
                 if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
                     st.session_state.scanned_devices.append(device)
                     st.success(f"Device added: {device_name} ({device_id})")
@@ -1395,6 +1398,7 @@ with st.form(key="verify_form"):
                 st.error("❌ Required verifying device not found. Access Denied.")
         else:
             st.warning("⚠️ No devices scanned yet.")
+
 
 
     
