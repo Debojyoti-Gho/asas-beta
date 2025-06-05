@@ -1278,7 +1278,7 @@ if "scanned_devices" not in st.session_state:
 name_filter = st.text_input("Filter by device name prefix (optional):")
 uuid_filter = st.text_input("Filter by service UUID (optional, e.g. '180D'):")
 
-scan_html_template = r"""
+scan_html_template = """
 <script>
 async function scanBLE() {{
     try {{
@@ -1307,9 +1307,8 @@ async function scanBLE() {{
             name: device.name || "Unnamed Device",
             id: device.id
         }};
-        const input = document.getElementById("ble_data");
-        input.value = JSON.stringify(result);
-        input.dispatchEvent(new Event("input", {{ bubbles: true }}));
+        // Send scanned device info to Streamlit
+        window.parent.postMessage({{type: "ble_scan_result", data: result}}, "*");
     }} catch(e) {{
         alert("Scan cancelled or failed. See console for details.");
         console.error(e);
@@ -1317,8 +1316,7 @@ async function scanBLE() {{
 }}
 </script>
 
-<button onclick="scanBLE()">🔎 Scan Bluetooth Device</button><br><br>
-<input type="text" id="ble_data" oninput="streamlit.setComponentValue(this.value)" style="display:none" />
+<button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
 """
 
 scan_html = scan_html_template.format(
@@ -1326,20 +1324,20 @@ scan_html = scan_html_template.format(
     uuid_filter=uuid_filter.replace('"', '\\"'),
 )
 
-# Render the BLE scanner component (no 'key' argument)
-components.html(scan_html, height=180)
-
-# Hidden text input to capture scanned device JSON string from JS
-scanned_device_json = st.text_input("", key="ble_data_hidden", label_visibility="hidden")
-
-if scanned_device_json:
-    try:
-        device = json.loads(scanned_device_json)
+def on_message(msg):
+    if msg["type"] == "ble_scan_result":
+        device = msg["data"]
+        # Avoid duplicates
         if not any(d["id"] == device["id"] for d in st.session_state.scanned_devices):
             st.session_state.scanned_devices.append(device)
             st.success(f"Device added: {device['name']} ({device['id']})")
-    except Exception as e:
-        st.error(f"Failed to parse scanned device data: {e}")
+
+components.html(
+    scan_html,
+    height=150,
+    scrolling=False,
+    on_message=on_message,
+)
 
 st.subheader(f"Scanned Devices ({len(st.session_state.scanned_devices)})")
 if st.session_state.scanned_devices:
