@@ -1262,7 +1262,6 @@ def get_precise_location(api_key=None):
             return "Error with ip-api request."
 
 
-
 import streamlit as st
 import streamlit.components.v1 as components
 import json
@@ -1307,15 +1306,8 @@ async function scanBLE() {{
             name: device.name || "Unnamed Device",
             id: device.id
         }};
-
-        // Update the hidden Streamlit input value and dispatch input event
-        const input = window.parent.document.querySelector('input[data-key="ble_data_hidden"]');
-        if(input){{
-            input.value = JSON.stringify(result);
-            input.dispatchEvent(new Event('input', {{ bubbles: true }}));
-        }} else {{
-            alert("Failed to find Streamlit input element.");
-        }}
+        // Show device JSON here for user to copy manually
+        document.getElementById("device_info").textContent = JSON.stringify(result, null, 2);
     }} catch(e) {{
         alert("Scan cancelled or failed. See console for details.");
         console.error(e);
@@ -1324,6 +1316,8 @@ async function scanBLE() {{
 </script>
 
 <button onclick="scanBLE()">🔎 Scan Bluetooth Device</button><br><br>
+<p><b>Scanned device info (copy this and paste below):</b></p>
+<pre id="device_info" style="background:#eee; padding:10px; white-space: pre-wrap;"></pre>
 """
 
 scan_html = scan_html_template.format(
@@ -1331,10 +1325,10 @@ scan_html = scan_html_template.format(
     uuid_filter=uuid_filter.replace('"', '\\"'),
 )
 
-components.html(scan_html, height=120, scrolling=False)
+components.html(scan_html, height=250, scrolling=False)
 
-# Hidden Streamlit input to receive scanned device JSON
-scanned_device_json = st.text_input("", key="ble_data_hidden", label_visibility="hidden")
+# User pastes the scanned device JSON here manually
+scanned_device_json = st.text_area("Paste scanned device JSON here:")
 
 device_verified = False
 
@@ -1367,6 +1361,7 @@ if st.session_state.scanned_devices:
         st.write(f"• Name: {d['name']} | ID: {d['id']}")
 else:
     st.info("No devices scanned yet. Click the button above to start scanning.")
+
 
 
 
