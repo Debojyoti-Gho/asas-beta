@@ -1261,106 +1261,62 @@ def get_precise_location(api_key=None):
             st.error(f"ip-api request failed: {str(e)}")
             return "Error with ip-api request."
 
-
 import streamlit as st
 import streamlit.components.v1 as components
-import json
 
-st.title("📡 BLE Scanner and Device Verification")
+st.title("📡 Secure BLE Device Verification")
 
+# Your required device identity
 REQUIRED_DEVICE_NAME = "76:6B:E1:0F:92:09"
 REQUIRED_MAC_ID = "INSTITUTE BLE VERIFY SIGNA"
 
-if "scanned_devices" not in st.session_state:
-    st.session_state.scanned_devices = []
-
-name_filter = st.text_input("Filter by device name prefix (optional):")
-uuid_filter = st.text_input("Filter by service UUID (optional, e.g. '180D'):")
-
-scan_html_template = r"""
+# JavaScript-only BLE scanning and verification
+secure_js = f"""
 <script>
-async function scanBLE() {{
+async function scanAndVerify() {{
+    const requiredId = "{REQUIRED_DEVICE_NAME}";
+    const requiredName = "{REQUIRED_MAC_ID}";
+
     try {{
-        const options = {{
-            acceptAllDevices: false,
-            filters: []
-        }};
-        const nameFilter = "{name_filter}".trim();
-        const uuidFilter = "{uuid_filter}".trim();
+        const device = await navigator.bluetooth.requestDevice({{
+            acceptAllDevices: true
+        }});
 
-        if(nameFilter.length > 0) {{
-            options.filters.push({{ namePrefix: nameFilter }});
+        const matched = (
+            device.id === requiredId ||
+            device.name === requiredName
+        );
+
+        const input = window.parent.document.querySelector('input[data-testid="stTextInput"]');
+        if (input) {{
+            input.value = matched ? "verified" : "failed";
+            input.dispatchEvent(new Event('input', {{ bubbles: true }}));
         }}
-
-        if(uuidFilter.length > 0) {{
-            options.filters.push({{ services: ["0x" + uuidFilter] }});
-        }}
-
-        if(options.filters.length === 0) {{
-            delete options.filters;
-            options.acceptAllDevices = true;
-        }}
-
-        const device = await navigator.bluetooth.requestDevice(options);
-        const result = {{
-            name: device.name || "Unnamed Device",
-            id: device.id
-        }};
-        // Show device JSON here for user to copy manually
-        document.getElementById("device_info").textContent = JSON.stringify(result, null, 2);
-    }} catch(e) {{
-        alert("Scan cancelled or failed. See console for details.");
+    }} catch (e) {{
+        alert("Scan cancelled or failed.");
         console.error(e);
     }}
 }}
 </script>
 
-<button onclick="scanBLE()">🔎 Scan Bluetooth Device</button><br><br>
-<p><b>Scanned device info (copy this and paste below):</b></p>
-<pre id="device_info" style="background:#eee; padding:10px; white-space: pre-wrap;"></pre>
+<button onclick="scanAndVerify()">🔍 Scan & Verify Device</button>
 """
 
-scan_html = scan_html_template.format(
-    name_filter=name_filter.replace('"', '\\"'),
-    uuid_filter=uuid_filter.replace('"', '\\"'),
-)
+# Inject the JS button
+components.html(secure_js, height=100)
 
-components.html(scan_html, height=250, scrolling=False)
+# Receive result (just 'verified' or 'failed')
+result = st.text_input("", key="ble_verification_result", label_visibility="hidden")
 
-# User pastes the scanned device JSON here manually
-scanned_device_json = st.text_area("Paste scanned device JSON here:")
+# Show outcome
+if result == "verified":
+    st.success("✅ Verified device found. Proceeding...")
+    st.session_state.logged_in = True
+    st.session_state.bluetooth_selected = True
+elif result == "failed":
+    st.error("❌ Required device not found. Verification failed.")
+    st.stop()
 
-device_verified = False
-
-if scanned_device_json:
-    try:
-        device = json.loads(scanned_device_json)
-        if not any(d["id"] == device["id"] for d in st.session_state.scanned_devices):
-            st.session_state.scanned_devices.append(device)
-            st.success(f"Device added: {device['name']} ({device['id']})")
-
-        # Auto-verify immediately after adding
-        for d in st.session_state.scanned_devices:
-            if REQUIRED_DEVICE_NAME in d["id"] or d["name"] == REQUIRED_MAC_ID:
-                device_verified = True
-                st.success(f"✅ Required verifying device found!\nName: {d['name']}, ID: {d['id']}")
-                st.session_state.logged_in = True
-                st.session_state.bluetooth_selected = True
-                break
-
-        if not device_verified:
-            st.error("❌ Required verifying device not found. Login failed.")
-            st.stop()
-
-    except Exception as e:
-        st.error(f"Failed to parse scanned device data: {e}")
-
-st.subheader(f"Scanned Devices ({len(st.session_state.scanned_devices)})")
-if st.session_state.scanned_devices:
-    for d in st.session_state.scanned_devices:
-        st.write(f"• Name: {d['name']} | ID: {d['id']}")
-else:
-    st.info("No devices scanned yet. Click the button above to start scanning.")
 
 
 
