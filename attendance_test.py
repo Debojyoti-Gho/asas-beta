@@ -1348,17 +1348,27 @@ components.html(final_js, height=160)
 
 # Form to hold scanned JSON and verify button
 with st.form(key="verify_form"):
-    scanned_device_json = st.text_area("Scanned device JSON:", key="auto_json", height=100)
+    if "scanned_device_json" not in st.session_state:
+        st.session_state.scanned_device_json = ""
+
+    scanned_device_json = st.text_area(
+        "Scanned device JSON:",
+        value=st.session_state.scanned_device_json,
+        key="auto_json",
+        height=100
+    )
+
     submit = st.form_submit_button("🔒 Verify Device")
 
     if submit:
+        st.session_state.scanned_device_json = scanned_device_json  # <-- store persistently
+
         if scanned_device_json:
             try:
                 device = json.loads(scanned_device_json)
                 device_name = device.get("name", "").strip()
                 device_id = device.get("id", "").strip()
 
-                # Add new device to scanned list if not already added
                 if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
                     st.session_state.scanned_devices.append(device)
                     st.success(f"Device added: {device_name} ({device_id})")
@@ -1386,13 +1396,6 @@ with st.form(key="verify_form"):
         else:
             st.warning("⚠️ No devices scanned yet.")
 
-# Display scanned devices
-st.subheader(f"Scanned Devices ({len(st.session_state.scanned_devices)})")
-if st.session_state.scanned_devices:
-    for d in st.session_state.scanned_devices:
-        st.write(f"• Name: {d['name']} | ID: {d['id']}")
-else:
-    st.info("No devices scanned yet. Click the button above to start scanning.")
 
     
 
