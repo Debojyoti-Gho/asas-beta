@@ -1268,7 +1268,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 import json
 
-st.set_page_config(page_title="BLE Scanner + Verification", layout="centered")
 st.title("📡 BLE Scanner and Device Verification")
 
 # Required device info for verification - replace as needed
