@@ -1341,46 +1341,54 @@ components.html(f"""
 <button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
 """, height=160)
 
-# Text area to receive BLE data
-scanned_device_json = st.text_area("Scanned device JSON:", key="auto_json", height=100)
+# Form to hold scanned JSON and verify button
+with st.form(key="verify_form"):
+    scanned_device_json = st.text_area("Scanned device JSON:", key="auto_json", height=100)
+    submit = st.form_submit_button("🔒 Verify Device")
 
-# Process scanned device JSON input
-if scanned_device_json:
-    try:
-        device = json.loads(scanned_device_json)
-        device_name = device.get("name", "").strip()
-        device_id = device.get("id", "").strip()
+    if submit:
+        if scanned_device_json:
+            try:
+                device = json.loads(scanned_device_json)
+                device_name = device.get("name", "").strip()
+                device_id = device.get("id", "").strip()
 
-        # Add new device to scanned list if not already added
-        if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
-            st.session_state.scanned_devices.append(device)
-            st.success(f"Device added: {device_name} ({device_id})")
-    except Exception as e:
-        st.error(f"❌ Failed to parse device data: {e}")
+                # Add new device to scanned list if not already added
+                if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
+                    st.session_state.scanned_devices.append(device)
+                    st.success(f"Device added: {device_name} ({device_id})")
+            except Exception as e:
+                st.error(f"❌ Failed to parse device data: {e}")
 
-# Manual verify button
-if st.button("🔒 Verify Device"):
-    if st.session_state.scanned_devices:
-        match_found = any(
-            d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
-            for d in st.session_state.scanned_devices
-        )
-
-        if match_found:
-            matched_device = next(
-                d for d in st.session_state.scanned_devices
-                if d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
+        if st.session_state.scanned_devices:
+            match_found = any(
+                d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
+                for d in st.session_state.scanned_devices
             )
-            st.session_state.verified = True
-            st.session_state.logged_in = True
-            st.session_state.bluetooth_selected = True
 
-            st.success(f"✅ Verified Device Found!\nName: {matched_device['name']}, ID: {matched_device['id']}")
+            if match_found:
+                matched_device = next(
+                    d for d in st.session_state.scanned_devices
+                    if d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
+                )
+                st.session_state.verified = True
+                st.session_state.logged_in = True
+                st.session_state.bluetooth_selected = True
+
+                st.success(f"✅ Verified Device Found!\nName: {matched_device['name']}, ID: {matched_device['id']}")
+            else:
+                st.error("❌ Required verifying device not found. Access Denied.")
         else:
-            st.error("❌ Required verifying device not found. Access Denied.")
-    else:
-        st.warning("⚠️ No devices scanned yet.")
+            st.warning("⚠️ No devices scanned yet.")
 
+# Display scanned devices
+st.subheader(f"Scanned Devices ({len(st.session_state.scanned_devices)})")
+if st.session_state.scanned_devices:
+    for d in st.session_state.scanned_devices:
+        st.write(f"• Name: {d['name']} | ID: {d['id']}")
+else:
+    st.info("No devices scanned yet. Click the button above to start scanning.")
+    
 
 
 def measure_latency(flask_server_url):
