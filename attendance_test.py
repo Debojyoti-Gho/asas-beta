@@ -1281,62 +1281,76 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "bluetooth_selected" not in st.session_state:
     st.session_state.bluetooth_selected = False
+if "scanned_device_json" not in st.session_state:
+    st.session_state.scanned_device_json = ""
 
-# --- JavaScript for BLE Scan and Form Submit ---
-js_code = """
+
+# --- JavaScript for BLE Scan and Auto Save ---
+js_code = f"""
 <script>
-    async function scanBLE() {
-        try {
-            const device = await navigator.bluetooth.requestDevice({
+    async function scanBLE() {{
+        try {{
+            const device = await navigator.bluetooth.requestDevice({{
                 acceptAllDevices: true
-            });
+            }});
 
-            const deviceInfo = {
+            const deviceInfo = {{
                 name: device.name || "Unnamed Device",
                 id: device.id
-            };
+            }};
 
-            const inputBox = window.parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]');
-            if (inputBox) {
+            const inputBox = window.parent.document.querySelector('textarea[aria-label="Hidden BLE JSON Input"]');
+            if (inputBox) {{
                 inputBox.value = JSON.stringify(deviceInfo, null, 2);
-                inputBox.dispatchEvent(new Event('input', { bubbles: true }));
-            }
+                inputBox.dispatchEvent(new Event('input', {{ bubbles: true }}));
+            }}
 
-            // Auto-click the hidden verify button to submit the form
-            const verifyBtn = window.parent.document.querySelector('button[aria-label="hidden_verify"]');
-            if (verifyBtn) {
-                verifyBtn.click();
-            }
+            const btn = window.parent.document.querySelector('button[aria-label="hidden_submit"]');
+            if (btn) {{
+                btn.click();
+            }}
 
-        } catch (e) {
+        }} catch (e) {{
             alert("❌ Scan failed or cancelled.");
             console.error(e);
-        }
-    }
+        }}
+    }}
 </script>
 <button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
 """
 
+# --- Render BLE Scan Button ---
 components.html(js_code, height=160)
 
-# --- Verification Form ---
-with st.form(key="verify_form"):
-    st.text_area("Scanned device JSON:", key="form_auto_json", height=100)
-    # Hidden submit button triggered from JS
-    st.form_submit_button("🔒 Verify Device", help="Hidden submit", disabled=True, kwargs={"aria-label": "hidden_verify"})
+# --- Hidden Input to Receive JSON from JS ---
+# This field is not shown, but is used to get data from JS
+st.text_area("Hidden BLE JSON Input", key="raw_json_input", label_visibility="collapsed", height=1)
 
-# --- Manual Submit Fallback (Optional) ---
-if st.button("🔒 Manually Verify (if auto fails)"):
-    st.session_state.force_submit = True
+# --- Trigger Update on Change ---
+if st.session_state.raw_json_input:
+    st.session_state.scanned_device_json = st.session_state.raw_json_input
 
-# --- Manual OR Auto Submission Handler ---
-if st.session_state.get("form_auto_json") and (
-    st.session_state.get("force_submit") or st.session_state.get("form_auto_json").strip()
-):
-    scanned_device_json = st.session_state.form_auto_json
+# --- Display-Only JSON Output ---
+if st.session_state.scanned_device_json:
+    st.subheader("📋 Scanned Device (Read-Only)")
+    st.code(st.session_state.scanned_device_json, language="json")
+else:
+    st.info("🔍 Click the scan button above to capture a BLE device.")
 
+# --- Hidden Submit Button for JS to Click ---
+with st.form("verify_form"):
+    st.form_submit_button("🔒 Verify Device", help="Hidden", kwargs={"aria-label": "hidden_submit"})
+
+# --- Manual Fallback Button for Debugging (optional) ---
+if st.button("🔒 Verify Now"):
+    verify = True
+else:
+    verify = False
+
+# --- Verification Logic ---
+if st.session_state.scanned_device_json and verify:
     try:
-        device = json.loads(scanned_device_json)
+        device = json.loads(st.session_state.scanned_device_json)
         device_name = device.get("name", "").strip()
         device_id = device.get("id", "").strip()
 
@@ -1346,27 +1360,24 @@ if st.session_state.get("form_auto_json") and (
     except Exception as e:
         st.error(f"❌ Failed to parse device data: {e}")
 
-    # --- Verification Logic ---
-    if st.session_state.scanned_devices:
-        match_found = any(
-            d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
-            for d in st.session_state.scanned_devices
+    # Check if device matches required
+    match_found = any(
+        d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
+        for d in st.session_state.scanned_devices
+    )
+
+    if match_found:
+        matched_device = next(
+            d for d in st.session_state.scanned_devices
+            if d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
         )
+        st.session_state.verified = True
+        st.session_state.logged_in = True
+        st.session_state.bluetooth_selected = True
 
-        if match_found:
-            matched_device = next(
-                d for d in st.session_state.scanned_devices
-                if d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
-            )
-            st.session_state.verified = True
-            st.session_state.logged_in = True
-            st.session_state.bluetooth_selected = True
-
-            st.success(f"✅ Verified Device Found!\nName: {matched_device['name']}, ID: {matched_device['id']}")
-        else:
-            st.error("❌ Required verifying device not found. Access Denied.")
-else:
-    st.info("ℹ️ Click 'Scan Bluetooth Device' and wait for it to verify.")
+        st.success(f"✅ Verified Device Found!\nName: {matched_device['name']}, ID: {matched_device['id']}")
+    else:
+        st.error("❌ Required verifying device not found. Access Denied.")
 
 
 
