@@ -1283,12 +1283,12 @@ if "verified" not in st.session_state:
 name_filter = st.text_input("Filter by device name prefix (optional):")
 uuid_filter = st.text_input("Filter by service UUID (optional, e.g. 180D):")
 
-# Safely prepare JS variables
+# Safely prepare JS variables as JSON strings
 safe_name_filter = json.dumps(name_filter.strip())
 safe_uuid_filter = json.dumps(uuid_filter.strip())
 
-# BLE scan button + JS logic
-components.html(f"""
+# JavaScript + HTML with proper braces escaped for .format()
+js_code = """
 <script>
     async function scanBLE() {{
         const nameFilter = {safe_name_filter};
@@ -1339,7 +1339,12 @@ components.html(f"""
     }}
 </script>
 <button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
-""", height=160)
+"""
+
+# Format the JS with safe JSON variables
+final_js = js_code.format(safe_name_filter=safe_name_filter, safe_uuid_filter=safe_uuid_filter)
+
+components.html(final_js, height=160)
 
 # Form to hold scanned JSON and verify button
 with st.form(key="verify_form"):
@@ -1388,6 +1393,7 @@ if st.session_state.scanned_devices:
         st.write(f"• Name: {d['name']} | ID: {d['id']}")
 else:
     st.info("No devices scanned yet. Click the button above to start scanning.")
+
     
 
 
