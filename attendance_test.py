@@ -1272,7 +1272,7 @@ st.title("📡 BLE Scanner and Device Verification")
 REQUIRED_DEVICE_ID = "76:6B:E1:0F:92:09"
 REQUIRED_DEVICE_NAME = "INSTITUTE BLE VERIFY SIGNA"
 
-# Initialize session state
+# Session state initialization
 if "scanned_devices" not in st.session_state:
     st.session_state.scanned_devices = []
 if "verified" not in st.session_state:
@@ -1284,11 +1284,11 @@ if "auto_json" not in st.session_state:
 name_filter = st.text_input("Filter by device name prefix (optional):")
 uuid_filter = st.text_input("Filter by service UUID (optional, e.g. 180D):")
 
-# Safely prepare JS variables as JSON strings
+# Safe JSON for JS code
 safe_name_filter = json.dumps(name_filter.strip())
 safe_uuid_filter = json.dumps(uuid_filter.strip())
 
-# JavaScript for BLE scanning
+# JavaScript to scan BLE devices
 js_code = """
 <script>
     async function scanBLE() {{
@@ -1342,66 +1342,58 @@ js_code = """
 <button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
 """
 
-# Render the BLE scanner button
+# Render BLE scan button
 final_js = js_code.format(safe_name_filter=safe_name_filter, safe_uuid_filter=safe_uuid_filter)
 components.html(final_js, height=160)
 
 # --- Device Verification Form ---
-def on_json_change():
-    st.session_state.auto_json = st.session_state._form_auto_json
-
 with st.form(key="verify_form"):
     scanned_device_json = st.text_area(
         "Scanned device JSON:",
-        key="_form_auto_json",
+        key="form_auto_json",
         value=st.session_state.auto_json,
-        height=100,
-        on_change=on_json_change
+        height=100
     )
-
     submit = st.form_submit_button("🔒 Verify Device")
 
-    if submit:
-        # Update session state
-        st.session_state.auto_json = scanned_device_json
+# Process form submission
+if submit:
+    st.session_state.auto_json = scanned_device_json  # Persist scanned JSON
 
-        if scanned_device_json:
-            try:
-                device = json.loads(scanned_device_json)
-                device_name = device.get("name", "").strip()
-                device_id = device.get("id", "").strip()
+    if scanned_device_json:
+        try:
+            device = json.loads(scanned_device_json)
+            device_name = device.get("name", "").strip()
+            device_id = device.get("id", "").strip()
 
-                # Add to scanned list if not already present
-                if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
-                    st.session_state.scanned_devices.append(device)
-                    st.success(f"Device added: {device_name} ({device_id})")
-            except Exception as e:
-                st.error(f"❌ Failed to parse device data: {e}")
+            # Add device if not already seen
+            if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
+                st.session_state.scanned_devices.append(device)
+                st.success(f"Device added: {device_name} ({device_id})")
+        except Exception as e:
+            st.error(f"❌ Failed to parse device data: {e}")
 
-        if st.session_state.scanned_devices:
-            match_found = any(
-                d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
-                for d in st.session_state.scanned_devices
+    if st.session_state.scanned_devices:
+        match_found = any(
+            d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
+            for d in st.session_state.scanned_devices
+        )
+
+        if match_found:
+            matched_device = next(
+                d for d in st.session_state.scanned_devices
+                if d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
             )
+            st.session_state.verified = True
+            st.session_state.logged_in = True
+            st.session_state.bluetooth_selected = True
 
-            if match_found:
-                matched_device = next(
-                    d for d in st.session_state.scanned_devices
-                    if d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
-                )
-                st.session_state.verified = True
-                st.session_state.logged_in = True
-                st.session_state.bluetooth_selected = True
-
-                st.success(f"✅ Verified Device Found!\nName: {matched_device['name']}, ID: {matched_device['id']}")
-            else:
-                st.error("❌ Required verifying device not found. Access Denied.")
+            st.success(f"✅ Verified Device Found!\nName: {matched_device['name']}, ID: {matched_device['id']}")
         else:
-            st.warning("⚠️ No devices scanned yet.")
+            st.error("❌ Required verifying device not found. Access Denied.")
+    else:
+        st.warning("⚠️ No devices scanned yet.")
 
-
-
-    
 
 
 def measure_latency(flask_server_url):
