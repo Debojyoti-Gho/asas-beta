@@ -1263,21 +1263,18 @@ def get_precise_location(api_key=None):
 
 
 
-
 import streamlit as st
 import streamlit.components.v1 as components
 import json
 
 st.title("📡 BLE Scanner and Device Verification")
 
-# Required device info for verification - replace as needed
 REQUIRED_DEVICE_NAME = "76:6B:E1:0F:92:09"
 REQUIRED_MAC_ID = "INSTITUTE BLE VERIFY SIGNA"
 
 if "scanned_devices" not in st.session_state:
     st.session_state.scanned_devices = []
 
-# Filters for scanning
 name_filter = st.text_input("Filter by device name prefix (optional):")
 uuid_filter = st.text_input("Filter by service UUID (optional, e.g. '180D'):")
 
@@ -1310,7 +1307,6 @@ async function scanBLE() {{
             name: device.name || "Unnamed Device",
             id: device.id
         }};
-        // Set hidden input value and notify Streamlit
         const input = document.getElementById("ble_data");
         input.value = JSON.stringify(result);
         input.dispatchEvent(new Event("input", {{ bubbles: true }}));
@@ -1330,7 +1326,10 @@ scan_html = scan_html_template.format(
     uuid_filter=uuid_filter.replace('"', '\\"'),
 )
 
-scanned_device_json = components.html(scan_html, height=180)
+components.html(scan_html, height=180, key="ble_scanner")
+
+# Hidden text input to capture scanned device JSON string from JS
+scanned_device_json = st.text_input("##", key="ble_data_hidden", label_visibility="hidden")
 
 if scanned_device_json:
     try:
