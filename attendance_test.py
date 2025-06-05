@@ -1344,39 +1344,42 @@ components.html(f"""
 # Text area to receive BLE data
 scanned_device_json = st.text_area("Scanned device JSON:", key="auto_json", height=100)
 
-# Process scanned device
+# Process scanned device JSON input
 if scanned_device_json:
     try:
         device = json.loads(scanned_device_json)
         device_name = device.get("name", "").strip()
         device_id = device.get("id", "").strip()
 
-        # Add device if it's not already in the list
+        # Add new device to scanned list if not already added
         if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
             st.session_state.scanned_devices.append(device)
             st.success(f"Device added: {device_name} ({device_id})")
-
-        # Matching logic for verification
-        if not st.session_state.verified:
-            match_found = any(
-                d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
-                for d in st.session_state.scanned_devices
-            )
-
-            if match_found:
-                matched_device = next(
-                    d for d in st.session_state.scanned_devices
-                    if d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
-                )
-                st.session_state.verified = True
-                st.session_state.logged_in = True
-                st.session_state.bluetooth_selected = True
-
-                st.success(f"✅ Verified Device Found!\nName: {matched_device['name']}, ID: {matched_device['id']}")
-            else:
-                st.error("❌ Required verifying device not found. Access Denied.")
     except Exception as e:
         st.error(f"❌ Failed to parse device data: {e}")
+
+# Manual verify button
+if st.button("🔒 Verify Device"):
+    if st.session_state.scanned_devices:
+        match_found = any(
+            d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
+            for d in st.session_state.scanned_devices
+        )
+
+        if match_found:
+            matched_device = next(
+                d for d in st.session_state.scanned_devices
+                if d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
+            )
+            st.session_state.verified = True
+            st.session_state.logged_in = True
+            st.session_state.bluetooth_selected = True
+
+            st.success(f"✅ Verified Device Found!\nName: {matched_device['name']}, ID: {matched_device['id']}")
+        else:
+            st.error("❌ Required verifying device not found. Access Denied.")
+    else:
+        st.warning("⚠️ No devices scanned yet.")
 
 
 
