@@ -1269,8 +1269,8 @@ import json
 st.title("📡 BLE Scanner and Device Verification")
 
 # Constants
-REQUIRED_DEVICE_ID = "76:6B:E1:0F:92:09"
-REQUIRED_DEVICE_NAME = "INSTITUTE BLE VERIFY SIGNA"
+REQUIRED_DEVICE_ID = "kkFu61r4jTvGoHPPOSKK0Q=="
+REQUIRED_DEVICE_NAME = "DeskJet 2700 series"
 
 # Session state initialization
 if "scanned_devices" not in st.session_state:
