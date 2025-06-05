@@ -1261,7 +1261,6 @@ def get_precise_location(api_key=None):
             st.error(f"ip-api request failed: {str(e)}")
             return "Error with ip-api request."
 
-
 import streamlit as st
 import streamlit.components.v1 as components
 import json
@@ -1269,16 +1268,18 @@ import json
 st.title("📡 BLE Scanner and Device Verification")
 
 # Constants
-REQUIRED_DEVICE_ID = "kkFu61r4jTvGoHPPOSKK0Q=="
-REQUIRED_DEVICE_NAME = "DeskJet 2700 series"
+REQUIRED_DEVICE_ID = "76:6B:E1:0F:92:09"
+REQUIRED_DEVICE_NAME = "INSTITUTE BLE VERIFY SIGNA"
 
 # Session state initialization
 if "scanned_devices" not in st.session_state:
     st.session_state.scanned_devices = []
 if "verified" not in st.session_state:
     st.session_state.verified = False
-if "auto_json" not in st.session_state:
-    st.session_state.auto_json = ""
+if "last_scanned_device" not in st.session_state:
+    st.session_state.last_scanned_device = {"name": "", "id": ""}
+if "show_json" not in st.session_state:
+    st.session_state.show_json = ""
 
 # Filter inputs
 name_filter = st.text_input("Filter by device name prefix (optional):")
@@ -1289,8 +1290,18 @@ safe_name_filter = json.dumps(name_filter.strip())
 safe_uuid_filter = json.dumps(uuid_filter.strip())
 
 # JavaScript to scan BLE devices
-js_code = """
+js_code = f"""
 <script>
+    // Store scanned device in Streamlit session state
+    function storeDevice(deviceInfo) {{
+        const data = {{
+            name: deviceInfo.name,
+            id: deviceInfo.id
+        }};
+        parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]').value = JSON.stringify(data, null, 2);
+        parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]').dispatchEvent(new Event('input', {{ bubbles: true }}));
+    }}
+
     async function scanBLE() {{
         const nameFilter = {safe_name_filter};
         const uuidFilter = {safe_uuid_filter};
@@ -1327,12 +1338,8 @@ js_code = """
                 name: device.name || "Unnamed Device",
                 id: device.id
             }};
-
-            const inputBox = window.parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]');
-            if (inputBox) {{
-                inputBox.value = JSON.stringify(deviceInfo, null, 2);
-                inputBox.dispatchEvent(new Event('input', {{ bubbles: true }}));
-            }}
+            
+            storeDevice(deviceInfo);
         }} catch (e) {{
             alert("Scan failed or cancelled.");
             console.error(e);
@@ -1343,50 +1350,76 @@ js_code = """
 """
 
 # Render BLE scan button
-final_js = js_code.format(safe_name_filter=safe_name_filter, safe_uuid_filter=safe_uuid_filter)
-components.html(final_js, height=160)
+components.html(js_code, height=60)
 
 # --- Persistent Device JSON Display ---
-st.text_area(
+scanned_json = st.text_area(
     "Scanned device JSON:",
-    key="auto_json",
-    height=100
+    value=st.session_state.show_json,
+    height=100,
+    key="scanned_json_area"
 )
+
+# Update session state when JSON changes
+if scanned_json != st.session_state.show_json:
+    st.session_state.show_json = scanned_json
 
 # --- Device Verification ---
 if st.button("🔒 Verify Device"):
-    # Try to process the current JSON in the text area
-    if st.session_state.auto_json:
+    if st.session_state.show_json:
         try:
-            device = json.loads(st.session_state.auto_json)
+            device = json.loads(st.session_state.show_json)
             device_name = device.get("name", "").strip()
             device_id = device.get("id", "").strip()
 
+            # Store last scanned device
+            st.session_state.last_scanned_device = {
+                "name": device_name,
+                "id": device_id
+            }
+
             # Add device if not already seen
             if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
-                st.session_state.scanned_devices.append(device)
+                st.session_state.scanned_devices.append({
+                    "name": device_name,
+                    "id": device_id
+                })
                 st.success(f"Device added: {device_name} ({device_id})")
         except Exception as e:
             st.error(f"❌ Failed to parse device data: {e}")
     
-    # Now check if we have any devices to verify
+    # Always show verification status
     if st.session_state.scanned_devices:
         match_found = any(
-            d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
+            d.get("id") == REQUIRED_DEVICE_ID or 
+            d.get("name") == REQUIRED_DEVICE_NAME
             for d in st.session_state.scanned_devices
         )
 
         if match_found:
             matched_device = next(
                 d for d in st.session_state.scanned_devices
-                if d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
+                if d.get("id") == REQUIRED_DEVICE_ID or 
+                d.get("name") == REQUIRED_DEVICE_NAME
             )
             st.session_state.verified = True
             st.success(f"✅ Verified Device Found!\nName: {matched_device['name']}, ID: {matched_device['id']}")
         else:
-            st.error("❌ Required verifying device not found. Access Denied.")
+            st.error("❌ Required verifying device not found in scanned devices.")
     else:
-        st.warning("⚠️ No devices scanned yet.")
+        st.warning("⚠️ No valid devices scanned yet.")
+
+# Display last scanned device info
+if st.session_state.last_scanned_device["name"]:
+    st.subheader("Last Scanned Device")
+    st.json(st.session_state.last_scanned_device)
+
+# Display all scanned devices
+if st.session_state.scanned_devices:
+    st.subheader("All Scanned Devices")
+    for i, device in enumerate(st.session_state.scanned_devices, 1):
+        st.write(f"{i}. **{device['name']}** ({device['id']})")
+
 
 
 def measure_latency(flask_server_url):
