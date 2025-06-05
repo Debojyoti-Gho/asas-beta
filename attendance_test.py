@@ -1269,74 +1269,82 @@ import json
 
 st.title("📡 BLE Scanner and Device Verification")
 
-# Constants for verification
+# Constants
 REQUIRED_DEVICE_ID = "76:6B:E1:0F:92:09"
 REQUIRED_DEVICE_NAME = "INSTITUTE BLE VERIFY SIGNA"
 
-# Session state init
+# Init session state
 if "scanned_devices" not in st.session_state:
     st.session_state.scanned_devices = []
 if "verified" not in st.session_state:
     st.session_state.verified = False
 
-# Filters
+# Filter inputs
 name_filter = st.text_input("Filter by device name prefix (optional):")
-uuid_filter = st.text_input("Filter by service UUID (optional, e.g. '180D'):")
+uuid_filter = st.text_input("Filter by service UUID (optional, e.g. 180D):")
 
-st.warning("🔒 Note: Bluetooth scanning works only in secure origins (HTTPS or localhost) on supported browsers like Chrome/Edge (not Safari or Firefox).")
+# Safely prepare JS variables
+safe_name_filter = json.dumps(name_filter.strip())
+safe_uuid_filter = json.dumps(uuid_filter.strip())
 
-# BLE Scan button and script
-components.html("""
+# BLE scan button + JS logic
+components.html(f"""
 <script>
-    async function scanBLE() {
-        try {
-            let nameFilter = document.getElementById("nameFilter").textContent.trim();
-            let uuidFilter = document.getElementById("uuidFilter").textContent.trim();
+    async function scanBLE() {{
+        const nameFilter = {safe_name_filter};
+        const uuidFilter = {safe_uuid_filter};
 
-            let options = {
+        try {{
+            let options = {{
                 acceptAllDevices: false,
                 filters: []
-            };
+            }};
 
-            if (nameFilter.length > 0) {
-                options.filters.push({ namePrefix: nameFilter });
-            }
+            if (nameFilter) {{
+                options.filters.push({{ namePrefix: nameFilter }});
+            }}
 
-            if (uuidFilter.length > 0) {
-                options.filters.push({ services: ["0x" + uuidFilter] });
-            }
+            if (uuidFilter) {{
+                let cleaned = uuidFilter.replace(/^0x/, '').toLowerCase();
+                if (/^[0-9a-f]{{4}}$/.test(cleaned)) {{
+                    options.filters.push({{ services: [parseInt(cleaned, 16)] }});
+                }} else if (/^[0-9a-f-]{{36}}$/.test(cleaned)) {{
+                    options.filters.push({{ services: [cleaned] }});
+                }} else {{
+                    alert("❌ Invalid UUID format. Use a 16-bit hex (e.g. 180D) or full UUID.");
+                    return;
+                }}
+            }}
 
-            if (options.filters.length === 0) {
+            if (options.filters.length === 0) {{
                 delete options.filters;
                 options.acceptAllDevices = true;
-            }
+            }}
 
             const device = await navigator.bluetooth.requestDevice(options);
-            const deviceInfo = {
+            const deviceInfo = {{
                 name: device.name || "Unnamed Device",
                 id: device.id
-            };
+            }};
 
             const inputBox = window.parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]');
-            if (inputBox) {
+            if (inputBox) {{
                 inputBox.value = JSON.stringify(deviceInfo, null, 2);
-                inputBox.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        } catch (e) {
+                inputBox.dispatchEvent(new Event('input', {{ bubbles: true }}));
+            }}
+        }} catch (e) {{
             alert("Scan failed or cancelled.");
             console.error(e);
-        }
-    }
+        }}
+    }}
 </script>
-<div style="display:none;" id="nameFilter">{name_filter}</div>
-<div style="display:none;" id="uuidFilter">{uuid_filter}</div>
 <button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
-""", height=140)
+""", height=160)
 
-# Text area that gets filled automatically
+# Text area to receive BLE data
 scanned_device_json = st.text_area("Scanned device JSON:", key="auto_json", height=100)
 
-# Handle scanned device data
+# Process scanned device
 if scanned_device_json:
     try:
         device = json.loads(scanned_device_json)
@@ -1366,6 +1374,7 @@ if st.session_state.scanned_devices:
         st.write(f"• Name: {d['name']} | ID: {d['id']}")
 else:
     st.info("No devices scanned yet. Click the button above to start scanning.")
+
 
 
 
