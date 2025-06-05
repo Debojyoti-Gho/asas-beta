@@ -1425,6 +1425,30 @@ def get_ble_signal_from_api():
         st.error(f"Error connecting to the BLE API: {e}")
         return None
 
+import streamlit as st
+import streamlit.components.v1 as components
+
+st.title("📡 BLE Scanner (basic example)")
+
+scan_html = """
+<script>
+async function scanBLE() {
+  try {
+    const options = { acceptAllDevices: true };
+    const device = await navigator.bluetooth.requestDevice(options);
+    alert("Scanned Device:\\nName: " + (device.name || "Unnamed") + "\\nID: " + device.id);
+  } catch (e) {
+    alert("Scan cancelled or failed. See console for details.");
+    console.error(e);
+  }
+}
+</script>
+<button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
+"""
+
+components.html(scan_html, height=100)
+
+
 def get_current_period():
     """
     Get the current active period based on the current time, considering timezones.
