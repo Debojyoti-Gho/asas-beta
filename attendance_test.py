@@ -1326,10 +1326,11 @@ scan_html = scan_html_template.format(
     uuid_filter=uuid_filter.replace('"', '\\"'),
 )
 
-components.html(scan_html, height=180, key="ble_scanner")
+# Render the BLE scanner component (no 'key' argument)
+components.html(scan_html, height=180)
 
 # Hidden text input to capture scanned device JSON string from JS
-scanned_device_json = st.text_input("##", key="ble_data_hidden", label_visibility="hidden")
+scanned_device_json = st.text_input("", key="ble_data_hidden", label_visibility="hidden")
 
 if scanned_device_json:
     try:
