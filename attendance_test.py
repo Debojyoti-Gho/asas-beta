@@ -1268,97 +1268,63 @@ import json
 
 st.title("📡 BLE Scanner and Device Verification")
 
-# Constants
+# --- Constants ---
 REQUIRED_DEVICE_ID = "76:6B:E1:0F:92:09"
 REQUIRED_DEVICE_NAME = "INSTITUTE BLE VERIFY SIGNA"
 
-# Session state initialization
+# --- Session State Initialization ---
 if "scanned_devices" not in st.session_state:
     st.session_state.scanned_devices = []
 if "verified" not in st.session_state:
     st.session_state.verified = False
-if "auto_json" not in st.session_state:
-    st.session_state.auto_json = ""
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "bluetooth_selected" not in st.session_state:
+    st.session_state.bluetooth_selected = False
 
-# Filter inputs
-name_filter = st.text_input("Filter by device name prefix (optional):")
-uuid_filter = st.text_input("Filter by service UUID (optional, e.g. 180D):")
-
-# Safe JSON for JS code
-safe_name_filter = json.dumps(name_filter.strip())
-safe_uuid_filter = json.dumps(uuid_filter.strip())
-
-# JavaScript to scan BLE devices
+# --- JavaScript to Scan BLE Devices ---
 js_code = """
 <script>
-    async function scanBLE() {{
-        const nameFilter = {safe_name_filter};
-        const uuidFilter = {safe_uuid_filter};
+    async function scanBLE() {
+        try {
+            const device = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true
+            });
 
-        try {{
-            let options = {{
-                acceptAllDevices: false,
-                filters: []
-            }};
-
-            if (nameFilter) {{
-                options.filters.push({{ namePrefix: nameFilter }});
-            }}
-
-            if (uuidFilter) {{
-                let cleaned = uuidFilter.replace(/^0x/, '').toLowerCase();
-                if (/^[0-9a-f]{{4}}$/.test(cleaned)) {{
-                    options.filters.push({{ services: [parseInt(cleaned, 16)] }});
-                }} else if (/^[0-9a-f-]{{36}}$/.test(cleaned)) {{
-                    options.filters.push({{ services: [cleaned] }});
-                }} else {{
-                    alert("❌ Invalid UUID format. Use a 16-bit hex (e.g. 180D) or full UUID.");
-                    return;
-                }}
-            }}
-
-            if (options.filters.length === 0) {{
-                delete options.filters;
-                options.acceptAllDevices = true;
-            }}
-
-            const device = await navigator.bluetooth.requestDevice(options);
-            const deviceInfo = {{
+            const deviceInfo = {
                 name: device.name || "Unnamed Device",
                 id: device.id
-            }};
+            };
 
             const inputBox = window.parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]');
-            if (inputBox) {{
+            if (inputBox) {
                 inputBox.value = JSON.stringify(deviceInfo, null, 2);
-                inputBox.dispatchEvent(new Event('input', {{ bubbles: true }}));
-            }}
-        }} catch (e) {{
-            alert("Scan failed or cancelled.");
+                inputBox.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        } catch (e) {
+            alert("❌ Scan failed or cancelled.");
             console.error(e);
-        }}
-    }}
+        }
+    }
 </script>
 <button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
 """
 
-# Render BLE scan button
-final_js = js_code.format(safe_name_filter=safe_name_filter, safe_uuid_filter=safe_uuid_filter)
-components.html(final_js, height=160)
+# --- Render BLE Scan Button ---
+components.html(js_code, height=160)
 
 # --- Device Verification Form ---
 with st.form(key="verify_form"):
-    scanned_device_json = st.text_area(
+    st.text_area(
         "Scanned device JSON:",
         key="form_auto_json",
-        value=st.session_state.auto_json,
         height=100
     )
     submit = st.form_submit_button("🔒 Verify Device")
 
-# Process form submission
+# --- Handle Form Submission ---
 if submit:
-    st.session_state.auto_json = scanned_device_json  # Persist scanned JSON
+    scanned_device_json = st.session_state.form_auto_json
 
     if scanned_device_json:
         try:
@@ -1366,13 +1332,14 @@ if submit:
             device_name = device.get("name", "").strip()
             device_id = device.get("id", "").strip()
 
-            # Add device if not already seen
+            # Add device if not already in scanned list
             if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
                 st.session_state.scanned_devices.append(device)
                 st.success(f"Device added: {device_name} ({device_id})")
         except Exception as e:
             st.error(f"❌ Failed to parse device data: {e}")
 
+    # --- Verification Logic ---
     if st.session_state.scanned_devices:
         match_found = any(
             d.get("id") == REQUIRED_DEVICE_ID or d.get("name") == REQUIRED_DEVICE_NAME
@@ -1393,6 +1360,7 @@ if submit:
             st.error("❌ Required verifying device not found. Access Denied.")
     else:
         st.warning("⚠️ No devices scanned yet.")
+
 
 
 
