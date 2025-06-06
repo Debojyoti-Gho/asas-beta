@@ -1267,37 +1267,33 @@ import streamlit.components.v1 as components
 
 st.title("🔒 Bluetooth Device Verifier")
 
-EXPECTED_DEVICE_NAME = "My Trusted Device"  # Change this to match your actual device name
+EXPECTED_DEVICE_NAME = "My Trusted Device"  # <-- Change this to match your target device
 
-# Initialize session state
+# --- Step 1: Initialize session ---
 if "selected_device" not in st.session_state:
     st.session_state.selected_device = None
 if "verified" not in st.session_state:
     st.session_state.verified = None
 
-# Handle query param for selected device (set from browser localStorage via JS)
+# --- Step 2: Get from query string ---
 query_params = st.query_params
 if "device" in query_params:
     st.session_state.selected_device = query_params["device"]
-    st.query_params.clear()
+    st.query_params.clear()  # Clear query params from the URL
 
-# Step 1: Embedded HTML + JS
-# This script:
-# - Lets user pick a Bluetooth device
-# - Stores device name in localStorage
-# - Reloads the Streamlit page with device name as query param
+# --- Step 3: Embedded HTML + JS ---
 components.html(
     """
     <!DOCTYPE html>
     <html>
     <body>
         <button onclick="selectBluetoothDevice()" style="
-            padding: 10px 20px;
-            background-color: #4CAF50;
+            padding: 12px 24px;
+            background-color: #0066CC;
             color: white;
             font-weight: bold;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
         ">
@@ -1312,45 +1308,38 @@ components.html(
                     });
                     const deviceName = device.name || "Unnamed Device";
                     localStorage.setItem("selectedDevice", deviceName);
+
+                    // Reload the page with device name in query param
                     const url = new URL(window.location.href);
                     url.searchParams.set("device", deviceName);
-                    window.location.href = url.toString();  // reload with device param
+                    window.location.href = url.toString();
                 } catch (error) {
-                    alert("Bluetooth selection failed or was cancelled.");
+                    alert("❌ Bluetooth selection was cancelled or failed.");
                 }
             }
-
-            // Auto-load saved device from localStorage (optional, just for visibility)
-            window.onload = function () {
-                const storedDevice = localStorage.getItem("selectedDevice");
-                if (storedDevice) {
-                    console.log("Restored device from localStorage:", storedDevice);
-                }
-            };
         </script>
     </body>
     </html>
     """,
-    height=160,
+    height=150,
 )
 
-# Step 2: Display selected device and show verify button
+# --- Step 4: Show device & Verify ---
 if st.session_state.selected_device:
     st.markdown(f"**🔗 Selected Device:** `{st.session_state.selected_device}`")
-    st.info("✅ Device info loaded from browser storage.")
+    st.info("🧠 Saved in browser localStorage and session.")
 
     if st.button("✅ Verify"):
         st.session_state.verified = (
             st.session_state.selected_device == EXPECTED_DEVICE_NAME
         )
 
-# Step 3: Show result
+# --- Step 5: Show verification result ---
 if st.session_state.verified is not None:
     if st.session_state.verified:
         st.success("✅ Verified")
     else:
         st.error("❌ Not Verified")
-
 
 
 
