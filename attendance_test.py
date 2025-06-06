@@ -1421,7 +1421,6 @@ if st.session_state.scanned_devices:
         st.write(f"{i}. **{device['name']}** ({device['id']})")
 
 
-
 def measure_latency(flask_server_url):
     """
     Measure the network latency between the Streamlit app and Flask server.
