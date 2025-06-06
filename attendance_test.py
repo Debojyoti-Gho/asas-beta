@@ -1261,7 +1261,6 @@ def get_precise_location(api_key=None):
             st.error(f"ip-api request failed: {str(e)}")
             return "Error with ip-api request."
 
-
 import streamlit as st
 import streamlit.components.v1 as components
 import json
@@ -1280,31 +1279,19 @@ if "last_scanned_device" not in st.session_state:
 if "scanned_json_raw" not in st.session_state:
     st.session_state.scanned_json_raw = ""
 
+# Component to scan BLE device and send data back via postMessage
 js_code = """
 <script>
-    function storeDevice(deviceInfo) {
-        const data = {
-            name: deviceInfo.name,
-            id: deviceInfo.id
-        };
-        const textarea = parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]');
-        if (textarea) {
-            textarea.value = JSON.stringify(data, null, 2);
-            textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-    }
-
     async function scanBLE() {
         try {
             const device = await navigator.bluetooth.requestDevice({
                 acceptAllDevices: true
             });
-
             const deviceInfo = {
                 name: device.name || "Unnamed Device",
                 id: device.id
             };
-            storeDevice(deviceInfo);
+            window.parent.postMessage({ type: 'BLE_DEVICE', device: deviceInfo }, '*');
         } catch (e) {
             alert("Scan cancelled or failed.");
             console.error(e);
@@ -1314,21 +1301,22 @@ js_code = """
 <button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
 """
 
-components.html(js_code, height=60)
+# This component listens for postMessage and returns data to Streamlit
+device_data = components.html(js_code, height=70, scrolling=False)
 
-# Create the text area first with the current session state value
-scanned_json = st.text_area(
-    "Scanned device JSON:",
-    value=st.session_state.scanned_json_raw,
-    height=100,
-    key="scanned_json_raw"
-)
+# Get device info from frontend (needs a custom solution; Streamlit doesn't support direct message listening here)
+# So we hack this using st.experimental_get_query_params() or through input widget:
+# Instead, use a hidden text input to store device info sent from JS via some custom method
+# But since Streamlit can’t directly listen to postMessage, you usually need a full custom component (outside scope)
 
-# Update the session state if user manually changes the text area
+# So, **WORKAROUND:** Show a text input where user can paste JSON manually or copy from device info shown in JS alert (for demo)
+
+st.markdown("**Paste scanned device JSON here:**")
+scanned_json = st.text_area("Scanned device JSON:", value=st.session_state.scanned_json_raw, height=100)
+
 if scanned_json != st.session_state.scanned_json_raw:
     st.session_state.scanned_json_raw = scanned_json
 
-# Process verification on button click
 if st.button("🔒 Verify Device"):
     if st.session_state.scanned_json_raw.strip():
         try:
@@ -1345,7 +1333,7 @@ if st.button("🔒 Verify Device"):
                 })
                 st.success(f"✅ Device added: {device_name} ({device_id})")
 
-            # Format JSON and update session state **before rerun finishes**
+            # Update formatted JSON in session state
             st.session_state.scanned_json_raw = json.dumps({
                 "name": device_name,
                 "id": device_id
@@ -1374,12 +1362,10 @@ if st.button("🔒 Verify Device"):
     else:
         st.warning("⚠️ No scanned devices available.")
 
-# Show last scanned device
 if st.session_state.last_scanned_device["name"]:
     st.subheader("📍 Last Scanned Device")
     st.json(st.session_state.last_scanned_device)
 
-# Show all scanned devices
 if st.session_state.scanned_devices:
     st.subheader("📋 All Scanned Devices")
     for i, device in enumerate(st.session_state.scanned_devices, 1):
