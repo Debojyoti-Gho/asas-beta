@@ -1279,8 +1279,8 @@ if "verified" not in st.session_state:
     st.session_state.verified = False
 if "last_scanned_device" not in st.session_state:
     st.session_state.last_scanned_device = {"name": "", "id": ""}
-if "show_json" not in st.session_state:
-    st.session_state.show_json = ""
+if "scanned_json_raw" not in st.session_state:
+    st.session_state.scanned_json_raw = ""
 
 # --- BLE Scan JS without filters ---
 js_code = """
@@ -1290,8 +1290,11 @@ js_code = """
             name: deviceInfo.name,
             id: deviceInfo.id
         };
-        parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]').value = JSON.stringify(data, null, 2);
-        parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]').dispatchEvent(new Event('input', { bubbles: true }));
+        const textarea = parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]');
+        if (textarea) {
+            textarea.value = JSON.stringify(data, null, 2);
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
     }
 
     async function scanBLE() {
@@ -1316,18 +1319,19 @@ js_code = """
 
 components.html(js_code, height=60)
 
-# --- Text Area: Bound only by key ---
-st.text_area(
+# --- Text Area bound to session state ---
+st.session_state.scanned_json_raw = st.text_area(
     "Scanned device JSON:",
+    value=st.session_state.scanned_json_raw,
     height=100,
-    key="show_json"
+    key="scanned_json_raw"
 )
 
 # --- Verify button ---
 if st.button("🔒 Verify Device"):
-    if st.session_state.show_json:
+    if st.session_state.scanned_json_raw.strip():
         try:
-            device = json.loads(st.session_state.show_json)
+            device = json.loads(st.session_state.scanned_json_raw)
             device_name = device.get("name", "").strip()
             device_id = device.get("id", "").strip()
 
@@ -1342,14 +1346,16 @@ if st.button("🔒 Verify Device"):
                 })
                 st.success(f"✅ Device added: {device_name} ({device_id})")
 
-            # Update the JSON back to text area (keeps formatting clean)
-            st.session_state.show_json = json.dumps({
+            # Reformat and persist it
+            st.session_state.scanned_json_raw = json.dumps({
                 "name": device_name,
                 "id": device_id
             }, indent=2)
 
         except Exception as e:
             st.error(f"❌ Invalid JSON: {e}")
+    else:
+        st.warning("⚠️ Please scan a device first.")
 
     # --- Perform verification ---
     if st.session_state.scanned_devices:
@@ -1380,6 +1386,7 @@ if st.session_state.scanned_devices:
     st.subheader("📋 All Scanned Devices")
     for i, device in enumerate(st.session_state.scanned_devices, 1):
         st.write(f"{i}. *{device['name']}* ({device['id']})")
+
 
 
 
