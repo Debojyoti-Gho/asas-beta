@@ -1271,32 +1271,42 @@ st.title("📡 BLE Device Verifier")
 REQUIRED_DEVICE_ID = "76:6B:E1:0F:92:09"
 REQUIRED_DEVICE_NAME = "INSTITUTE BLE VERIFY SIGNA"
 
-# --- Session State ---
+# --- Session state initialization ---
 if "scanned_devices" not in st.session_state:
     st.session_state.scanned_devices = []
 if "verified" not in st.session_state:
     st.session_state.verified = False
 if "last_scanned_device" not in st.session_state:
-    st.session_state.last_scanned_device = {}
+    st.session_state.last_scanned_device = {"name": "", "id": ""}
+if "show_json" not in st.session_state:
+    st.session_state.show_json = ""
 
-# --- BLE JS Code ---
+# --- BLE JavaScript Scanner ---
 js_code = """
 <script>
+    function storeDevice(deviceInfo) {
+        const data = {
+            name: deviceInfo.name,
+            id: deviceInfo.id
+        };
+        const textarea = parent.document.querySelector('textarea[data-testid="stTextArea"]');
+        if (textarea) {
+            textarea.value = JSON.stringify(data, null, 2);
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+
     async function scanBLE() {
         try {
             const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
-            const payload = {
+            const deviceInfo = {
                 name: device.name || "Unnamed Device",
                 id: device.id
             };
-            const textarea = parent.document.querySelector('textarea[data-testid="stTextArea"]');
-            if (textarea) {
-                textarea.value = JSON.stringify(payload, null, 2);
-                textarea.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        } catch (err) {
+            storeDevice(deviceInfo);
+        } catch (e) {
             alert("Scan cancelled or failed.");
-            console.error(err);
+            console.error(e);
         }
     }
 </script>
@@ -1305,52 +1315,54 @@ js_code = """
 
 components.html(js_code, height=60)
 
-# Hidden text_area just for JS communication (min height: 68)
-scanned_json = st.text_area(" ",
-    key="json_box",
-    height=68,
-    label_visibility="collapsed"
-)
+# --- Bind textarea directly to session state key ---
+st.text_area("Scanned device JSON:", height=100, key="show_json")
 
-# Try to parse and display read-only scanned device info
-if scanned_json.strip():
-    try:
-        parsed = json.loads(scanned_json)
-        st.session_state.last_scanned_device = parsed
-        st.subheader("📍 Scanned Device")
-        st.json(parsed)
-    except json.JSONDecodeError:
-        st.error("❌ Invalid JSON received from scan.")
-
-
-# --- Verify ---
+# --- Verify Device Button ---
 if st.button("🔒 Verify Device"):
-    device = st.session_state.get("last_scanned_device", {})
-    name = device.get("name", "")
-    device_id = device.get("id", "")
+    json_input = st.session_state.show_json.strip()
+    if json_input:
+        try:
+            device = json.loads(json_input)
+            name = device.get("name", "").strip()
+            device_id = device.get("id", "").strip()
 
-    if name and device_id:
-        if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
-            st.session_state.scanned_devices.append(device)
-            st.success(f"Device added: {name} ({device_id})")
+            st.session_state.last_scanned_device = {"name": name, "id": device_id}
 
-        match_found = any(
-            d["id"] == REQUIRED_DEVICE_ID or d["name"] == REQUIRED_DEVICE_NAME
-            for d in st.session_state.scanned_devices
-        )
-        if match_found:
-            st.session_state.verified = True
-            st.success(f"✅ Verified: {name} ({device_id})")
-        else:
-            st.error("❌ Required device not found.")
+            if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
+                st.session_state.scanned_devices.append({"name": name, "id": device_id})
+                st.success(f"✅ Device added: {name} ({device_id})")
+
+            match_found = any(
+                d["id"] == REQUIRED_DEVICE_ID or d["name"] == REQUIRED_DEVICE_NAME
+                for d in st.session_state.scanned_devices
+            )
+
+            if match_found:
+                matched_device = next(
+                    d for d in st.session_state.scanned_devices
+                    if d["id"] == REQUIRED_DEVICE_ID or d["name"] == REQUIRED_DEVICE_NAME
+                )
+                st.session_state.verified = True
+                st.success(f"✅ Verified: {matched_device['name']} ({matched_device['id']})")
+            else:
+                st.error("❌ Verification failed. Required device not found.")
+        except Exception as e:
+            st.error(f"❌ Invalid JSON: {e}")
     else:
-        st.warning("⚠️ Please scan a device first.")
+        st.warning("⚠️ No device JSON provided.")
 
-# --- All Devices ---
+# --- Show last scanned device ---
+if st.session_state.last_scanned_device["name"]:
+    st.subheader("📍 Last Scanned Device")
+    st.json(st.session_state.last_scanned_device)
+
+# --- Show all scanned devices ---
 if st.session_state.scanned_devices:
     st.subheader("📋 All Scanned Devices")
-    for i, d in enumerate(st.session_state.scanned_devices, 1):
-        st.write(f"{i}. *{d['name']}* ({d['id']})")
+    for i, device in enumerate(st.session_state.scanned_devices, 1):
+        st.write(f"{i}. *{device['name']}* ({device['id']})")
+
 
 
 def measure_latency(flask_server_url):
