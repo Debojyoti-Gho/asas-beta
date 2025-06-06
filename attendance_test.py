@@ -1267,158 +1267,79 @@ import json
 
 st.title("📡 BLE Scanner and Device Verification")
 
-# Constants
-REQUIRED_DEVICE_ID = "76:6B:E1:0F:92:09"
-REQUIRED_DEVICE_NAME = "INSTITUTE BLE VERIFY SIGNA"
+# Constants (Your required device details)
+REQUIRED_DEVICE_ID = "kkFu61r4jTvGoHPPOSKK0Q=="
+REQUIRED_DEVICE_NAME = "DeskJet 2700 series"
 
-# Session state initialization
-if "scanned_devices" not in st.session_state:
-    st.session_state.scanned_devices = []
+# Initialize session state
 if "verified" not in st.session_state:
     st.session_state.verified = False
-if "last_scanned_device" not in st.session_state:
-    st.session_state.last_scanned_device = {"name": "", "id": ""}
-if "show_json" not in st.session_state:
-    st.session_state.show_json = ""
+if "scanned_device_json" not in st.session_state:
+    st.session_state.scanned_device_json = ""
+if "scan_attempted" not in st.session_state:
+    st.session_state.scan_attempted = False
 
-# Filter inputs
-name_filter = st.text_input("Filter by device name prefix (optional):")
-uuid_filter = st.text_input("Filter by service UUID (optional, e.g. 180D):")
-
-# Safe JSON for JS code
-safe_name_filter = json.dumps(name_filter.strip())
-safe_uuid_filter = json.dumps(uuid_filter.strip())
-
-# JavaScript to scan BLE devices
-js_code = f"""
+# --- JavaScript BLE Scanner (auto-triggers verification via hidden input) ---
+js_code = """
 <script>
-    // Store scanned device in Streamlit session state
-    function storeDevice(deviceInfo) {{
-        const data = {{
-            name: deviceInfo.name,
-            id: deviceInfo.id
-        }};
-        parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]').value = JSON.stringify(data, null, 2);
-        parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]').dispatchEvent(new Event('input', {{ bubbles: true }}));
-    }}
+    async function scanBLE() {
+        try {
+            const device = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true
+            });
 
-    async function scanBLE() {{
-        const nameFilter = {safe_name_filter};
-        const uuidFilter = {safe_uuid_filter};
-
-        try {{
-            let options = {{
-                acceptAllDevices: false,
-                filters: []
-            }};
-
-            if (nameFilter) {{
-                options.filters.push({{ namePrefix: nameFilter }});
-            }}
-
-            if (uuidFilter) {{
-                let cleaned = uuidFilter.replace(/^0x/, '').toLowerCase();
-                if (/^[0-9a-f]{{4}}$/.test(cleaned)) {{
-                    options.filters.push({{ services: [parseInt(cleaned, 16)] }});
-                }} else if (/^[0-9a-f-]{{36}}$/.test(cleaned)) {{
-                    options.filters.push({{ services: [cleaned] }});
-                }} else {{
-                    alert("❌ Invalid UUID format. Use a 16-bit hex (e.g. 180D) or full UUID.");
-                    return;
-                }}
-            }}
-
-            if (options.filters.length === 0) {{
-                delete options.filters;
-                options.acceptAllDevices = true;
-            }}
-
-            const device = await navigator.bluetooth.requestDevice(options);
-            const deviceInfo = {{
+            const deviceInfo = {
                 name: device.name || "Unnamed Device",
                 id: device.id
-            }};
-            
-            storeDevice(deviceInfo);
-        }} catch (e) {{
-            alert("Scan failed or cancelled.");
-            console.error(e);
-        }}
-    }}
-</script>
-<button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
-"""
+            };
 
-# Render BLE scan button
-components.html(js_code, height=60)
-
-# --- Persistent Device JSON Display ---
-scanned_json = st.text_area(
-    "Scanned device JSON:",
-    value=st.session_state.show_json,
-    height=100,
-    key="scanned_json_area"
-)
-
-# Update session state when JSON changes
-if scanned_json != st.session_state.show_json:
-    st.session_state.show_json = scanned_json
-
-# --- Device Verification ---
-if st.button("🔒 Verify Device"):
-    if st.session_state.show_json:
-        try:
-            device = json.loads(st.session_state.show_json)
-            device_name = device.get("name", "").strip()
-            device_id = device.get("id", "").strip()
-
-            # Store last scanned device
-            st.session_state.last_scanned_device = {
-                "name": device_name,
-                "id": device_id
+            const inputBox = window.parent.document.querySelector('textarea[aria-label="Hidden BLE JSON Input"]');
+            if (inputBox) {
+                inputBox.value = JSON.stringify(deviceInfo, null, 2);
+                inputBox.dispatchEvent(new Event('input', { bubbles: true }));
             }
 
-            # Add device if not already seen
-            if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
-                st.session_state.scanned_devices.append({
-                    "name": device_name,
-                    "id": device_id
-                })
-                st.success(f"Device added: {device_name} ({device_id})")
-        except Exception as e:
-            st.error(f"❌ Failed to parse device data: {e}")
-    
-    # Always show verification status
-    if st.session_state.scanned_devices:
-        match_found = any(
-            d.get("id") == REQUIRED_DEVICE_ID or 
-            d.get("name") == REQUIRED_DEVICE_NAME
-            for d in st.session_state.scanned_devices
-        )
+        } catch (e) {
+            alert("❌ Scan cancelled or failed.");
+            console.error(e);
+        }
+    }
+</script>
+<button onclick="scanBLE()">🔎 Scan and Verify Bluetooth Device</button>
+"""
+components.html(js_code, height=160)
 
-        if match_found:
-            matched_device = next(
-                d for d in st.session_state.scanned_devices
-                if d.get("id") == REQUIRED_DEVICE_ID or 
-                d.get("name") == REQUIRED_DEVICE_NAME
-            )
+# --- Hidden input (auto-filled from JS) ---
+hidden_json = st.text_area("Hidden BLE JSON Input", key="raw_json_input", label_visibility="collapsed", height=68)
+
+# Save scanned JSON if received
+if hidden_json and hidden_json != st.session_state.scanned_device_json:
+    st.session_state.scanned_device_json = hidden_json
+    st.session_state.scan_attempted = True
+
+# Show scanned JSON
+if st.session_state.scanned_device_json:
+    st.subheader("📋 Scanned Device")
+    st.code(st.session_state.scanned_device_json, language="json")
+
+# --- Automatic Verification ---
+if st.session_state.scan_attempted and st.session_state.scanned_device_json:
+    try:
+        device = json.loads(st.session_state.scanned_device_json)
+        device_name = device.get("name", "").strip()
+        device_id = device.get("id", "").strip()
+
+        if device_id == REQUIRED_DEVICE_ID or device_name == REQUIRED_DEVICE_NAME:
             st.session_state.verified = True
-            st.success(f"✅ Verified Device Found!\nName: {matched_device['name']}, ID: {matched_device['id']}")
+            st.success(f"✅ Verified Device Found!\nName: {device_name}, ID: {device_id}")
         else:
-            st.error("❌ Required verifying device not found in scanned devices.")
-    else:
-        st.warning("⚠️ No valid devices scanned yet.")
+            st.session_state.verified = False
+            st.error("❌ Required verifying device not found. Access Denied.")
+    except Exception as e:
+        st.error(f"❌ Error parsing scanned data: {e}")
+    finally:
+        st.session_state.scan_attempted = False  # Prevent re-verifying on every rerun
 
-# Display last scanned device info
-if st.session_state.last_scanned_device["name"]:
-    st.subheader("Last Scanned Device")
-    st.json(st.session_state.last_scanned_device)
-
-# Display all scanned devices
-if st.session_state.scanned_devices:
-    st.subheader("All Scanned Devices")
-    for i, device in enumerate(st.session_state.scanned_devices, 1):
-        st.write(f"{i}. **{device['name']}** ({device['id']})")
 
 
 def measure_latency(flask_server_url):
