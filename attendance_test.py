@@ -1268,7 +1268,7 @@ import json
 
 st.title("📡 BLE Device Verifier")
 
-# --- Constants for Verification ---
+# Constants
 REQUIRED_DEVICE_ID = "76:6B:E1:0F:92:09"
 REQUIRED_DEVICE_NAME = "INSTITUTE BLE VERIFY SIGNA"
 
@@ -1282,7 +1282,7 @@ if "last_scanned_device" not in st.session_state:
 if "show_json" not in st.session_state:
     st.session_state.show_json = ""
 
-# --- JavaScript to scan BLE devices without filters ---
+# --- BLE Scan JS without filters ---
 js_code = """
 <script>
     function storeDevice(deviceInfo) {
@@ -1314,23 +1314,21 @@ js_code = """
 <button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
 """
 
-# --- Render BLE scan button ---
 components.html(js_code, height=60)
 
-# --- Persistent Device JSON Display (across reruns) ---
+# --- Text Area: Controlled by session state ---
 scanned_json = st.text_area(
     "Scanned device JSON:",
     value=st.session_state.show_json,
     height=100,
-    key="scanned_json_area",
-    label_visibility="collapsed"
+    key="scanned_json_area"
 )
 
-# --- Update session state if user edits scanned device manually ---
+# --- Sync input back to session state ---
 if scanned_json != st.session_state.show_json:
     st.session_state.show_json = scanned_json
 
-# --- Verify Button and Logic ---
+# --- Verify button ---
 if st.button("🔒 Verify Device"):
     if st.session_state.show_json:
         try:
@@ -1338,20 +1336,27 @@ if st.button("🔒 Verify Device"):
             device_name = device.get("name", "").strip()
             device_id = device.get("id", "").strip()
 
-            # Save last scanned device
+            # Save scanned data
             st.session_state.last_scanned_device = {"name": device_name, "id": device_id}
 
-            # Add to history if new
+            # Store if new
             if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
                 st.session_state.scanned_devices.append({
                     "name": device_name,
                     "id": device_id
                 })
-                st.success(f"Device added: {device_name} ({device_id})")
-        except Exception as e:
-            st.error(f"❌ Failed to parse device JSON: {e}")
+                st.success(f"✅ Device added: {device_name} ({device_id})")
 
-    # Always show verification result
+            # Update the JSON back to text area (this prevents blanking)
+            st.session_state.show_json = json.dumps({
+                "name": device_name,
+                "id": device_id
+            }, indent=2)
+
+        except Exception as e:
+            st.error(f"❌ Invalid JSON: {e}")
+
+    # --- Perform verification ---
     if st.session_state.scanned_devices:
         match_found = any(
             d["id"] == REQUIRED_DEVICE_ID or d["name"] == REQUIRED_DEVICE_NAME
@@ -1368,19 +1373,18 @@ if st.button("🔒 Verify Device"):
         else:
             st.error("❌ Verification failed. Required device not found.")
     else:
-        st.warning("⚠️ No devices scanned yet.")
+        st.warning("⚠️ No scanned devices available.")
 
-# --- Show Last Scanned Device ---
+# --- Last Scanned Device Display ---
 if st.session_state.last_scanned_device["name"]:
     st.subheader("📍 Last Scanned Device")
     st.json(st.session_state.last_scanned_device)
 
-# --- Show All Scanned Devices ---
+# --- All Devices History ---
 if st.session_state.scanned_devices:
     st.subheader("📋 All Scanned Devices")
     for i, device in enumerate(st.session_state.scanned_devices, 1):
         st.write(f"{i}. *{device['name']}* ({device['id']})")
-
 
 
 
