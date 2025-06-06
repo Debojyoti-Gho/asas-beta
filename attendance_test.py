@@ -1262,76 +1262,32 @@ def get_precise_location(api_key=None):
             return "Error with ip-api request."
 
 import streamlit as st
-import streamlit.components.v1 as components
 import json
 
-# Constants for device verification
+# Your constants for verification
 REQUIRED_ID = "kkFu61r4jTvGoHPPOSKK0Q=="
 REQUIRED_NAME = "DeskJet 2700 series"
 
-# Initialize session state keys
-if "device_data" not in st.session_state:
-    st.session_state.device_data = None
-if "verified" not in st.session_state:
-    st.session_state.verified = None
-if "verify_flag" not in st.session_state:
-    st.session_state.verify_flag = ""
-
 st.title("🔍 BLE Device Scanner & Verifier")
 
-# CSS to hide the inputs but keep them accessible to Streamlit
-st.markdown(
-    """
-    <style>
-    input[aria-label="Hidden BLE Device"],
-    input[aria-label="Hidden Verify Flag"] {
-        position: absolute;
-        width: 0;
-        height: 0;
-        padding: 0;
-        margin: 0;
-        border: none;
-        visibility: hidden;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# Initialize session state
+if "device" not in st.session_state:
+    st.session_state.device = None
+if "verified" not in st.session_state:
+    st.session_state.verified = None
 
-# Hidden inputs to receive data from JS
-device_input = st.text_input(
-    "Hidden BLE Device", "", label_visibility="collapsed", key="device_data_input"
-)
-verify_flag = st.text_input(
-    "Hidden Verify Flag", "", label_visibility="collapsed", key="verify_flag"
-)
-
-# When device input changes, parse and update session state
-if device_input:
+# Parse device info from URL query param (if any)
+params = st.experimental_get_query_params()
+device_param = params.get("device")
+if device_param:
     try:
-        parsed = json.loads(device_input)
-        if st.session_state.device_data != parsed:
-            st.session_state.device_data = parsed
-            st.session_state.verified = None  # reset verification when new device scanned
-    except json.JSONDecodeError:
-        st.error("Failed to parse device info.")
-
-# When verify flag is set to "start", perform verification once
-if verify_flag == "start":
-    device = st.session_state.device_data
-    if device:
-        id_match = device.get("id") == REQUIRED_ID
-        name_match = device.get("name") == REQUIRED_NAME
-        st.session_state.verified = id_match or name_match
-    else:
-        st.error("No device scanned yet.")
-    # Reset flag so verification only runs once per press
-    st.session_state.verify_flag = ""
-
-# Show scanned device info
-if st.session_state.device_data:
-    st.subheader("📋 Scanned Device")
-    st.json(st.session_state.device_data)
+        device = json.loads(device_param[0])
+        st.session_state.device = device
+        st.session_state.verified = (device.get("id") == REQUIRED_ID) or (device.get("name") == REQUIRED_NAME)
+        # Clear query params to avoid re-verifying on reload
+        st.experimental_set_query_params()
+    except Exception:
+        st.error("Failed to parse device info from URL.")
 
 # Show verification result
 if st.session_state.verified is not None:
@@ -1340,48 +1296,41 @@ if st.session_state.verified is not None:
     else:
         st.error("❌ Device verification failed.")
 
-# Inject JS for BLE scanning and verification buttons
-components.html(
+# Show scanned device info
+if st.session_state.device:
+    st.subheader("📋 Scanned Device Info")
+    st.json(st.session_state.device)
+
+# Inject JS: Scan device and reload page with device info in URL
+st.components.v1.html(
     """
     <script>
-        let selectedDevice = null;
-
-        async function scanDevice() {
-            try {
-                const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true
-                });
-                selectedDevice = {
-                    name: device.name || "Unnamed",
-                    id: device.id
-                };
-                const input = window.parent.document.querySelector('input[aria-label="Hidden BLE Device"]');
-                if (input) {
-                    input.value = JSON.stringify(selectedDevice);
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-            } catch (err) {
-                alert("Failed to select device: " + err);
-            }
+    async function scanAndVerify() {
+        try {
+            const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+            const deviceInfo = {
+                name: device.name || "Unnamed",
+                id: device.id
+            };
+            const encoded = encodeURIComponent(JSON.stringify(deviceInfo));
+            const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?device=' + encoded;
+            window.location.href = newurl;
+        } catch(e) {
+            alert("Scan cancelled or failed: " + e);
         }
+    }
 
-        function verifyDevice() {
-            if (!selectedDevice) {
-                alert("Please scan a device first.");
-                return;
-            }
-            const verifyInput = window.parent.document.querySelector('input[aria-label="Hidden Verify Flag"]');
-            if (verifyInput) {
-                verifyInput.value = "start";
-                verifyInput.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        }
+    const btn = document.createElement("button");
+    btn.textContent = "🔎 Scan & Verify Device";
+    btn.style.fontSize = "18px";
+    btn.style.padding = "10px 20px";
+    btn.style.marginTop = "10px";
+    btn.onclick = scanAndVerify;
+    document.body.style.textAlign = "center";
+    document.body.appendChild(btn);
     </script>
-
-    <button onclick="scanDevice()" style="font-size:18px;margin-right:10px;">🔎 Scan Device</button>
-    <button onclick="verifyDevice()" style="font-size:18px;">🔐 Verify Device</button>
     """,
-    height=120,
+    height=100,
 )
 
 
