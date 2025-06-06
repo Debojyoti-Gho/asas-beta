@@ -1267,15 +1267,21 @@ import streamlit.components.v1 as components
 
 st.title("🔒 Bluetooth Device Verifier")
 
-EXPECTED_DEVICE_NAME = "My Trusted Device"  # Change this to match your actual device
+EXPECTED_DEVICE_NAME = "My Trusted Device"  # ✅ Change this to your actual device
 
-# Initialize session state
+# Session state initialization
 if "selected_device" not in st.session_state:
     st.session_state.selected_device = None
 if "verified" not in st.session_state:
     st.session_state.verified = None
 
-# Step 1: Embedded HTML + JS for Bluetooth device selection
+# Handle device from query param
+query_params = st.query_params
+if "device" in query_params:
+    st.session_state.selected_device = query_params["device"]
+    st.query_params.clear()  # Clean the URL after capturing
+
+# HTML + JS for Bluetooth picker
 components.html(
     """
     <!DOCTYPE html>
@@ -1315,18 +1321,10 @@ components.html(
     height=150,
 )
 
-# Step 2: Handle device name from query params
-query_params = st.experimental_get_query_params()
-if "device" in query_params:
-    selected = query_params["device"][0]
-    st.session_state.selected_device = selected
-    # Remove the device param from the URL (for cleaner user experience)
-    st.experimental_set_query_params()
-
-# Step 3: Show selected device (if any)
+# Show selected device and allow verification
 if st.session_state.selected_device:
     st.markdown(f"**🔗 Selected Device:** `{st.session_state.selected_device}`")
-    st.info("✅ Device info saved in session cache.")
+    st.info("✅ Device info saved in session.")
 
     # Show Verify button
     if st.button("Verify"):
@@ -1334,12 +1332,13 @@ if st.session_state.selected_device:
             st.session_state.selected_device == EXPECTED_DEVICE_NAME
         )
 
-# Step 4: Show verification result
+# Show result
 if st.session_state.verified is not None:
     if st.session_state.verified:
         st.success("✅ Verified")
     else:
         st.error("❌ Not Verified")
+
 
 
 
