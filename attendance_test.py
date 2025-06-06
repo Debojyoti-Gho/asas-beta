@@ -1317,7 +1317,7 @@ js_code = """
 components.html(js_code, height=60)
 
 # Use local variable to capture textarea input
-scanned_json = st.text_area(
+scanned_json = st.json(
     "Scanned device JSON:",
     value=st.session_state.scanned_json_raw,
     height=100,
