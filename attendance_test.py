@@ -1261,22 +1261,21 @@ def get_precise_location(api_key=None):
             st.error(f"ip-api request failed: {str(e)}")
             return "Error with ip-api request."
 
+
+
 import streamlit as st
 import json
 
-# Your constants for verification
 REQUIRED_ID = "kkFu61r4jTvGoHPPOSKK0Q=="
 REQUIRED_NAME = "DeskJet 2700 series"
 
 st.title("🔍 BLE Device Scanner & Verifier")
 
-# Initialize session state
 if "device" not in st.session_state:
     st.session_state.device = None
 if "verified" not in st.session_state:
     st.session_state.verified = None
 
-# Parse device info from URL query param (if any)
 params = st.experimental_get_query_params()
 device_param = params.get("device")
 if device_param:
@@ -1284,54 +1283,54 @@ if device_param:
         device = json.loads(device_param[0])
         st.session_state.device = device
         st.session_state.verified = (device.get("id") == REQUIRED_ID) or (device.get("name") == REQUIRED_NAME)
-        # Clear query params to avoid re-verifying on reload
         st.experimental_set_query_params()
     except Exception:
         st.error("Failed to parse device info from URL.")
 
-# Show verification result
 if st.session_state.verified is not None:
     if st.session_state.verified:
         st.success("✅ Device verified successfully.")
     else:
         st.error("❌ Device verification failed.")
 
-# Show scanned device info
 if st.session_state.device:
     st.subheader("📋 Scanned Device Info")
     st.json(st.session_state.device)
 
-# Inject JS: Scan device and reload page with device info in URL
+# Inject JS with window.onload to avoid document.body == null
 st.components.v1.html(
     """
     <script>
-    async function scanAndVerify() {
-        try {
-            const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
-            const deviceInfo = {
-                name: device.name || "Unnamed",
-                id: device.id
-            };
-            const encoded = encodeURIComponent(JSON.stringify(deviceInfo));
-            const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?device=' + encoded;
-            window.location.href = newurl;
-        } catch(e) {
-            alert("Scan cancelled or failed: " + e);
+    window.onload = function() {
+        async function scanAndVerify() {
+            try {
+                const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+                const deviceInfo = {
+                    name: device.name || "Unnamed",
+                    id: device.id
+                };
+                const encoded = encodeURIComponent(JSON.stringify(deviceInfo));
+                const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?device=' + encoded;
+                window.location.href = newurl;
+            } catch(e) {
+                alert("Scan cancelled or failed: " + e);
+            }
         }
-    }
 
-    const btn = document.createElement("button");
-    btn.textContent = "🔎 Scan & Verify Device";
-    btn.style.fontSize = "18px";
-    btn.style.padding = "10px 20px";
-    btn.style.marginTop = "10px";
-    btn.onclick = scanAndVerify;
-    document.body.style.textAlign = "center";
-    document.body.appendChild(btn);
+        const btn = document.createElement("button");
+        btn.textContent = "🔎 Scan & Verify Device";
+        btn.style.fontSize = "18px";
+        btn.style.padding = "10px 20px";
+        btn.style.marginTop = "10px";
+        document.body.style.textAlign = "center";
+        document.body.appendChild(btn);
+        btn.onclick = scanAndVerify;
+    };
     </script>
     """,
-    height=100,
+    height=120,
 )
+
 
 
 
