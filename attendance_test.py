@@ -1274,6 +1274,8 @@ if "device_data" not in st.session_state:
     st.session_state.device_data = None
 if "verified" not in st.session_state:
     st.session_state.verified = None
+if "verify_flag" not in st.session_state:
+    st.session_state.verify_flag = ""
 
 st.title("🔍 BLE Device Scanner & Verifier")
 
@@ -1285,24 +1287,28 @@ verify_flag = st.text_input("Hidden Verify Flag", "", label_visibility="collapse
 if device_input:
     try:
         parsed = json.loads(device_input)
-        st.session_state.device_data = parsed
-        # Clear verification result when device changes
-        st.session_state.verified = None
+        # Only update if device changed
+        if st.session_state.device_data != parsed:
+            st.session_state.device_data = parsed
+            st.session_state.verified = None  # reset verification on new device
     except json.JSONDecodeError:
         st.error("Failed to parse device info.")
 
-# Process verification when verify_flag is set to "start"
-
-device = st.session_state.device_data
-if device:
-    id_match = device.get("id") == REQUIRED_ID
-    name_match = device.get("name") == REQUIRED_NAME
-    if id_match or name_match:
-        st.session_state.verified = True
+# When verify flag is set to "start", perform verification
+if verify_flag == "start":
+    device = st.session_state.device_data
+    if device:
+        id_match = device.get("id") == REQUIRED_ID
+        name_match = device.get("name") == REQUIRED_NAME
+        if id_match or name_match:
+            st.session_state.verified = True
+        else:
+            st.session_state.verified = False
     else:
-        st.session_state.verified = False
-else:
-    st.error("No device scanned yet.")
+        st.error("No device scanned yet.")
+
+    # Reset verify_flag after processing to avoid repeated checks
+    st.session_state.verify_flag = ""
 
 # Show scanned device info
 if st.session_state.device_data:
