@@ -1265,81 +1265,74 @@ import streamlit as st
 import streamlit.components.v1 as components
 import json
 
-st.title("📡 BLE Scanner and Device Verification")
+st.title("📡 BLE Auto Verification")
 
-# Constants (Your required device details)
-REQUIRED_DEVICE_ID = "kkFu61r4jTvGoHPPOSKK0Q=="
-REQUIRED_DEVICE_NAME = "DeskJet 2700 series"
+# Required BLE values
+REQUIRED_ID = "kkFu61r4jTvGoHPPOSKK0Q=="
+REQUIRED_NAME = "DeskJet 2700 series"
 
-# Initialize session state
-if "verified" not in st.session_state:
-    st.session_state.verified = False
-if "scanned_device_json" not in st.session_state:
-    st.session_state.scanned_device_json = ""
-if "scan_attempted" not in st.session_state:
-    st.session_state.scan_attempted = False
+# Initialize state
+if "verification_result" not in st.session_state:
+    st.session_state.verification_result = ""
+if "device_info" not in st.session_state:
+    st.session_state.device_info = None
 
-# --- JavaScript BLE Scanner (auto-triggers verification via hidden input) ---
-js_code = """
+# Receive message from JS
+result = st.text_input("Hidden verification result", key="verify_result", label_visibility="collapsed")
+
+# Update session state if new result
+if result:
+    try:
+        parsed = json.loads(result)
+        st.session_state.device_info = parsed
+        match = (
+            parsed.get("id") == REQUIRED_ID or
+            parsed.get("name") == REQUIRED_NAME
+        )
+        st.session_state.verification_result = "VERIFIED" if match else "NOT_VERIFIED"
+    except:
+        # Fall back to raw string result like "VERIFIED" or "NOT_VERIFIED"
+        if result in ["VERIFIED", "NOT_VERIFIED"]:
+            st.session_state.verification_result = result
+
+# Display scanned device (with stable JSON formatting)
+if st.session_state.device_info:
+    st.subheader("📋 Scanned Device")
+    st.code(json.dumps(st.session_state.device_info, indent=2), language="json")
+
+# Display verification result
+if st.session_state.verification_result == "VERIFIED":
+    st.success("✅ Verified Device Found!")
+elif st.session_state.verification_result == "NOT_VERIFIED":
+    st.error("❌ Required device not found.")
+
+# JavaScript code to scan and send JSON result to Streamlit
+components.html(f"""
 <script>
-    async function scanBLE() {
-        try {
-            const device = await navigator.bluetooth.requestDevice({
+    async function verifyBLE() {{
+        try {{
+            const device = await navigator.bluetooth.requestDevice({{
                 acceptAllDevices: true
-            });
+            }});
 
-            const deviceInfo = {
+            const result = {{
                 name: device.name || "Unnamed Device",
                 id: device.id
-            };
+            }};
 
-            const inputBox = window.parent.document.querySelector('textarea[aria-label="Hidden BLE JSON Input"]');
-            if (inputBox) {
-                inputBox.value = JSON.stringify(deviceInfo, null, 2);
-                inputBox.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-
-        } catch (e) {
-            alert("❌ Scan cancelled or failed.");
-            console.error(e);
-        }
-    }
+            const input = window.parent.document.querySelector('input[aria-label="Hidden verification result"]');
+            if (input) {{
+                input.value = JSON.stringify(result);
+                input.dispatchEvent(new Event('input', {{ bubbles: true }}));
+            }}
+        }} catch (err) {{
+            console.error(err);
+            alert("Scan failed or cancelled.");
+        }}
+    }}
 </script>
-<button onclick="scanBLE()">🔎 Scan and Verify Bluetooth Device</button>
-"""
-components.html(js_code, height=160)
-
-# --- Hidden input (auto-filled from JS) ---
-hidden_json = st.text_area("Hidden BLE JSON Input", key="raw_json_input", label_visibility="collapsed", height=68)
-
-# Save scanned JSON if received
-if hidden_json and hidden_json != st.session_state.scanned_device_json:
-    st.session_state.scanned_device_json = hidden_json
-    st.session_state.scan_attempted = True
-
-# Show scanned JSON
-if st.session_state.scanned_device_json:
-    st.subheader("📋 Scanned Device")
-    st.code(st.session_state.scanned_device_json, language="json")
-
-# --- Automatic Verification ---
-if st.session_state.scan_attempted and st.session_state.scanned_device_json:
-    try:
-        device = json.loads(st.session_state.scanned_device_json)
-        device_name = device.get("name", "").strip()
-        device_id = device.get("id", "").strip()
-
-        if device_id == REQUIRED_DEVICE_ID or device_name == REQUIRED_DEVICE_NAME:
-            st.session_state.verified = True
-            st.success(f"✅ Verified Device Found!\nName: {device_name}, ID: {device_id}")
-        else:
-            st.session_state.verified = False
-            st.error("❌ Required verifying device not found. Access Denied.")
-    except Exception as e:
-        st.error(f"❌ Error parsing scanned data: {e}")
-    finally:
-        st.session_state.scan_attempted = False  # Prevent re-verifying on every rerun
-
+<button onclick="verifyBLE()">🔍 Scan and Verify</button>
+""", height=150)
 
 
 def measure_latency(flask_server_url):
