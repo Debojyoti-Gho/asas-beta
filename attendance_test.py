@@ -1305,11 +1305,14 @@ js_code = """
 
 components.html(js_code, height=60)
 
-# --- Hidden text_area just for JS communication ---
-# Never shown to user, but holds the JSON scanned by JS
-scanned_json = st.text_area(" ", key="json_box", height=1, label_visibility="collapsed")
+# Hidden text_area just for JS communication (min height: 68)
+scanned_json = st.text_area(" ",
+    key="json_box",
+    height=68,
+    label_visibility="collapsed"
+)
 
-# --- Show scanned device info in read-only format ---
+# Try to parse and display read-only scanned device info
 if scanned_json.strip():
     try:
         parsed = json.loads(scanned_json)
@@ -1317,7 +1320,8 @@ if scanned_json.strip():
         st.subheader("📍 Scanned Device")
         st.json(parsed)
     except json.JSONDecodeError:
-        st.error("❌ Invalid device data received.")
+        st.error("❌ Invalid JSON received from scan.")
+
 
 # --- Verify ---
 if st.button("🔒 Verify Device"):
