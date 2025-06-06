@@ -1264,73 +1264,71 @@ def get_precise_location(api_key=None):
 
 
 import streamlit as st
-import json
+import streamlit.components.v1 as components
 
-REQUIRED_ID = "kkFu61r4jTvGoHPPOSKK0Q=="
-REQUIRED_NAME = "DeskJet 2700 series"
+st.title("🔒 Bluetooth Device Verifier")
 
-st.title("🔍 BLE Device Scanner & Verifier")
+EXPECTED_DEVICE_NAME = "My Trusted Device"  # 🔧 Change this to your device name
 
-if "device" not in st.session_state:
-    st.session_state.device = None
-if "verified" not in st.session_state:
+# Initialize cache
+if "selected_device" not in st.session_state:
+    st.session_state.selected_device = None
     st.session_state.verified = None
 
-params = st.experimental_get_query_params()
-device_param = params.get("device")
-if device_param:
-    try:
-        device = json.loads(device_param[0])
-        st.session_state.device = device
-        st.session_state.verified = (device.get("id") == REQUIRED_ID) or (device.get("name") == REQUIRED_NAME)
-        st.experimental_set_query_params()
-    except Exception:
-        st.error("Failed to parse device info from URL.")
-
-if st.session_state.verified is not None:
-    if st.session_state.verified:
-        st.success("✅ Device verified successfully.")
-    else:
-        st.error("❌ Device verification failed.")
-
-if st.session_state.device:
-    st.subheader("📋 Scanned Device Info")
-    st.json(st.session_state.device)
-
-# Inject JS with window.onload to avoid document.body == null
-st.components.v1.html(
+# Inject HTML + JS for Bluetooth picker
+components.html(
     """
-    <script>
-    window.onload = function() {
-        async function scanAndVerify() {
-            try {
-                const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
-                const deviceInfo = {
-                    name: device.name || "Unnamed",
-                    id: device.id
-                };
-                const encoded = encodeURIComponent(JSON.stringify(deviceInfo));
-                const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?device=' + encoded;
-                window.location.href = newurl;
-            } catch(e) {
-                alert("Scan cancelled or failed: " + e);
-            }
-        }
+    <!DOCTYPE html>
+    <html>
+    <body>
+        <button onclick="selectBluetoothDevice()" style="
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        ">
+            🔍 Select Bluetooth Device
+        </button>
 
-        const btn = document.createElement("button");
-        btn.textContent = "🔎 Scan & Verify Device";
-        btn.style.fontSize = "18px";
-        btn.style.padding = "10px 20px";
-        btn.style.marginTop = "10px";
-        document.body.style.textAlign = "center";
-        document.body.appendChild(btn);
-        btn.onclick = scanAndVerify;
-    };
-    </script>
+        <script>
+            async function selectBluetoothDevice() {
+                try {
+                    const device = await navigator.bluetooth.requestDevice({
+                        acceptAllDevices: true
+                    });
+                    const deviceName = device.name || "Unnamed Device";
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("device", deviceName);
+                    window.location.href = url.toString();
+                } catch (error) {
+                    alert("Bluetooth selection was cancelled or not supported.");
+                }
+            }
+        </script>
+    </body>
+    </html>
     """,
-    height=120,
+    height=150,
 )
 
+# Get device name from query params
+query_params = st.experimental_get_query_params()
+if "device" in query_params:
+    selected = query_params["device"][0]
+    st.session_state.selected_device = selected
+    st.session_state.verified = selected == EXPECTED_DEVICE_NAME
+
+# Output result
+if st.session_state.selected_device:
+    st.markdown(f"**🔗 Selected Device:** `{st.session_state.selected_device}`")
+    if st.session_state.verified:
+        st.success("✅ Verified")
+    else:
+        st.error("❌ Not Verified")
 
 
 
