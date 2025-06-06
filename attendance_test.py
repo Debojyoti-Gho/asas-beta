@@ -1265,74 +1265,92 @@ import streamlit as st
 import streamlit.components.v1 as components
 import json
 
-st.title("📡 BLE Auto Verification")
-
-# Required BLE values
+# Constants for device verification
 REQUIRED_ID = "kkFu61r4jTvGoHPPOSKK0Q=="
 REQUIRED_NAME = "DeskJet 2700 series"
 
-# Initialize state
-if "verification_result" not in st.session_state:
-    st.session_state.verification_result = ""
-if "device_info" not in st.session_state:
-    st.session_state.device_info = None
+# Setup session state
+if "device_data" not in st.session_state:
+    st.session_state.device_data = None
+if "verified" not in st.session_state:
+    st.session_state.verified = None
 
-# Receive message from JS
-result = st.text_input("Hidden verification result", key="verify_result", label_visibility="collapsed")
+# Hidden inputs (used by JS)
+device_input = st.text_input("Hidden BLE Device", "", label_visibility="collapsed", key="device_data_input")
+verify_flag = st.text_input("Hidden Verify Flag", "", label_visibility="collapsed", key="verify_flag")
 
-# Update session state if new result
-if result:
+# Update Streamlit state if new device selected
+if device_input:
     try:
-        parsed = json.loads(result)
-        st.session_state.device_info = parsed
-        match = (
-            parsed.get("id") == REQUIRED_ID or
-            parsed.get("name") == REQUIRED_NAME
-        )
-        st.session_state.verification_result = "VERIFIED" if match else "NOT_VERIFIED"
-    except:
-        # Fall back to raw string result like "VERIFIED" or "NOT_VERIFIED"
-        if result in ["VERIFIED", "NOT_VERIFIED"]:
-            st.session_state.verification_result = result
+        parsed = json.loads(device_input)
+        st.session_state.device_data = parsed
+    except json.JSONDecodeError:
+        st.error("Failed to parse device info.")
 
-# Display scanned device (with stable JSON formatting)
-if st.session_state.device_info:
+# Process verification
+if verify_flag == "start":
+    device = st.session_state.device_data
+    if device:
+        id_match = device.get("id") == REQUIRED_ID
+        name_match = device.get("name") == REQUIRED_NAME
+        if id_match or name_match:
+            st.session_state.verified = True
+        else:
+            st.session_state.verified = False
+
+# Display device info
+st.title("🔍 BLE Device Scanner & Verifier")
+if st.session_state.device_data:
     st.subheader("📋 Scanned Device")
-    st.code(json.dumps(st.session_state.device_info, indent=2), language="json")
+    st.json(st.session_state.device_data)
 
 # Display verification result
-if st.session_state.verification_result == "VERIFIED":
-    st.success("✅ Verified Device Found!")
-elif st.session_state.verification_result == "NOT_VERIFIED":
-    st.error("❌ Required device not found.")
+if st.session_state.verified is not None:
+    if st.session_state.verified:
+        st.success("✅ Device verified successfully.")
+    else:
+        st.error("❌ Device verification failed.")
 
-# JavaScript code to scan and send JSON result to Streamlit
+# Inject JS for BLE scan and verify buttons
 components.html(f"""
 <script>
-    async function verifyBLE() {{
+    let selectedDevice = null;
+
+    async function scanDevice() {{
         try {{
             const device = await navigator.bluetooth.requestDevice({{
                 acceptAllDevices: true
             }});
-
-            const result = {{
-                name: device.name || "Unnamed Device",
+            selectedDevice = {{
+                name: device.name || "Unnamed",
                 id: device.id
             }};
-
-            const input = window.parent.document.querySelector('input[aria-label="Hidden verification result"]');
+            const input = window.parent.document.querySelector('input[aria-label="Hidden BLE Device"]');
             if (input) {{
-                input.value = JSON.stringify(result);
+                input.value = JSON.stringify(selectedDevice);
                 input.dispatchEvent(new Event('input', {{ bubbles: true }}));
             }}
         }} catch (err) {{
-            console.error(err);
-            alert("Scan failed or cancelled.");
+            alert("Failed to select device: " + err);
+        }}
+    }}
+
+    function verifyDevice() {{
+        if (!selectedDevice) {{
+            alert("Please scan a device first.");
+            return;
+        }}
+        const verifyInput = window.parent.document.querySelector('input[aria-label="Hidden Verify Flag"]');
+        if (verifyInput) {{
+            verifyInput.value = "start";
+            verifyInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
         }}
     }}
 </script>
-<button onclick="verifyBLE()">🔍 Scan and Verify</button>
-""", height=150)
+
+<button onclick="scanDevice()">🔎 Scan Device</button>
+<button onclick="verifyDevice()">🔐 Verify Device</button>
+""", height=120)
 
 
 def measure_latency(flask_server_url):
