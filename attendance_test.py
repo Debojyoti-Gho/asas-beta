@@ -1292,17 +1292,17 @@ if device_input:
         st.error("Failed to parse device info.")
 
 # Process verification when verify_flag is set to "start"
-if verify_flag == "start":
-    device = st.session_state.device_data
-    if device:
-        id_match = device.get("id") == REQUIRED_ID
-        name_match = device.get("name") == REQUIRED_NAME
-        if id_match or name_match:
-            st.session_state.verified = True
-        else:
-            st.session_state.verified = False
+
+device = st.session_state.device_data
+if device:
+    id_match = device.get("id") == REQUIRED_ID
+    name_match = device.get("name") == REQUIRED_NAME
+    if id_match or name_match:
+        st.session_state.verified = True
     else:
-        st.error("No device scanned yet.")
+        st.session_state.verified = False
+else:
+    st.error("No device scanned yet.")
 
 # Show scanned device info
 if st.session_state.device_data:
