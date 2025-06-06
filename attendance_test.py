@@ -1316,18 +1316,19 @@ js_code = """
 
 components.html(js_code, height=60)
 
-# Use local variable to capture textarea input
-scanned_json = st.json(
+# Create the text area first with the current session state value
+scanned_json = st.text_area(
     "Scanned device JSON:",
     value=st.session_state.scanned_json_raw,
     height=100,
     key="scanned_json_raw"
 )
 
-# Update session state only if different (this is safe before widget creation)
+# Update the session state if user manually changes the text area
 if scanned_json != st.session_state.scanned_json_raw:
     st.session_state.scanned_json_raw = scanned_json
 
+# Process verification on button click
 if st.button("🔒 Verify Device"):
     if st.session_state.scanned_json_raw.strip():
         try:
@@ -1344,14 +1345,11 @@ if st.button("🔒 Verify Device"):
                 })
                 st.success(f"✅ Device added: {device_name} ({device_id})")
 
-            # Instead of assigning directly, assign the formatted string to a local var
-            formatted_json = json.dumps({
+            # Format JSON and update session state **before rerun finishes**
+            st.session_state.scanned_json_raw = json.dumps({
                 "name": device_name,
                 "id": device_id
             }, indent=2)
-
-            # Now update the session state variable (this is after the button click so safe)
-            st.session_state.scanned_json_raw = formatted_json
 
         except Exception as e:
             st.error(f"❌ Invalid JSON: {e}")
@@ -1376,14 +1374,17 @@ if st.button("🔒 Verify Device"):
     else:
         st.warning("⚠️ No scanned devices available.")
 
+# Show last scanned device
 if st.session_state.last_scanned_device["name"]:
     st.subheader("📍 Last Scanned Device")
     st.json(st.session_state.last_scanned_device)
 
+# Show all scanned devices
 if st.session_state.scanned_devices:
     st.subheader("📋 All Scanned Devices")
     for i, device in enumerate(st.session_state.scanned_devices, 1):
         st.write(f"{i}. *{device['name']}* ({device['id']})")
+
 
 
 
