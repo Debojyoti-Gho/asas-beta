@@ -1264,83 +1264,122 @@ def get_precise_location(api_key=None):
 
 import streamlit as st
 import streamlit.components.v1 as components
+import json
 
-st.title("🔒 Bluetooth Device Verifier")
+st.title("📡 BLE Device Verifier")
 
-EXPECTED_DEVICE_NAME = "My Trusted Device"  # <-- Change this to match your target device
+# --- Constants for Verification ---
+REQUIRED_DEVICE_ID = "76:6B:E1:0F:92:09"
+REQUIRED_DEVICE_NAME = "INSTITUTE BLE VERIFY SIGNA"
 
-# --- Step 1: Initialize session ---
-if "selected_device" not in st.session_state:
-    st.session_state.selected_device = None
+# --- Session state initialization ---
+if "scanned_devices" not in st.session_state:
+    st.session_state.scanned_devices = []
 if "verified" not in st.session_state:
-    st.session_state.verified = None
+    st.session_state.verified = False
+if "last_scanned_device" not in st.session_state:
+    st.session_state.last_scanned_device = {"name": "", "id": ""}
+if "show_json" not in st.session_state:
+    st.session_state.show_json = ""
 
-# --- Step 2: Get from query string ---
-query_params = st.query_params
-if "device" in query_params:
-    st.session_state.selected_device = query_params["device"]
-    st.query_params.clear()  # Clear query params from the URL
+# --- JavaScript to scan BLE devices without filters ---
+js_code = """
+<script>
+    function storeDevice(deviceInfo) {
+        const data = {
+            name: deviceInfo.name,
+            id: deviceInfo.id
+        };
+        parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]').value = JSON.stringify(data, null, 2);
+        parent.document.querySelector('textarea[aria-label="Scanned device JSON:"]').dispatchEvent(new Event('input', { bubbles: true }));
+    }
 
-# --- Step 3: Embedded HTML + JS ---
-components.html(
-    """
-    <!DOCTYPE html>
-    <html>
-    <body>
-        <button onclick="selectBluetoothDevice()" style="
-            padding: 12px 24px;
-            background-color: #0066CC;
-            color: white;
-            font-weight: bold;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-        ">
-            🔍 Select Bluetooth Device
-        </button>
+    async function scanBLE() {
+        try {
+            const device = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true
+            });
 
-        <script>
-            async function selectBluetoothDevice() {
-                try {
-                    const device = await navigator.bluetooth.requestDevice({
-                        acceptAllDevices: true
-                    });
-                    const deviceName = device.name || "Unnamed Device";
-                    localStorage.setItem("selectedDevice", deviceName);
+            const deviceInfo = {
+                name: device.name || "Unnamed Device",
+                id: device.id
+            };
+            storeDevice(deviceInfo);
+        } catch (e) {
+            alert("Scan cancelled or failed.");
+            console.error(e);
+        }
+    }
+</script>
+<button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
+"""
 
-                    // Reload the page with device name in query param
-                    const url = new URL(window.location.href);
-                    url.searchParams.set("device", deviceName);
-                    window.location.href = url.toString();
-                } catch (error) {
-                    alert("❌ Bluetooth selection was cancelled or failed.");
-                }
-            }
-        </script>
-    </body>
-    </html>
-    """,
-    height=150,
+# --- Render BLE scan button ---
+components.html(js_code, height=60)
+
+# --- Persistent Device JSON Display (across reruns) ---
+scanned_json = st.text_area(
+    "Scanned device JSON:",
+    value=st.session_state.show_json,
+    height=100,
+    key="scanned_json_area",
+    label_visibility="collapsed"
 )
 
-# --- Step 4: Show device & Verify ---
-if st.session_state.selected_device:
-    st.markdown(f"**🔗 Selected Device:** `{st.session_state.selected_device}`")
-    st.info("🧠 Saved in browser localStorage and session.")
+# --- Update session state if user edits scanned device manually ---
+if scanned_json != st.session_state.show_json:
+    st.session_state.show_json = scanned_json
 
-    if st.button("✅ Verify"):
-        st.session_state.verified = (
-            st.session_state.selected_device == EXPECTED_DEVICE_NAME
+# --- Verify Button and Logic ---
+if st.button("🔒 Verify Device"):
+    if st.session_state.show_json:
+        try:
+            device = json.loads(st.session_state.show_json)
+            device_name = device.get("name", "").strip()
+            device_id = device.get("id", "").strip()
+
+            # Save last scanned device
+            st.session_state.last_scanned_device = {"name": device_name, "id": device_id}
+
+            # Add to history if new
+            if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
+                st.session_state.scanned_devices.append({
+                    "name": device_name,
+                    "id": device_id
+                })
+                st.success(f"Device added: {device_name} ({device_id})")
+        except Exception as e:
+            st.error(f"❌ Failed to parse device JSON: {e}")
+
+    # Always show verification result
+    if st.session_state.scanned_devices:
+        match_found = any(
+            d["id"] == REQUIRED_DEVICE_ID or d["name"] == REQUIRED_DEVICE_NAME
+            for d in st.session_state.scanned_devices
         )
 
-# --- Step 5: Show verification result ---
-if st.session_state.verified is not None:
-    if st.session_state.verified:
-        st.success("✅ Verified")
+        if match_found:
+            matched_device = next(
+                d for d in st.session_state.scanned_devices
+                if d["id"] == REQUIRED_DEVICE_ID or d["name"] == REQUIRED_DEVICE_NAME
+            )
+            st.session_state.verified = True
+            st.success(f"✅ Verified: {matched_device['name']} ({matched_device['id']})")
+        else:
+            st.error("❌ Verification failed. Required device not found.")
     else:
-        st.error("❌ Not Verified")
+        st.warning("⚠️ No devices scanned yet.")
 
+# --- Show Last Scanned Device ---
+if st.session_state.last_scanned_device["name"]:
+    st.subheader("📍 Last Scanned Device")
+    st.json(st.session_state.last_scanned_device)
+
+# --- Show All Scanned Devices ---
+if st.session_state.scanned_devices:
+    st.subheader("📋 All Scanned Devices")
+    for i, device in enumerate(st.session_state.scanned_devices, 1):
+        st.write(f"{i}. *{device['name']}* ({device['id']})")
 
 
 
