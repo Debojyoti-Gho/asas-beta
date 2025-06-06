@@ -1265,9 +1265,11 @@ import streamlit as st
 import streamlit.components.v1 as components
 import json
 
+# Constants for device verification
 REQUIRED_ID = "kkFu61r4jTvGoHPPOSKK0Q=="
 REQUIRED_NAME = "DeskJet 2700 series"
 
+# Initialize session state keys
 if "device_data" not in st.session_state:
     st.session_state.device_data = None
 if "verified" not in st.session_state:
@@ -1277,30 +1279,44 @@ if "verify_flag" not in st.session_state:
 
 st.title("🔍 BLE Device Scanner & Verifier")
 
-# Hide the inputs visually but keep them in the DOM
+# CSS to hide the inputs but keep them accessible to Streamlit
 st.markdown(
     """
     <style>
-    input[aria-label="Hidden BLE Device"], input[aria-label="Hidden Verify Flag"] {
-        display: none;
+    input[aria-label="Hidden BLE Device"],
+    input[aria-label="Hidden Verify Flag"] {
+        position: absolute;
+        width: 0;
+        height: 0;
+        padding: 0;
+        margin: 0;
+        border: none;
+        visibility: hidden;
     }
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
-device_input = st.text_input("Hidden BLE Device", "", label_visibility="collapsed", key="device_data_input")
-verify_flag = st.text_input("Hidden Verify Flag", "", label_visibility="collapsed", key="verify_flag")
+# Hidden inputs to receive data from JS
+device_input = st.text_input(
+    "Hidden BLE Device", "", label_visibility="collapsed", key="device_data_input"
+)
+verify_flag = st.text_input(
+    "Hidden Verify Flag", "", label_visibility="collapsed", key="verify_flag"
+)
 
+# When device input changes, parse and update session state
 if device_input:
     try:
         parsed = json.loads(device_input)
         if st.session_state.device_data != parsed:
             st.session_state.device_data = parsed
-            st.session_state.verified = None
+            st.session_state.verified = None  # reset verification when new device scanned
     except json.JSONDecodeError:
         st.error("Failed to parse device info.")
 
+# When verify flag is set to "start", perform verification once
 if verify_flag == "start":
     device = st.session_state.device_data
     if device:
@@ -1309,18 +1325,22 @@ if verify_flag == "start":
         st.session_state.verified = id_match or name_match
     else:
         st.error("No device scanned yet.")
+    # Reset flag so verification only runs once per press
     st.session_state.verify_flag = ""
 
+# Show scanned device info
 if st.session_state.device_data:
     st.subheader("📋 Scanned Device")
     st.json(st.session_state.device_data)
 
+# Show verification result
 if st.session_state.verified is not None:
     if st.session_state.verified:
         st.success("✅ Device verified successfully.")
     else:
         st.error("❌ Device verification failed.")
 
+# Inject JS for BLE scanning and verification buttons
 components.html(
     """
     <script>
@@ -1358,11 +1378,12 @@ components.html(
         }
     </script>
 
-    <button onclick="scanDevice()">🔎 Scan Device</button>
-    <button onclick="verifyDevice()">🔐 Verify Device</button>
+    <button onclick="scanDevice()" style="font-size:18px;margin-right:10px;">🔎 Scan Device</button>
+    <button onclick="verifyDevice()" style="font-size:18px;">🔐 Verify Device</button>
     """,
     height=120,
 )
+
 
 
 
