@@ -1261,120 +1261,6 @@ def get_precise_location(api_key=None):
             st.error(f"ip-api request failed: {str(e)}")
             return "Error with ip-api request."
 
-import streamlit as st
-import streamlit.components.v1 as components
-import json
-
-st.title("📡 BLE Device Verifier")
-
-REQUIRED_DEVICE_ID = "76:6B:E1:0F:92:09"
-REQUIRED_DEVICE_NAME = "INSTITUTE BLE VERIFY SIGNA"
-
-if "scanned_devices" not in st.session_state:
-    st.session_state.scanned_devices = []
-if "verified" not in st.session_state:
-    st.session_state.verified = False
-if "last_scanned_device" not in st.session_state:
-    st.session_state.last_scanned_device = {"name": "", "id": ""}
-if "scanned_json_raw" not in st.session_state:
-    st.session_state.scanned_json_raw = ""
-
-# Component to scan BLE device and send data back via postMessage
-js_code = """
-<script>
-    async function scanBLE() {
-        try {
-            const device = await navigator.bluetooth.requestDevice({
-                acceptAllDevices: true
-            });
-            const deviceInfo = {
-                name: device.name || "Unnamed Device",
-                id: device.id
-            };
-            window.parent.postMessage({ type: 'BLE_DEVICE', device: deviceInfo }, '*');
-        } catch (e) {
-            alert("Scan cancelled or failed.");
-            console.error(e);
-        }
-    }
-</script>
-<button onclick="scanBLE()">🔎 Scan Bluetooth Device</button>
-"""
-
-# This component listens for postMessage and returns data to Streamlit
-device_data = components.html(js_code, height=70, scrolling=False)
-
-# Get device info from frontend (needs a custom solution; Streamlit doesn't support direct message listening here)
-# So we hack this using st.experimental_get_query_params() or through input widget:
-# Instead, use a hidden text input to store device info sent from JS via some custom method
-# But since Streamlit can’t directly listen to postMessage, you usually need a full custom component (outside scope)
-
-# So, **WORKAROUND:** Show a text input where user can paste JSON manually or copy from device info shown in JS alert (for demo)
-
-st.markdown("**Paste scanned device JSON here:**")
-scanned_json = st.text_area("Scanned device JSON:", value=st.session_state.scanned_json_raw, height=100)
-
-if scanned_json != st.session_state.scanned_json_raw:
-    st.session_state.scanned_json_raw = scanned_json
-
-if st.button("🔒 Verify Device"):
-    if st.session_state.scanned_json_raw.strip():
-        try:
-            device = json.loads(st.session_state.scanned_json_raw)
-            device_name = device.get("name", "").strip()
-            device_id = device.get("id", "").strip()
-
-            st.session_state.last_scanned_device = {"name": device_name, "id": device_id}
-
-            if not any(d["id"] == device_id for d in st.session_state.scanned_devices):
-                st.session_state.scanned_devices.append({
-                    "name": device_name,
-                    "id": device_id
-                })
-                st.success(f"✅ Device added: {device_name} ({device_id})")
-
-            # Update formatted JSON in session state
-            st.session_state.scanned_json_raw = json.dumps({
-                "name": device_name,
-                "id": device_id
-            }, indent=2)
-
-        except Exception as e:
-            st.error(f"❌ Invalid JSON: {e}")
-    else:
-        st.warning("⚠️ Please scan a device first.")
-
-    # Verification check
-    if st.session_state.scanned_devices:
-        match_found = any(
-            d["id"] == REQUIRED_DEVICE_ID or d["name"] == REQUIRED_DEVICE_NAME
-            for d in st.session_state.scanned_devices
-        )
-        if match_found:
-            matched_device = next(
-                d for d in st.session_state.scanned_devices
-                if d["id"] == REQUIRED_DEVICE_ID or d["name"] == REQUIRED_DEVICE_NAME
-            )
-            st.session_state.verified = True
-            st.success(f"✅ Verified: {matched_device['name']} ({matched_device['id']})")
-        else:
-            st.error("❌ Verification failed. Required device not found.")
-    else:
-        st.warning("⚠️ No scanned devices available.")
-
-if st.session_state.last_scanned_device["name"]:
-    st.subheader("📍 Last Scanned Device")
-    st.json(st.session_state.last_scanned_device)
-
-if st.session_state.scanned_devices:
-    st.subheader("📋 All Scanned Devices")
-    for i, device in enumerate(st.session_state.scanned_devices, 1):
-        st.write(f"{i}. *{device['name']}* ({device['id']})")
-
-
-
-
-
 def measure_latency(flask_server_url):
     """
     Measure the network latency between the Streamlit app and Flask server.
@@ -1427,7 +1313,6 @@ def get_ble_signal_from_api():
     except requests.exceptions.RequestException as e:
         st.error(f"Error connecting to the BLE API: {e}")
         return None
-
 
 def get_current_period():
     """
